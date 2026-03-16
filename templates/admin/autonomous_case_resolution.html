@@ -1,0 +1,651 @@
+{% extends "base.html" %}
+
+{% block title %}Autonomous Case Resolution{% endblock %}
+
+{% block extra_css %}
+<style>
+    .resolution-card {
+        border-left: 4px solid #007bff;
+        transition: all 0.3s ease;
+    }
+    .resolution-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    .resolution-badge {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+    }
+    .confidence-bar {
+        height: 8px;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+    .confidence-fill {
+        height: 100%;
+        transition: width 0.3s ease;
+    }
+    .stats-card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+        background: white;
+    }
+    .stats-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    .candidate-item {
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 0.5rem;
+        transition: all 0.3s ease;
+    }
+    .candidate-item:hover {
+        border-color: #007bff;
+        background-color: #f8f9fa;
+    }
+    .resolution-type-badge {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-1">🤖 Autonomous Case Resolution</h2>
+                    <p class="text-muted mb-0">Smart case closure with automated resolution detection</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary me-2">
+                        <i class="fas fa-arrow-left"></i> Back to Dashboard
+                    </a>
+                    <button class="btn btn-primary me-2" onclick="bulkAnalyzeResolutions()">
+                        <i class="fas fa-robot"></i> Bulk Analyze
+                    </button>
+                    <button class="btn btn-outline-secondary" onclick="refreshDashboard()">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card stats-card">
+                <div class="card-body text-center">
+                    <i class="fas fa-search fa-2x mb-2 text-primary"></i>
+                    <h3 class="mb-1 text-primary">{{ stats.resolution_candidates or 0 }}</h3>
+                    <p class="mb-0">Resolution Candidates</p>
+                    <small class="text-muted">Cases ready for analysis</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stats-card">
+                <div class="card-body text-center">
+                    <i class="fas fa-check-circle fa-2x mb-2 text-success"></i>
+                    <h3 class="mb-1 text-success">{{ stats.auto_closures or 0 }}</h3>
+                    <p class="mb-0">Auto Closures</p>
+                    <small class="text-muted">AI-resolved cases</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stats-card">
+                <div class="card-body text-center">
+                    <i class="fas fa-user-check fa-2x mb-2 text-warning"></i>
+                    <h3 class="mb-1 text-warning">{{ stats.manual_reviews or 0 }}</h3>
+                    <p class="mb-0">Manual Reviews</p>
+                    <small class="text-muted">Admin review required</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stats-card">
+                <div class="card-body text-center">
+                    <i class="fas fa-balance-scale fa-2x mb-2 text-info"></i>
+                    <h3 class="mb-1 text-info">{{ stats.legal_compliant or 0 }}</h3>
+                    <p class="mb-0">Legal Compliant</p>
+                    <small class="text-muted">Meets legal requirements</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Resolution Candidates -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list-alt"></i> Resolution Candidates
+                        <span class="badge badge-primary ml-2">{{ (candidates|length) if candidates else 0 }}</span>
+                    </h5>
+                    <small class="text-muted">Cases eligible for autonomous resolution analysis</small>
+                </div>
+                <div class="card-body" style="max-height: 500px; overflow-y: auto;">
+                    {% if candidate_cases %}
+                        {% for case in candidate_cases %}
+                            <div class="candidate-item">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-2">
+                                            <a href="{{ url_for('admin.case_detail', case_id=case.id) }}" class="text-decoration-none fw-bold">
+                                                Case #{{ case.id }} - {{ case.person_name }}
+                                            </a>
+                                        </h6>
+                                        <div class="mb-1">
+                                            <i class="fas fa-map-marker-alt text-danger"></i>
+                                            <small class="text-muted">{{ case.last_seen_location or 'Location not specified' }}</small>
+                                        </div>
+                                        <div class="d-flex align-items-center gap-3">
+                                            <span class="text-muted">
+                                                <i class="fas fa-calendar-alt text-primary"></i>
+                                                <small>{{ case.created_at.strftime('%d %b %Y') }}</small>
+                                            </span>
+                                            <span class="badge bg-{{ 'danger' if case.priority == 'Critical' else 'warning' if case.priority == 'High' else 'info' }}">
+                                                <i class="fas fa-flag"></i> {{ case.priority or 'Medium' }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="ms-3 d-flex flex-column gap-1">
+                                        <button class="btn btn-sm btn-primary" onclick="handleAnalyze({{ case.id }})" title="AI Resolution Analysis">
+                                            <i class="fas fa-robot"></i> Analyze
+                                        </button>
+                                        <button class="btn btn-sm btn-info" onclick="handlePredict({{ case.id }})" title="Outcome Prediction">
+                                            <i class="fas fa-chart-line"></i> Predict
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-robot fa-4x text-primary mb-3"></i>
+                            <h5 class="text-primary">No Resolution Candidates</h5>
+                            <p class="text-muted mb-3">All eligible cases have been analyzed or are not ready for autonomous resolution.</p>
+                            <div class="alert alert-info">
+                                <strong>💡 How it works:</strong><br>
+                                • Cases become eligible after 7+ days of processing<br>
+                                • AI analyzes evidence and legal compliance<br>
+                                • Smart decisions for case closure or review
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Resolution Decisions -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-history"></i> Recent Resolution Decisions
+                        <span class="badge badge-info ml-2">{{ (recent_decisions|length) if recent_decisions else 0 }}</span>
+                    </h5>
+                    <small class="text-muted">Latest AI resolution analysis results</small>
+                </div>
+                <div class="card-body" style="max-height: 500px; overflow-y: auto;">
+                    {% if recent_decisions %}
+                        {% for decision in recent_decisions %}
+                        <div class="resolution-card card mb-3">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h6 class="mb-0">
+                                        <a href="{{ url_for('admin.case_detail', case_id=decision.case.id) }}" class="text-decoration-none">
+                                            {{ decision.case.person_name }}
+                                        </a>
+                                    </h6>
+                                    <div>
+                                        {% if decision.auto_closure_eligible %}
+                                            <span class="badge badge-success resolution-type-badge">Auto Eligible</span>
+                                        {% else %}
+                                            <span class="badge badge-warning resolution-type-badge">Manual Review</span>
+                                        {% endif %}
+                                        {% if decision.legal_compliance_met %}
+                                            <span class="badge badge-info resolution-type-badge ml-1">Legal ✓</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-2">
+                                    <small class="text-muted">Resolution Type:</small>
+                                    <span class="badge badge-primary ml-1">{{ decision.resolution_type.replace('_', ' ').title() }}</span>
+                                </div>
+                                
+                                <div class="mb-2">
+                                    <small class="text-muted">AI Confidence:</small>
+                                    <div class="confidence-bar bg-light ml-2" style="width: 100px; display: inline-block;">
+                                        <div class="confidence-fill bg-primary" style="width: {{ (decision.confidence_score * 100)|round }}%;"></div>
+                                    </div>
+                                    <small class="ml-2">{{ (decision.confidence_score * 100)|round }}%</small>
+                                </div>
+                                
+                                <div class="mb-2">
+                                    <small class="text-muted">Evidence Count:</small>
+                                    <span class="badge badge-secondary ml-1">{{ decision.evidence_count }}</span>
+                                </div>
+                                
+                                {% if decision.closure_reason %}
+                                <div class="mb-2">
+                                    <small class="text-muted">Reason:</small>
+                                    <p class="mb-0 small">{{ decision.closure_reason[:100] }}{% if decision.closure_reason|length > 100 %}...{% endif %}</p>
+                                </div>
+                                {% endif %}
+                                
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-muted">
+                                        <i class="fas fa-clock"></i> {{ decision.detected_at }}
+                                    </small>
+                                    <div>
+                                        <button class="btn btn-sm btn-outline-primary" onclick="viewResolutionDetails({{ decision.case.id }})">
+                                            <i class="fas fa-eye"></i> Details
+                                        </button>
+                                        <a href="{{ url_for('admin.case_outcome_prediction', case_id=decision.case.id) }}" class="btn btn-sm btn-outline-info ml-1">
+                                            <i class="fas fa-chart-line"></i> Prediction
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-chart-line fa-4x text-info mb-3"></i>
+                            <h5 class="text-info">No Recent Decisions</h5>
+                            <p class="text-muted mb-3">No autonomous resolution decisions have been made yet.</p>
+                            <div class="alert alert-light border">
+                                <strong>🎯 AI Resolution Features:</strong><br>
+                                • Automated evidence analysis<br>
+                                • Legal compliance verification<br>
+                                • Smart case closure recommendations<br>
+                                • Outcome prediction with confidence scores
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Performance Metrics -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-bar"></i> System Performance Metrics
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 text-center">
+                            <div class="p-3 bg-light rounded">
+                                <h4 class="text-primary mb-1">{{ "%.1f"|format((stats.avg_confidence or 0) * 100) }}%</h4>
+                                <p class="text-muted mb-0">Average Confidence</p>
+                                <small class="text-muted">AI decision accuracy</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <div class="p-3 bg-light rounded">
+                                <h4 class="text-success mb-1">{{ "%.1f"|format((stats.auto_closures / (stats.auto_closures + stats.manual_reviews) * 100) if (stats.auto_closures + stats.manual_reviews) > 0 else 0) }}%</h4>
+                                <p class="text-muted mb-0">Automation Rate</p>
+                                <small class="text-muted">Cases auto-resolved</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <div class="p-3 bg-light rounded">
+                                <h4 class="text-info mb-1">{{ "%.1f"|format((stats.legal_compliant / (stats.auto_closures + stats.manual_reviews) * 100) if (stats.auto_closures + stats.manual_reviews) > 0 else 0) }}%</h4>
+                                <p class="text-muted mb-0">Legal Compliance</p>
+                                <small class="text-muted">Meets requirements</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <div class="p-3 bg-light rounded">
+                                <h4 class="text-warning mb-1">{{ stats.resolution_candidates or 0 }}</h4>
+                                <p class="text-muted mb-0">Pending Analysis</p>
+                                <small class="text-muted">Awaiting AI review</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function handleAnalyze(caseId) {
+    if (!confirm('Start AI resolution analysis for Case #' + caseId + '?')) return;
+    
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+    
+    fetch('/admin/analyze-case-resolution/' + caseId, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        }
+    })
+    .then(r => r.json())
+    .then(data => {
+        alert(data.success ? 'Success: ' + data.message : 'Error: ' + (data.error || 'Failed'));
+        if (data.success) setTimeout(() => location.reload(), 1000);
+    })
+    .catch(e => alert('Error: ' + e.message));
+}
+
+function handlePredict(caseId) {
+    if (!confirm('Generate outcome prediction for Case #' + caseId + '?')) return;
+    
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+    
+    fetch('/admin/predict-case-outcome/' + caseId, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            alert('Prediction completed!');
+            window.open('/admin/case-outcome-prediction/' + caseId, '_blank');
+        } else {
+            alert('Error: ' + (data.error || 'Failed'));
+        }
+    })
+    .catch(e => alert('Error: ' + e.message));
+}
+</script>
+
+<!-- Resolution Details Modal -->
+<div class="modal fade" id="resolutionDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-robot"></i> Resolution Analysis Details
+                </h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="resolutionDetailsContent">
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="sr-only">Loading...</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Ensure functions are globally accessible
+window.analyzeCase = function(caseId) {
+    console.log('analyzeCase called with caseId:', caseId);
+    
+    // Show loading state
+    const button = event.target.closest('button');
+    console.log('Button found:', button);
+    
+    if (!button) {
+        alert('Button not found!');
+        return;
+    }
+    
+    const originalText = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing...';
+    button.disabled = true;
+    
+    const url = `/admin/analyze-case-resolution/${caseId}`;
+    console.log('Fetching URL:', url);
+    
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrfToken()
+        }
+    })
+    .then(response => {
+        console.log('Response status:', response.status);
+        return response.json();
+    })
+    .then(data => {
+        console.log('Response data:', data);
+        if (data.success) {
+            alert('Success: ' + data.message);
+            // Refresh the dashboard after a short delay
+            setTimeout(() => {
+                location.reload();
+            }, 2000);
+        } else {
+            alert('Error: ' + (data.error || 'Analysis failed'));
+        }
+    })
+    .catch(error => {
+        console.error('Fetch error:', error);
+        alert('Network error: ' + error.message);
+    })
+    .finally(() => {
+        button.innerHTML = originalText;
+        button.disabled = false;
+    });
+}
+
+window.predictOutcome = function(caseId) {
+    const button = event.target.closest('button');
+    const originalText = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Predicting...';
+    button.disabled = true;
+    
+    fetch(`/admin/predict-case-outcome/${caseId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrfToken()
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('success', 'Outcome prediction completed');
+            // Redirect to prediction view
+            setTimeout(() => {
+                window.open(`/admin/case-outcome-prediction/${caseId}`, '_blank');
+            }, 500);
+        } else {
+            showAlert('error', data.error || 'Prediction failed');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('error', 'Network error occurred');
+    })
+    .finally(() => {
+        button.innerHTML = originalText;
+        button.disabled = false;
+    });
+}
+
+window.bulkAnalyzeResolutions = function() {
+    if (!confirm('This will analyze multiple cases for autonomous resolution. Continue?')) {
+        return;
+    }
+    
+    const button = event.target.closest('button');
+    const originalText = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing...';
+    button.disabled = true;
+    
+    fetch('/admin/bulk-analyze-resolutions', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrfToken()
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const results = data.results;
+            const message = `Bulk analysis completed:\n• Analyzed: ${results.analyzed}\n• Auto Closed: ${results.auto_closed}\n• Manual Review: ${results.manual_review}\n• Continue Investigation: ${results.continue_investigation}\n• Errors: ${results.errors}`;
+            showAlert('success', message);
+            
+            // Refresh dashboard
+            setTimeout(() => {
+                location.reload();
+            }, 3000);
+        } else {
+            showAlert('error', data.error || 'Bulk analysis failed');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('error', 'Network error occurred');
+    })
+    .finally(() => {
+        button.innerHTML = originalText;
+        button.disabled = false;
+    });
+}
+
+window.viewResolutionDetails = function(caseId) {
+    $('#resolutionDetailsModal').modal('show');
+    
+    fetch(`/admin/resolution-decision/${caseId}`)
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const decision = data.decision;
+            const content = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Resolution Analysis</h6>
+                        <table class="table table-sm">
+                            <tr>
+                                <td><strong>Resolution Type:</strong></td>
+                                <td><span class="badge badge-primary">${decision.resolution_type.replace('_', ' ')}</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>AI Confidence:</strong></td>
+                                <td>
+                                    <div class="progress" style="height: 20px;">
+                                        <div class="progress-bar" style="width: ${(decision.confidence_score * 100).toFixed(1)}%">
+                                            ${(decision.confidence_score * 100).toFixed(1)}%
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Evidence Count:</strong></td>
+                                <td><span class="badge badge-secondary">${decision.evidence_count}</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Auto Closure:</strong></td>
+                                <td>${decision.auto_closure_eligible ? '<span class="badge badge-success">Eligible</span>' : '<span class="badge badge-warning">Not Eligible</span>'}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Legal Compliance:</strong></td>
+                                <td>${decision.legal_compliance_met ? '<span class="badge badge-success">Met</span>' : '<span class="badge badge-danger">Not Met</span>'}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Status:</strong></td>
+                                <td><span class="badge badge-info">${decision.status}</span></td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Closure Reason</h6>
+                        <div class="alert alert-info">
+                            ${decision.closure_reason || 'No specific reason provided'}
+                        </div>
+                        <h6>Analysis Date</h6>
+                        <p class="text-muted">${decision.detected_at}</p>
+                    </div>
+                </div>
+            `;
+            document.getElementById('resolutionDetailsContent').innerHTML = content;
+        } else {
+            document.getElementById('resolutionDetailsContent').innerHTML = `
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i> ${data.error || 'No resolution details found'}
+                </div>
+            `;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        document.getElementById('resolutionDetailsContent').innerHTML = `
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-circle"></i> Error loading resolution details
+            </div>
+        `;
+    });
+}
+
+window.refreshDashboard = function() {
+    location.reload();
+}
+
+window.showAlert = function(type, message) {
+    const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+    const icon = type === 'success' ? 'fas fa-check-circle' : 'fas fa-exclamation-circle';
+    
+    const alertHtml = `
+        <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+            <i class="${icon}"></i> ${message.replace(/\n/g, '<br>')}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    
+    // Insert at top of container
+    const container = document.querySelector('.container') || document.querySelector('.container-fluid') || document.body;
+    container.insertAdjacentHTML('afterbegin', alertHtml);
+    
+    // Auto dismiss after 5 seconds
+    setTimeout(() => {
+        const alerts = document.querySelectorAll('.alert');
+        alerts.forEach(alert => alert.remove());
+    }, 5000);
+}
+
+window.getCsrfToken = function() {
+    // Try multiple methods to get CSRF token
+    const metaToken = document.querySelector('meta[name="csrf-token"]');
+    if (metaToken) {
+        return metaToken.getAttribute('content');
+    }
+    
+    const hiddenToken = document.querySelector('input[name="csrf_token"]');
+    if (hiddenToken) {
+        return hiddenToken.value;
+    }
+    
+    // Return empty string if not found (route may not require CSRF)
+    return '';
+}
+</script>
+{% endblock %}

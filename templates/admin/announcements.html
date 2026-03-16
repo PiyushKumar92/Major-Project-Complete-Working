@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+{% block extra_css %}
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+* { font-family: 'Inter', sans-serif; }
+
+.announcements-header {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: white;
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+}
+
+.announcement-card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 1rem;
+    transition: transform 0.2s;
+}
+
+.announcement-card:hover { transform: translateY(-2px); }
+
+.announcement-type {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.type-info { background: #dbeafe; color: #1d4ed8; }
+.type-success { background: #d1fae5; color: #059669; }
+.type-warning { background: #fef3c7; color: #d97706; }
+.type-danger { background: #fee2e2; color: #dc2626; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="announcements-header">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="mb-2">📢 Announcement Management</h1>
+                <p class="mb-0">Manage site-wide announcements and notifications</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <a href="{{ url_for('admin.create_announcement') }}" class="btn btn-light me-2">
+                    <i class="fas fa-plus"></i> New Announcement
+                </a>
+                <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-light">
+                    <i class="fas fa-arrow-left"></i> Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">📋 All Announcements</h5>
+                    <div>
+                        <span class="badge bg-success">{{ announcements|selectattr('is_active')|list|length }} Active</span>
+                        <span class="badge bg-secondary">{{ announcements|rejectattr('is_active')|list|length }} Inactive</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if announcements %}
+                        {% for announcement in announcements %}
+                        <div class="announcement-card">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex align-items-center mb-2">
+                                            <h6 class="mb-0 me-3">{{ announcement.title }}</h6>
+                                            <span class="announcement-type type-{{ announcement.type }}">
+                                                {{ announcement.type }}
+                                            </span>
+                                            {% if announcement.is_active %}
+                                                <span class="badge bg-success ms-2">Active</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary ms-2">Inactive</span>
+                                            {% endif %}
+                                        </div>
+                                        <p class="text-muted mb-2">{{ announcement.content[:200] }}{% if announcement.content|length > 200 %}...{% endif %}</p>
+                                        <div class="d-flex align-items-center text-muted">
+                                            <small>
+                                                <i class="fas fa-user"></i> {{ announcement.author.username }} • 
+                                                <i class="fas fa-calendar"></i> {{ announcement.ist_created_at.strftime('%B %d, %Y at %I:%M %p') }} IST
+                                                {% if announcement.expires_at %}
+                                                    • <i class="fas fa-clock"></i> Expires {{ announcement.expires_at.strftime('%B %d, %Y') }}
+                                                {% endif %}
+                                            </small>
+                                        </div>
+                                    </div>
+                                    <div class="ms-3">
+                                        <form method="POST" style="display: inline;">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                            <button type="submit" 
+                                                    formaction="{{ url_for('admin.toggle_announcement', announcement_id=announcement.id) }}"
+                                                    class="btn btn-sm {% if announcement.is_active %}btn-warning{% else %}btn-success{% endif %}">
+                                                {% if announcement.is_active %}
+                                                    <i class="fas fa-pause"></i> Deactivate
+                                                {% else %}
+                                                    <i class="fas fa-play"></i> Activate
+                                                {% endif %}
+                                            </button>
+                                        </form>
+                                        <form method="POST" style="display: inline;" onsubmit="return confirm('Are you sure you want to permanently delete this announcement? This action cannot be undone.')">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                            <button type="submit" 
+                                                    formaction="{{ url_for('admin.delete_announcement', announcement_id=announcement.id) }}"
+                                                    class="btn btn-sm btn-danger ms-1">
+                                                <i class="fas fa-trash"></i> Delete
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-bullhorn fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No announcements yet</h5>
+                            <p class="text-muted">Create your first announcement to communicate with all platform users.</p>
+                            <a href="{{ url_for('admin.create_announcement') }}" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Create Announcement
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="row mt-4">
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="text-primary">{{ announcements|length }}</h3>
+                    <p class="mb-0">Total Announcements</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="text-success">{{ announcements|selectattr('is_active')|list|length }}</h3>
+                    <p class="mb-0">Active</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="text-info">{{ announcements|selectattr('type', 'equalto', 'info')|list|length }}</h3>
+                    <p class="mb-0">Info Type</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="text-warning">{{ announcements|selectattr('expires_at')|list|length }}</h3>
+                    <p class="mb-0">With Expiry</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,578 @@
+{% extends "base.html" %}
+
+{% block title %}System Status{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="text-primary mb-1">
+                        <i class="fas fa-heartbeat me-2"></i>System Status & Health
+                    </h2>
+                    <p class="text-muted mb-0">Monitor system components and performance metrics</p>
+                </div>
+                <div class="btn-group">
+                    <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                    </a>
+                    <button class="btn btn-primary" onclick="location.reload()">
+                        <i class="fas fa-sync-alt me-2"></i>Refresh Status
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Health Cards -->
+    <div class="row mb-4">
+        <div class="col-lg-4 col-md-6 mb-3">
+            <div class="card h-100">
+                <div class="card-header bg-{{ 'success' if db_status == 'Connected' else 'danger' }} text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-database me-2"></i>Database Status
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="text-{{ 'success' if db_status == 'Connected' else 'danger' }}">
+                                {{ db_status }}
+                            </h4>
+                            <p class="text-muted mb-0">SQLAlchemy Connection</p>
+                        </div>
+                        <div class="text-{{ 'success' if db_status == 'Connected' else 'danger' }}">
+                            <i class="fas fa-{{ 'check-circle' if db_status == 'Connected' else 'times-circle' }} fa-3x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4 col-md-6 mb-3">
+            <div class="card h-100">
+                <div class="card-header bg-{{ 'success' if redis_status == 'Connected' else 'warning' }} text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-memory me-2"></i>Redis Status
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="text-{{ 'success' if redis_status == 'Connected' else 'warning' }}">
+                                {{ redis_status }}
+                            </h4>
+                            <p class="text-muted mb-0">Background Processing</p>
+                        </div>
+                        <div class="text-{{ 'success' if redis_status == 'Connected' else 'warning' }}">
+                            <i class="fas fa-{{ 'check-circle' if redis_status == 'Connected' else 'exclamation-triangle' }} fa-3x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4 col-md-6 mb-3">
+            <div class="card h-100">
+                <div class="card-header bg-{{ 'success' if ai_status == 'Available' else 'danger' }} text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-brain me-2"></i>AI System Status
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="text-{{ 'success' if ai_status == 'Available' else 'danger' }}">
+                                {{ 'Available' if ai_status == 'Available' else 'Error' }}
+                            </h4>
+                            <p class="text-muted mb-0">Face Recognition Engine</p>
+                            {% if ai_status != 'Available' %}
+                            <small class="text-danger">{{ ai_status }}</small>
+                            {% endif %}
+                        </div>
+                        <div class="text-{{ 'success' if ai_status == 'Available' else 'danger' }}">
+                            <i class="fas fa-{{ 'check-circle' if ai_status == 'Available' else 'times-circle' }} fa-3x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Statistics -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-bar me-2"></i>System Statistics
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="stat-card text-center p-3 border rounded">
+                                <div class="stat-icon mx-auto mb-2" style="background: #007bff; color: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-folder-open"></i>
+                                </div>
+                                <h3 class="text-primary mb-1">{{ stats.total_cases }}</h3>
+                                <p class="text-muted mb-0">Total Cases</p>
+                            </div>
+                        </div>
+                        
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="stat-card text-center p-3 border rounded">
+                                <div class="stat-icon mx-auto mb-2" style="background: #ffc107; color: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-clock"></i>
+                                </div>
+                                <h3 class="text-warning mb-1">{{ stats.pending_cases }}</h3>
+                                <p class="text-muted mb-0">Pending Approval</p>
+                            </div>
+                        </div>
+                        
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="stat-card text-center p-3 border rounded">
+                                <div class="stat-icon mx-auto mb-2" style="background: #28a745; color: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-play-circle"></i>
+                                </div>
+                                <h3 class="text-success mb-1">{{ stats.active_cases }}</h3>
+                                <p class="text-muted mb-0">Active Cases</p>
+                            </div>
+                        </div>
+                        
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="stat-card text-center p-3 border rounded">
+                                <div class="stat-icon mx-auto mb-2" style="background: #17a2b8; color: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-video"></i>
+                                </div>
+                                <h3 class="text-info mb-1">{{ stats.total_footage }}</h3>
+                                <p class="text-muted mb-0">CCTV Footage</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Processing Statistics -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-brain me-2"></i>AI Processing Statistics
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="text-center">
+                                <div class="h2 text-primary">{{ stats.total_matches }}</div>
+                                <p class="text-muted">Location Matches</p>
+                            </div>
+                        </div>
+                        
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="text-center">
+                                <div class="h2 text-warning">{{ stats.processing_matches }}</div>
+                                <p class="text-muted">Currently Processing</p>
+                            </div>
+                        </div>
+                        
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="text-center">
+                                <div class="h2 text-info">{{ stats.total_detections }}</div>
+                                <p class="text-muted">Total Detections</p>
+                            </div>
+                        </div>
+                        
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="text-center">
+                                <div class="h2 text-success">{{ stats.verified_detections }}</div>
+                                <p class="text-muted">Verified Detections</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Processing Efficiency -->
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <h6>Detection Rate</h6>
+                            {% set detection_rate = (stats.total_detections / stats.total_matches * 100) if stats.total_matches > 0 else 0 %}
+                            <div class="progress mb-2">
+                                <div class="progress-bar bg-info" style="width: {{ detection_rate }}%">
+                                    {{ "%.1f"|format(detection_rate) }}%
+                                </div>
+                            </div>
+                            <small class="text-muted">Detections per footage analyzed</small>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h6>Verification Rate</h6>
+                            {% set verification_rate = (stats.verified_detections / stats.total_detections * 100) if stats.total_detections > 0 else 0 %}
+                            <div class="progress mb-2">
+                                <div class="progress-bar bg-success" style="width: {{ verification_rate }}%">
+                                    {{ "%.1f"|format(verification_rate) }}%
+                                </div>
+                            </div>
+                            <small class="text-muted">Verified detections accuracy</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Actions -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-tools me-2"></i>System Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <button class="btn btn-outline-primary w-100" onclick="testAISystem()" title="Test Face Recognition, OpenCV, and AI components">
+                                <i class="fas fa-brain me-2"></i>Test AI System
+                            </button>
+                        </div>
+                        
+                        <div class="col-md-3 mb-3">
+                            <button class="btn btn-outline-info w-100" onclick="clearCache()" title="Clear Redis cache and temporary files">
+                                <i class="fas fa-broom me-2"></i>Clear Cache
+                            </button>
+                        </div>
+                        
+                        <div class="col-md-3 mb-3">
+                            <button class="btn btn-outline-success w-100" onclick="optimizeDatabase()" title="Clean up old logs and notifications to improve performance">
+                                <i class="fas fa-database me-2"></i>Optimize Database
+                            </button>
+                        </div>
+                        
+                        <div class="col-md-3 mb-3">
+                            <button class="btn btn-outline-warning w-100" onclick="generateReport()">
+                                <i class="fas fa-file-alt me-2"></i>System Report
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function testAISystem() {
+    const button = event.target;
+    const originalText = button.innerHTML;
+    
+    // Show loading state
+    button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Testing...';
+    button.disabled = true;
+    
+    fetch('/admin/test-ai-system', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    }).then(response => response.json())
+    .then(data => {
+        // Reset button
+        button.innerHTML = originalText;
+        button.disabled = false;
+        
+        // Show results in modal
+        showTestResults(data);
+    }).catch(error => {
+        button.innerHTML = originalText;
+        button.disabled = false;
+        alert('Test failed: ' + error.message);
+    });
+}
+
+function showTestResults(data) {
+    const modalHtml = `
+        <div class="modal fade" id="testResultsModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header bg-${data.success ? 'success' : 'danger'} text-white">
+                        <h5 class="modal-title">
+                            <i class="fas fa-${data.success ? 'check-circle' : 'times-circle'} me-2"></i>
+                            AI System Test Results
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="alert alert-${data.success ? 'success' : 'danger'}">
+                            <strong>${data.message}</strong>
+                        </div>
+                        <h6>Test Results:</h6>
+                        <ul class="list-group list-group-flush">
+                            ${data.results ? data.results.map(result => 
+                                `<li class="list-group-item d-flex align-items-center">
+                                    ${result.startsWith('✅') ? 
+                                        '<i class="fas fa-check-circle text-success me-2"></i>' : 
+                                        '<i class="fas fa-times-circle text-danger me-2"></i>'
+                                    }
+                                    ${result.replace(/^[✅❌]\s*/, '')}
+                                </li>`
+                            ).join('') : '<li class="list-group-item">No detailed results available</li>'}
+                        </ul>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remove existing modal if any
+    const existingModal = document.getElementById('testResultsModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    // Add modal to body
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('testResultsModal'));
+    modal.show();
+    
+    // Remove modal from DOM when hidden
+    document.getElementById('testResultsModal').addEventListener('hidden.bs.modal', function() {
+        this.remove();
+    });
+}
+
+function showConfirmModal(title, message, onConfirm) {
+    const modalHtml = `
+        <div class="modal fade" id="confirmModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="fas fa-question-circle text-warning me-2"></i>${title}
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>${message}</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" onclick="confirmAction()">Confirm</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Store callback function
+    window.confirmCallback = onConfirm;
+    
+    // Remove existing modal if any
+    const existingModal = document.getElementById('confirmModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    // Add modal to body
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('confirmModal'));
+    modal.show();
+    
+    // Remove modal from DOM when hidden
+    document.getElementById('confirmModal').addEventListener('hidden.bs.modal', function() {
+        this.remove();
+        delete window.confirmCallback;
+    });
+}
+
+function confirmAction() {
+    if (window.confirmCallback) {
+        window.confirmCallback();
+    }
+    bootstrap.Modal.getInstance(document.getElementById('confirmModal')).hide();
+}
+
+function clearCache() {
+    // Show confirmation modal instead of alert
+    showConfirmModal('Clear System Cache', 'Are you sure you want to clear the system cache? This may temporarily slow down the system.', function() {
+        const button = event.target;
+        const originalText = button.innerHTML;
+        
+        // Show loading state
+        button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Clearing...';
+        button.disabled = true;
+        
+        fetch('/admin/clear-cache', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        }).then(response => response.json())
+        .then(data => {
+            button.innerHTML = originalText;
+            button.disabled = false;
+            
+            // Show results in modal
+            showCacheResults(data);
+        }).catch(error => {
+            button.innerHTML = originalText;
+            button.disabled = false;
+            showCacheResults({success: false, message: 'Cache clear failed: ' + error.message, redis_cleared: false});
+        });
+    });
+}
+
+function showCacheResults(data) {
+    const modalHtml = `
+        <div class="modal fade" id="cacheResultsModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header bg-${data.success ? 'success' : 'danger'} text-white">
+                        <h5 class="modal-title">
+                            <i class="fas fa-broom me-2"></i>Cache Clear Results
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="alert alert-${data.success ? 'success' : 'danger'}">
+                            <strong>${data.message}</strong>
+                        </div>
+                        ${data.redis_cleared ? 
+                            '<p><i class="fas fa-check text-success me-2"></i>Redis cache cleared</p>' : 
+                            '<p><i class="fas fa-times text-warning me-2"></i>Redis not available</p>'
+                        }
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary" onclick="location.reload()">Refresh Page</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remove existing modal if any
+    const existingModal = document.getElementById('cacheResultsModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    // Add modal to body
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('cacheResultsModal'));
+    modal.show();
+    
+    // Remove modal from DOM when hidden
+    document.getElementById('cacheResultsModal').addEventListener('hidden.bs.modal', function() {
+        this.remove();
+    });
+}
+
+function optimizeDatabase() {
+    showConfirmModal('Optimize Database', 'This will clean up old logs and notifications. The process may take a few minutes. Continue?', function() {
+        const button = event.target;
+        const originalText = button.innerHTML;
+        
+        // Show loading state
+        button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Optimizing...';
+        button.disabled = true;
+        
+        fetch('/admin/optimize-database', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        }).then(response => response.json())
+        .then(data => {
+            button.innerHTML = originalText;
+            button.disabled = false;
+            
+            // Show results in modal
+            showOptimizeResults(data);
+        }).catch(error => {
+            button.innerHTML = originalText;
+            button.disabled = false;
+            showOptimizeResults({success: false, message: 'Database optimization failed: ' + error.message, optimizations: []});
+        });
+    });
+}
+
+function showOptimizeResults(data) {
+    const modalHtml = `
+        <div class="modal fade" id="optimizeResultsModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header bg-${data.success ? 'success' : 'danger'} text-white">
+                        <h5 class="modal-title">
+                            <i class="fas fa-database me-2"></i>Database Optimization Results
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="alert alert-${data.success ? 'success' : 'danger'}">
+                            <strong>${data.message}</strong>
+                        </div>
+                        ${data.optimizations && data.optimizations.length > 0 ? 
+                            `<h6>Optimizations Performed:</h6>
+                            <ul class="list-group list-group-flush">
+                                ${data.optimizations.map(opt => 
+                                    `<li class="list-group-item">
+                                        <i class="fas fa-check text-success me-2"></i>${opt}
+                                    </li>`
+                                ).join('')}
+                            </ul>` : ''
+                        }
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary" onclick="location.reload()">Refresh Page</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remove existing modal if any
+    const existingModal = document.getElementById('optimizeResultsModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    // Add modal to body
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('optimizeResultsModal'));
+    modal.show();
+    
+    // Remove modal from DOM when hidden
+    document.getElementById('optimizeResultsModal').addEventListener('hidden.bs.modal', function() {
+        this.remove();
+    });
+}
+
+function generateReport() {
+    window.location.href = '/admin/system-report';
+}
+
+// Auto-refresh every 30 seconds
+setInterval(() => {
+    location.reload();
+}, 30000);
+</script>
+{% endblock %}

@@ -1,0 +1,501 @@
+{% extends "base.html" %}
+
+{% block title %}Upload Surveillance Footage{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Header -->
+            <div class="text-center mb-4">
+                <h2 class="text-primary mb-2">
+                    <i class="fas fa-upload me-2"></i>Upload Surveillance Footage
+                </h2>
+                <p class="text-muted">Add CCTV footage for AI-powered missing person analysis</p>
+            </div>
+
+            <!-- Upload Form -->
+            <div class="card shadow">
+                <div class="card-body p-4">
+                    <form method="POST" enctype="multipart/form-data" id="uploadForm">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        
+                        <!-- Basic Information -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-primary mb-3">
+                                    <i class="fas fa-info-circle me-2"></i>Basic Information
+                                </h5>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="title" class="form-label">Footage Title *</label>
+                                <input type="text" class="form-control" id="title" name="title" required 
+                                       placeholder="e.g., Main Street CCTV - Camera 1">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="camera_type" class="form-label">Camera Type</label>
+                                <select class="form-select" id="camera_type" name="camera_type">
+                                    <option value="CCTV">CCTV</option>
+                                    <option value="Security">Security Camera</option>
+                                    <option value="Traffic">Traffic Camera</option>
+                                    <option value="Surveillance">Surveillance Camera</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            <div class="col-12 mb-3">
+                                <label for="description" class="form-label">Description <span class="text-muted">(Optional)</span></label>
+                                <textarea class="form-control" id="description" name="description" rows="3"
+                                          placeholder="Brief description of the footage content and context"></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Location Information -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-primary mb-3">
+                                    <i class="fas fa-map-marker-alt me-2"></i>Detailed Location Information
+                                </h5>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="location_name" class="form-label">Location Name *</label>
+                                <input type="text" class="form-control" id="location_name" name="location_name" required
+                                       placeholder="e.g., Main Street Junction">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="quality" class="form-label">Video Quality</label>
+                                <select class="form-select" id="quality" name="quality">
+                                    <option value="SD">SD (480p)</option>
+                                    <option value="HD" selected>HD (720p)</option>
+                                    <option value="FHD">Full HD (1080p)</option>
+                                    <option value="4K">4K (2160p)</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="street_address" class="form-label">Street Address *</label>
+                                <input type="text" class="form-control" id="street_address" name="street_address" required
+                                       placeholder="House/Building number, Street name">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="area_locality" class="form-label">Area/Locality *</label>
+                                <input type="text" class="form-control" id="area_locality" name="area_locality" required
+                                       placeholder="Sector, Colony, Neighborhood">
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label for="city" class="form-label">City *</label>
+                                <input type="text" class="form-control" id="city" name="city" required
+                                       placeholder="City name">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="state" class="form-label">State *</label>
+                                <input type="text" class="form-control" id="state" name="state" required
+                                       placeholder="State name">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="pincode" class="form-label">PIN Code *</label>
+                                <input type="text" class="form-control" id="pincode" name="pincode" required
+                                       placeholder="6-digit PIN code" pattern="[0-9]{6}">
+                            </div>
+                            
+                            <div class="col-12 mb-3">
+                                <label for="landmarks" class="form-label">Landmarks/Additional Details <span class="text-muted">(Optional)</span></label>
+                                <textarea class="form-control" id="landmarks" name="landmarks" rows="2"
+                                          placeholder="Nearby landmarks, shops, metro stations, or any other location details"></textarea>
+                                <small class="text-info"><i class="fas fa-info-circle"></i> More details help AI match with cases better</small>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="latitude" class="form-label">Latitude (Optional)</label>
+                                <input type="number" step="any" class="form-control" id="latitude" name="latitude"
+                                       placeholder="e.g., 28.6139">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="longitude" class="form-label">Longitude (Optional)</label>
+                                <input type="number" step="any" class="form-control" id="longitude" name="longitude"
+                                       placeholder="e.g., 77.2090">
+                            </div>
+                        </div>
+
+                        <!-- Video Information -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-primary mb-3">
+                                    <i class="fas fa-video me-2"></i>Video Information
+                                </h5>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="date_recorded" class="form-label">Date & Time Recorded</label>
+                                <input type="datetime-local" class="form-control" id="date_recorded" name="date_recorded">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="video_file" class="form-label">Video File *</label>
+                                <input type="file" class="form-control" id="video_file" name="video_file" 
+                                       accept="video/*" required multiple onchange="handleFileSelect(this)">
+                                <div class="form-text"><strong>Enhanced Support:</strong> Multiple files, up to 10GB per file, 1-day footage supported<br><strong>Formats:</strong> MP4, AVI, MOV, MKV, WMV, FLV, WebM</div>
+                            </div>
+                        </div>
+
+                        <!-- File Preview -->
+                        <div id="filePreview" class="mb-4" style="display: none;">
+                            <h5 class="text-primary mb-3">
+                                <i class="fas fa-eye me-2"></i>File Preview
+                            </h5>
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-8">
+                                            <div id="fileInfo"></div>
+                                        </div>
+                                        <div class="col-md-4 text-end">
+                                            <video id="videoPreview" width="200" height="150" controls style="display: none;">
+                                                Your browser does not support the video tag.
+                                            </video>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Submit Buttons -->
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="d-flex justify-content-between">
+                                    <a href="{{ url_for('admin.surveillance_footage') }}" class="btn btn-outline-secondary">
+                                        <i class="fas fa-arrow-left me-2"></i>Back to Footage
+                                    </a>
+                                    <div>
+                                        <button type="reset" class="btn btn-outline-warning me-2">
+                                            <i class="fas fa-undo me-2"></i>Reset Form
+                                        </button>
+                                        <button type="submit" class="btn btn-primary" id="submitBtn">
+                                            <i class="fas fa-upload me-2"></i>Upload Footage
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Upload Progress -->
+            <div id="uploadProgress" class="card mt-4" style="display: none;">
+                <div class="card-body">
+                    <h6 class="mb-3">Upload Progress</h6>
+                    <div class="progress mb-2">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                             role="progressbar" style="width: 0%"></div>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <small class="text-muted">Uploading...</small>
+                        <small class="text-muted" id="progressText">0%</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function handleFileSelect(input) {
+    const files = input.files;
+    if (files && files.length > 0) {
+        const filePreview = document.getElementById('filePreview');
+        const fileInfo = document.getElementById('fileInfo');
+        const videoPreview = document.getElementById('videoPreview');
+        
+        // Show file information for all selected files
+        let filesHtml = '';
+        let totalSize = 0;
+        
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const fileSize = (file.size / (1024 * 1024)).toFixed(2);
+            totalSize += file.size;
+            
+            filesHtml += `
+                <div class="mb-2">
+                    <h6 class="mb-1"><i class="fas fa-video me-2"></i>${file.name}</h6>
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <small class="text-muted">Size: ${fileSize} MB</small>
+                        </div>
+                        <div class="col-sm-6">
+                            <small class="text-muted">Type: ${file.type}</small>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        const totalSizeMB = (totalSize / (1024 * 1024)).toFixed(2);
+        filesHtml += `<div class="alert alert-info mt-2"><strong>${files.length} file(s) selected</strong> - Total: ${totalSizeMB} MB</div>`;
+        
+        fileInfo.innerHTML = filesHtml;
+        
+        // Show video preview for first file
+        const url = URL.createObjectURL(files[0]);
+        videoPreview.src = url;
+        videoPreview.style.display = 'block';
+        
+        filePreview.style.display = 'block';
+        
+        // Validate total file size
+        if (totalSize > 10 * 1024 * 1024 * 1024) { // 10GB total
+            alert('Total file size exceeds 10GB limit. Please choose smaller files.');
+            input.value = '';
+            filePreview.style.display = 'none';
+        }
+    } else {
+        document.getElementById('filePreview').style.display = 'none';
+    }
+}
+
+function getCurrentLocation() {
+    const button = event.target;
+    const originalText = button.innerHTML;
+    
+    button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Detecting...';
+    button.disabled = true;
+    
+    // Try multiple location methods
+    function tryLocationMethod(method) {
+        const options = {
+            enableHighAccuracy: method === 'gps',
+            timeout: method === 'gps' ? 10000 : 30000,
+            maximumAge: method === 'gps' ? 0 : 600000
+        };
+        
+        navigator.geolocation.getCurrentPosition(
+            function(position) {
+                document.getElementById('latitude').value = position.coords.latitude.toFixed(6);
+                document.getElementById('longitude').value = position.coords.longitude.toFixed(6);
+                
+                button.innerHTML = '<i class="fas fa-check-circle me-1"></i>Located';
+                button.className = 'btn btn-success btn-sm mt-2 me-2';
+                
+                setTimeout(() => {
+                    button.innerHTML = originalText;
+                    button.className = 'btn btn-outline-primary btn-sm mt-2 me-2';
+                    button.disabled = false;
+                }, 2000);
+            },
+            function(error) {
+                if (method === 'gps') {
+                    // Try network location as fallback
+                    tryLocationMethod('network');
+                } else {
+                    // Final fallback - use IP location
+                    fetch('https://ipapi.co/json/')
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.latitude && data.longitude) {
+                                document.getElementById('latitude').value = data.latitude.toFixed(6);
+                                document.getElementById('longitude').value = data.longitude.toFixed(6);
+                                
+                                button.innerHTML = '<i class="fas fa-map-marker me-1"></i>IP Located';
+                                button.className = 'btn btn-info btn-sm mt-2 me-2';
+                                
+                                setTimeout(() => {
+                                    button.innerHTML = originalText;
+                                    button.className = 'btn btn-outline-primary btn-sm mt-2 me-2';
+                                    button.disabled = false;
+                                }, 2000);
+                            } else {
+                                throw new Error('IP location failed');
+                            }
+                        })
+                        .catch(() => {
+                            button.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i>Failed';
+                            button.className = 'btn btn-warning btn-sm mt-2 me-2';
+                            
+                            setTimeout(() => {
+                                button.innerHTML = originalText;
+                                button.className = 'btn btn-outline-primary btn-sm mt-2 me-2';
+                                button.disabled = false;
+                            }, 2000);
+                        });
+                }
+            },
+            options
+        );
+    }
+    
+    if (navigator.geolocation) {
+        tryLocationMethod('gps');
+    } else {
+        // Show message to use city dropdown
+        button.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i>Use City List';
+        button.className = 'btn btn-warning btn-sm mt-2 me-2';
+        
+        setTimeout(() => {
+            button.innerHTML = originalText;
+            button.className = 'btn btn-outline-primary btn-sm mt-2 me-2';
+            button.disabled = false;
+        }, 3000);
+    }
+}
+
+// Add location buttons
+document.addEventListener('DOMContentLoaded', function() {
+    const latInput = document.getElementById('latitude');
+    
+    // Auto detect button removed
+    
+    // Manual location button
+    const manualBtn = document.createElement('button');
+    manualBtn.type = 'button';
+    manualBtn.className = 'btn btn-outline-success btn-sm mt-2';
+    manualBtn.innerHTML = '<i class="fas fa-edit me-1"></i>Enter Manually';
+    manualBtn.onclick = function() {
+        showCoordinateModal();
+    };
+    latInput.parentNode.appendChild(manualBtn);
+});
+
+// Form submission with progress
+document.getElementById('uploadForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const submitBtn = document.getElementById('submitBtn');
+    const progressDiv = document.getElementById('uploadProgress');
+    const progressBar = progressDiv.querySelector('.progress-bar');
+    const progressText = document.getElementById('progressText');
+    
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Uploading...';
+    progressDiv.style.display = 'block';
+    
+    // Create FormData from form
+    const formData = new FormData(this);
+    
+    // Use XMLHttpRequest for progress tracking
+    const xhr = new XMLHttpRequest();
+    
+    // Track upload progress
+    xhr.upload.addEventListener('progress', function(e) {
+        if (e.lengthComputable) {
+            const percentComplete = (e.loaded / e.total) * 100;
+            progressBar.style.width = percentComplete + '%';
+            progressText.textContent = Math.round(percentComplete) + '%';
+        }
+    });
+    
+    // Handle completion
+    xhr.addEventListener('load', function() {
+        if (xhr.status === 200) {
+            // Show success popup
+            const successModal = document.createElement('div');
+            successModal.innerHTML = `
+                <div class="modal fade" id="successModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-body text-center py-5">
+                                <div class="mb-4">
+                                    <i class="fas fa-check-circle text-success" style="font-size: 80px;"></i>
+                                </div>
+                                <h3 class="text-success mb-3">✅ Upload Successful!</h3>
+                                <p class="text-muted mb-4">Footage uploaded successfully and AI analysis has been started automatically.</p>
+                                <button type="button" class="btn btn-primary" onclick="window.location.href='{{ url_for('admin.surveillance_footage') }}'">
+                                    <i class="fas fa-arrow-left me-2"></i>Back to Footage
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(successModal);
+            const modal = new bootstrap.Modal(document.getElementById('successModal'));
+            modal.show();
+        } else {
+            alert('❌ Upload failed. Please try again.');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-upload me-2"></i>Upload Footage';
+        }
+    });
+    
+    // Handle errors
+    xhr.addEventListener('error', function() {
+        alert('❌ Upload failed. Please check your connection and try again.');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-upload me-2"></i>Upload Footage';
+    });
+    
+    // Send request
+    xhr.open('POST', this.action || window.location.href);
+    xhr.send(formData);
+});
+
+function showCoordinateModal() {
+    const modalHtml = `
+        <div class="modal fade" id="coordinateModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="fas fa-map-marker-alt me-2"></i>Enter Coordinates Manually
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Latitude</label>
+                            <input type="number" step="any" class="form-control" id="modalLatitude" placeholder="e.g., 28.6139">
+                            <small class="text-muted">Enter latitude value (North/South position)</small>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Longitude</label>
+                            <input type="number" step="any" class="form-control" id="modalLongitude" placeholder="e.g., 77.2090">
+                            <small class="text-muted">Enter longitude value (East/West position)</small>
+                        </div>
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            You can get coordinates from Google Maps by right-clicking on a location.
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" onclick="saveCoordinates()">Save Coordinates</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    const modal = new bootstrap.Modal(document.getElementById('coordinateModal'));
+    modal.show();
+    
+    document.getElementById('coordinateModal').addEventListener('hidden.bs.modal', function() {
+        this.remove();
+    });
+}
+
+function saveCoordinates() {
+    const lat = document.getElementById('modalLatitude').value;
+    const lng = document.getElementById('modalLongitude').value;
+    
+    if (lat && lng && !isNaN(lat) && !isNaN(lng)) {
+        document.getElementById('latitude').value = parseFloat(lat).toFixed(6);
+        document.getElementById('longitude').value = parseFloat(lng).toFixed(6);
+        
+        bootstrap.Modal.getInstance(document.getElementById('coordinateModal')).hide();
+        
+        // Show success message
+        const successDiv = document.createElement('div');
+        successDiv.className = 'alert alert-success alert-dismissible fade show mt-2';
+        successDiv.innerHTML = '<i class="fas fa-check-circle me-2"></i>Coordinates saved successfully! <button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
+        document.getElementById('latitude').parentNode.appendChild(successDiv);
+        
+        setTimeout(() => {
+            if (successDiv.parentNode) {
+                successDiv.remove();
+            }
+        }, 3000);
+    } else {
+        alert('Please enter valid numbers for both latitude and longitude.');
+    }
+}
+</script>
+{% endblock %}

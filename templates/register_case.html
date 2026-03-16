@@ -1,0 +1,512 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Header -->
+            <div class="text-center mb-4">
+                <h1 class="display-5 fw-bold text-primary mb-3">
+                    <i class="fas fa-user-plus me-2"></i>Register Missing Person
+                </h1>
+                <p class="lead text-muted">Help us find your loved one using AI-powered face recognition</p>
+            </div>
+
+            <!-- Form Card -->
+            <div class="card shadow-lg border-0">
+                <div class="card-body p-4">
+                    <form method="POST" enctype="multipart/form-data" id="registrationForm">
+                        {{ form.hidden_tag() }}
+                        
+                        <!-- Personal Information -->
+                        <div class="mb-4">
+                            <h4 class="text-primary mb-3">
+                                <i class="fas fa-user me-2"></i>Personal Information
+                            </h4>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-semibold">
+                                        {{ form.full_name.label.text }} <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.full_name(class="form-control" + (" is-invalid" if form.full_name.errors else ""), placeholder="Enter full legal name") }}
+                                    {% if form.full_name.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.full_name.errors %}{{ error }}{% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-semibold">{{ form.nickname.label.text }}</label>
+                                    {{ form.nickname(class="form-control", placeholder="Known as, goes by") }}
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-semibold">
+                                        {{ form.age.label.text }} <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.age(class="form-control" + (" is-invalid" if form.age.errors else ""), min="0", max="120", placeholder="Age in years") }}
+                                    {% if form.age.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.age.errors %}{{ error }}{% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-semibold">
+                                        {{ form.gender.label.text }} <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.gender(class="form-select" + (" is-invalid" if form.gender.errors else "")) }}
+                                    {% if form.gender.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.gender.errors %}{{ error }}{% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <!-- Physical Characteristics -->
+                        <div class="mb-4">
+                            <h4 class="text-primary mb-3">
+                                <i class="fas fa-ruler me-2"></i>Physical Characteristics
+                            </h4>
+                            
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    <label class="form-label fw-semibold">
+                                        {{ form.height_cm.label.text }} <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.height_cm(class="form-control" + (" is-invalid" if form.height_cm.errors else ""), min="30", max="250", placeholder="Height in centimeters") }}
+                                    {% if form.height_cm.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.height_cm.errors %}{{ error }}{% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">
+                                    {{ form.distinguishing_marks.label.text }} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.distinguishing_marks(class="form-control" + (" is-invalid" if form.distinguishing_marks.errors else ""), rows="3", placeholder="Describe any scars, tattoos, birthmarks, or unique features") }}
+                                {% if form.distinguishing_marks.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.distinguishing_marks.errors %}{{ error }}{% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <!-- Contact Information -->
+                        <div class="mb-4">
+                            <h4 class="text-primary mb-3">
+                                <i class="fas fa-phone me-2"></i>Your Contact Information
+                            </h4>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-semibold">
+                                        {{ form.contact_person_name.label.text }} <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.contact_person_name(class="form-control" + (" is-invalid" if form.contact_person_name.errors else ""), placeholder="Your full name") }}
+                                    {% if form.contact_person_name.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.contact_person_name.errors %}{{ error }}{% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-semibold">
+                                        {{ form.contact_person_phone.label.text }} <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.contact_person_phone(class="form-control" + (" is-invalid" if form.contact_person_phone.errors else ""), placeholder="+1234567890", type="tel") }}
+                                    {% if form.contact_person_phone.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.contact_person_phone.errors %}{{ error }}{% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">
+                                    {{ form.contact_person_email.label.text }} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.contact_person_email(class="form-control" + (" is-invalid" if form.contact_person_email.errors else ""), placeholder="your.email@example.com", type="email") }}
+                                {% if form.contact_person_email.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.contact_person_email.errors %}{{ error }}{% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Contact Address</label>
+                                <textarea class="form-control" name="contact_address" rows="2" placeholder="Your complete address for contact purposes"></textarea>
+                                <small class="text-muted">This helps us contact you if needed</small>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <!-- Case Details -->
+                        <div class="mb-4">
+                            <h4 class="text-primary mb-3">
+                                <i class="fas fa-calendar-alt me-2"></i>Case Details
+                            </h4>
+                            
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label fw-semibold">
+                                        {{ form.last_seen_date.label.text }} <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.last_seen_date(class="form-control" + (" is-invalid" if form.last_seen_date.errors else ""), type="date") }}
+                                    {% if form.last_seen_date.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.last_seen_date.errors %}{{ error }}{% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label fw-semibold">Last Seen Time (Optional)</label>
+                                    <input type="time" class="form-control" name="last_seen_time" placeholder="HH:MM">
+                                    <small class="text-muted">If you remember the approximate time</small>
+                                </div>
+                                
+                                <div class="col-md-12 mb-3">
+                                    <h6 class="text-primary mb-3">
+                                        <i class="fas fa-map-marker-alt me-2"></i>Last Seen Location Details
+                                    </h6>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label fw-semibold">
+                                                Street Address <span class="text-danger">*</span>
+                                            </label>
+                                            {{ form.last_seen_location(class="form-control" + (" is-invalid" if form.last_seen_location.errors else ""), placeholder="House/Building number, Street name") }}
+                                            {% if form.last_seen_location.errors %}
+                                                <div class="invalid-feedback">
+                                                    {% for error in form.last_seen_location.errors %}{{ error }}{% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label fw-semibold">
+                                                Area/Locality <span class="text-danger">*</span>
+                                            </label>
+                                            <input type="text" class="form-control" name="last_seen_area" placeholder="Sector, Colony, Neighborhood" required>
+                                        </div>
+                                        
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label fw-semibold">
+                                                City <span class="text-danger">*</span>
+                                            </label>
+                                            <input type="text" class="form-control" name="last_seen_city" placeholder="City name" required>
+                                        </div>
+                                        
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label fw-semibold">
+                                                State <span class="text-danger">*</span>
+                                            </label>
+                                            <input type="text" class="form-control" name="last_seen_state" placeholder="State name" required>
+                                        </div>
+                                        
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label fw-semibold">
+                                                PIN Code <span class="text-danger">*</span>
+                                            </label>
+                                            <input type="text" class="form-control" name="last_seen_pincode" placeholder="6-digit PIN code" pattern="[0-9]{6}" required>
+                                        </div>
+                                        
+                                        <div class="col-md-12 mb-3">
+                                            <label class="form-label fw-semibold">
+                                                Landmarks/Additional Details
+                                            </label>
+                                            <textarea class="form-control" name="last_seen_landmarks" rows="2" placeholder="Nearby landmarks, shops, metro stations, or any other location details that can help identify the exact spot"></textarea>
+                                            <small class="text-info"><i class="fas fa-info-circle"></i> Include nearby landmarks for better AI location matching</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">{{ form.additional_info.label.text }}</label>
+                                {{ form.additional_info(class="form-control", rows="4", placeholder="Circumstances of disappearance, clothing style, medical conditions, behavioral patterns, or any other relevant information. Even optional details can be very important for AI analysis - please don't skip anything that might help.") }}
+                                <small class="text-info"><i class="fas fa-info-circle"></i> <strong>Important:</strong> Include clothing style, habits, and any detail that might seem minor - AI uses all information for better matching.</small>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <!-- Photos & Media -->
+                        <div class="mb-4">
+                            <h4 class="text-primary mb-3">
+                                <i class="fas fa-camera me-2"></i>Photos & Media
+                            </h4>
+                            
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">
+                                    {{ form.photos.label.text }} <span class="text-danger">*</span>
+                                </label>
+                                <div class="border border-2 border-dashed rounded p-4 text-center" style="cursor: pointer; border-color: #dee2e6 !important;" onclick="document.getElementById('photos').click()">
+                                    <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
+                                    <p class="mb-2 fw-semibold">Click to upload photos</p>
+                                    <p class="text-muted small mb-0">JPG, PNG files up to 10MB each</p>
+                                    {{ form.photos(class="d-none", id="photos", multiple=true, accept="image/*") }}
+                                </div>
+                                <div id="image-preview" class="mt-3"></div>
+                                {% if form.photos.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.photos.errors %}{{ error }}{% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">
+                                    <i class="fas fa-video me-2"></i>Reference Videos (Optional)
+                                </label>
+                                <div class="border border-2 border-dashed rounded p-4 text-center" style="cursor: pointer; border-color: #dee2e6 !important;" onclick="document.getElementById('video').click()">
+                                    <i class="fas fa-video fa-2x text-primary mb-2"></i>
+                                    <p class="mb-1 fw-semibold text-primary">Upload close-up videos of the missing person</p>
+                                    <p class="text-muted small mb-0">Personal videos showing the person's face, movements, or behavior - MP4, AVI, MOV up to 50MB each</p>
+                                    {{ form.video(class="d-none", id="video", multiple=true, accept="video/*") }}
+                                </div>
+                                <div id="video-preview" class="mt-3"></div>
+                                <div class="alert alert-info mt-2 mb-0">
+                                    <i class="fas fa-lightbulb me-2"></i>
+                                    <strong>Purpose:</strong> These videos help our AI system better understand the person's facial features, body language, and mannerisms for more accurate detection in CCTV footage.
+                                    <br><br>
+                                    <strong>Examples:</strong> Family videos, social media clips, phone recordings showing the person clearly
+                                    <br><br>
+                                    <strong>Note:</strong> This is NOT for surveillance footage - admin will upload CCTV footage separately for analysis
+                                </div>
+                                {% if form.video.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.video.errors %}{{ error }}{% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Submit Button -->
+                        <div class="text-center pt-3">
+                            {{ form.submit(class="btn btn-primary btn-lg px-5") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const imagePreview = document.getElementById('image-preview');
+    let selectedFiles = [];
+    
+    // Handle photo uploads
+    document.getElementById('photos').addEventListener('change', function(e) {
+        selectedFiles = Array.from(e.target.files).filter(f => f.type.match('image.*'));
+        displayImagePreviews();
+    });
+    
+    function displayImagePreviews() {
+        imagePreview.innerHTML = '';
+        if (selectedFiles.length > 0) {
+            imagePreview.innerHTML = '<h6 class="mb-3"><i class="fas fa-images me-2"></i>Selected Photos (' + selectedFiles.length + ')</h6>';
+            const gridDiv = document.createElement('div');
+            gridDiv.className = 'row g-3';
+            
+            selectedFiles.forEach((file, index) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const colDiv = document.createElement('div');
+                    colDiv.className = 'col-md-3 col-sm-4 col-6';
+                    colDiv.innerHTML = `
+                        <div class="card">
+                            <div class="position-relative">
+                                <img src="${e.target.result}" class="card-img-top" style="height: 120px; object-fit: cover;">
+                                <button type="button" class="btn btn-danger btn-sm position-absolute top-0 end-0 m-1" onclick="removeImage(${index})" style="width: 25px; height: 25px; padding: 0;">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                                ${index === 0 ? '<span class="badge bg-primary position-absolute bottom-0 start-0 m-1">Primary</span>' : ''}
+                            </div>
+                            <div class="card-body p-2">
+                                <small class="text-muted text-truncate d-block">${file.name}</small>
+                                <small class="text-info">${(file.size / (1024 * 1024)).toFixed(1)} MB</small>
+                            </div>
+                        </div>
+                    `;
+                    gridDiv.appendChild(colDiv);
+                };
+                reader.readAsDataURL(file);
+            });
+            imagePreview.appendChild(gridDiv);
+        }
+    }
+    
+    window.removeImage = function(index) {
+        selectedFiles.splice(index, 1);
+        updateFileInput();
+        displayImagePreviews();
+        
+        // Show warning if no images left
+        if (selectedFiles.length === 0) {
+            imagePreview.innerHTML = '<div class="alert alert-warning"><i class="fas fa-exclamation-triangle"></i> At least one photo is required for AI analysis.</div>';
+        }
+    };
+    
+    function updateFileInput() {
+        const dt = new DataTransfer();
+        selectedFiles.forEach(file => dt.items.add(file));
+        document.getElementById('photos').files = dt.files;
+    }
+    
+    // Handle multiple video uploads with validation
+    const videoPreview = document.getElementById('video-preview');
+    let selectedVideos = [];
+    
+    document.getElementById('video').addEventListener('change', function(e) {
+        const newFiles = Array.from(e.target.files).filter(f => f.type.match('video.*'));
+        const uploadDiv = this.closest('.border');
+        const textP = uploadDiv.querySelector('p.fw-semibold');
+        const smallText = uploadDiv.querySelector('p.small');
+        
+        // Validate each file
+        const validFiles = [];
+        for (const file of newFiles) {
+            const fileSize = file.size / (1024 * 1024); // Convert to MB
+            
+            // Validate file size (50MB limit)
+            if (fileSize > 50) {
+                alert(`Video file "${file.name}" is too large. Please select files smaller than 50MB.`);
+                continue;
+            }
+            
+            // Validate file type
+            const allowedTypes = ['video/mp4', 'video/avi', 'video/mov', 'video/quicktime', 'video/x-msvideo'];
+            if (!allowedTypes.includes(file.type)) {
+                alert(`"${file.name}" is not a valid video file. Please select MP4, AVI, or MOV files.`);
+                continue;
+            }
+            
+            validFiles.push(file);
+        }
+        
+        selectedVideos = validFiles;
+        displayVideoPreview();
+        updateVideoInput();
+        
+        if (selectedVideos.length > 0) {
+            textP.textContent = `${selectedVideos.length} reference video(s) selected`;
+            smallText.innerHTML = '<i class="fas fa-check-circle text-success"></i> Reference videos ready for upload';
+        } else {
+            textP.textContent = 'Upload close-up videos of the missing person';
+            smallText.textContent = 'Personal videos showing the person\'s face, movements, or behavior - MP4, AVI, MOV up to 50MB each';
+        }
+    });
+    
+    function displayVideoPreview() {
+        videoPreview.innerHTML = '';
+        if (selectedVideos.length > 0) {
+            videoPreview.innerHTML = '<h6 class="mb-3"><i class="fas fa-video me-2"></i>Selected Reference Videos (' + selectedVideos.length + ')</h6>';
+            const listDiv = document.createElement('div');
+            listDiv.className = 'list-group';
+            
+            selectedVideos.forEach((file, index) => {
+                const fileSize = (file.size / (1024 * 1024)).toFixed(1);
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'list-group-item d-flex align-items-center justify-content-between';
+                itemDiv.innerHTML = `
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-video text-primary me-3 fa-2x"></i>
+                        <div>
+                            <div class="fw-semibold">${file.name}</div>
+                            <small class="text-muted">${fileSize} MB • Reference Video</small>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-danger btn-sm" onclick="removeVideo(${index})">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+                listDiv.appendChild(itemDiv);
+            });
+            videoPreview.appendChild(listDiv);
+        }
+    }
+    
+    window.removeVideo = function(index) {
+        selectedVideos.splice(index, 1);
+        updateVideoInput();
+        displayVideoPreview();
+        
+        const uploadDiv = document.querySelector('#video').closest('.border');
+        const textP = uploadDiv.querySelector('p.fw-semibold');
+        const smallText = uploadDiv.querySelector('p.small');
+        
+        if (selectedVideos.length > 0) {
+            textP.textContent = `${selectedVideos.length} reference video(s) selected`;
+            smallText.innerHTML = '<i class="fas fa-check-circle text-success"></i> Reference videos ready for upload';
+        } else {
+            textP.textContent = 'Upload close-up videos of the missing person';
+            smallText.textContent = 'Personal videos showing the person\'s face, movements, or behavior - MP4, AVI, MOV up to 50MB each';
+        }
+    };
+    
+    function updateVideoInput() {
+        const dt = new DataTransfer();
+        selectedVideos.forEach(file => dt.items.add(file));
+        document.getElementById('video').files = dt.files;
+    };
+    
+    // Form submission with validation and duplicate prevention
+    let formSubmitted = false;
+    document.getElementById('registrationForm').addEventListener('submit', function(e) {
+        // Prevent duplicate submissions
+        if (formSubmitted) {
+            e.preventDefault();
+            return false;
+        }
+        
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const photoInput = document.getElementById('photos');
+        
+        // Validate at least one photo is selected
+        if (!photoInput.files || photoInput.files.length === 0) {
+            e.preventDefault();
+            alert('Please upload at least one photo of the missing person for AI analysis.');
+            return false;
+        }
+        
+        // Mark form as submitted and disable button
+        formSubmitted = true;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Submitting Request...';
+    });
+    
+    // Reset form submission flag on page load (for back button)
+    window.addEventListener('pageshow', function() {
+        formSubmitted = false;
+        const submitBtn = document.querySelector('button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-paper-plane me-2"></i>Submit Investigation Request';
+        }
+    });
+});
+</script>
+{% endblock %}

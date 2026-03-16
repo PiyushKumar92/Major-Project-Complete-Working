@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+
+{% block title %}Footage Analysis Results - {{ case.person_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-video"></i>
+                        Analysis Results: {{ footage.title }}
+                    </h3>
+                    <div class="card-tools">
+                        <span class="badge badge-info">{{ total_detections }} Detections</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Case and Footage Info -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h5>Case Information</h5>
+                            <ul class="list-group">
+                                <li class="list-group-item d-flex justify-content-between">
+                                    <span>Person Name:</span>
+                                    <strong>{{ case.person_name }}</strong>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between">
+                                    <span>Age:</span>
+                                    <span>{{ case.age }} years</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between">
+                                    <span>Last Seen:</span>
+                                    <span>{{ case.last_seen_location }}</span>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Footage Information</h5>
+                            <ul class="list-group">
+                                <li class="list-group-item d-flex justify-content-between">
+                                    <span>Location:</span>
+                                    <span>{{ footage.location_name }}</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between">
+                                    <span>Date Recorded:</span>
+                                    <span>{{ footage.date_recorded.strftime('%Y-%m-%d %H:%M') if footage.date_recorded else 'Unknown' }}</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between">
+                                    <span>Duration:</span>
+                                    <span>{{ footage.duration or 'Unknown' }}</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    {% if total_detections > 0 %}
+                    <!-- Detection Summary -->
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <div class="alert alert-success">
+                                <h5><i class="fas fa-check-circle"></i> Person Detected!</h5>
+                                <p>Found {{ total_detections }} potential sightings of {{ case.person_name }} in this footage.</p>
+                                <p>Detections are grouped by time intervals (within 5 seconds of each other).</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Grouped Detections -->
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h5>Detection Timeline</h5>
+                            {% for group in grouped_sightings %}
+                            <div class="card mb-3">
+                                <div class="card-header">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-clock"></i>
+                                        Time: {{ "%.2f"|format(group[0].timestamp) }}s - {{ "%.2f"|format(group[-1].timestamp) }}s
+                                        <span class="badge badge-primary ml-2">{{ group|length }} detection(s)</span>
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        {% for sighting in group %}
+                                        <div class="col-md-3 mb-3">
+                                            <div class="card">
+                                                <div class="card-body text-center">
+                                                    {% if sighting.thumbnail_path %}
+                                                    <img src="{{ url_for('static', filename=sighting.thumbnail_path.replace('static/', '')) }}" 
+                                                         class="img-fluid mb-2" 
+                                                         style="max-height: 150px;"
+                                                         alt="Detection thumbnail">
+                                                    {% else %}
+                                                    <div class="bg-light p-3 mb-2" style="height: 150px; display: flex; align-items: center; justify-content: center;">
+                                                        <i class="fas fa-user fa-3x text-muted"></i>
+                                                    </div>
+                                                    {% endif %}
+                                                    <small class="text-muted">
+                                                        <strong>Time:</strong> {{ "%.2f"|format(sighting.timestamp) }}s<br>
+                                                        <strong>Confidence:</strong> 
+                                                        <span class="badge {% if sighting.confidence_score >= 0.8 %}badge-success{% elif sighting.confidence_score >= 0.6 %}badge-warning{% else %}badge-secondary{% endif %}">
+                                                            {{ "%.1f"|format(sighting.confidence_score * 100) }}%
+                                                        </span><br>
+                                                        <strong>Method:</strong> {{ sighting.detection_method }}
+                                                    </small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- All Detections Table -->
+                    <div class="row mt-4">
+                        <div class="col-md-12">
+                            <h5>All Detections</h5>
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Time (seconds)</th>
+                                            <th>Confidence</th>
+                                            <th>Detection Method</th>
+                                            <th>Thumbnail</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for sighting in sightings %}
+                                        <tr>
+                                            <td>{{ "%.2f"|format(sighting.timestamp) }}</td>
+                                            <td>
+                                                <span class="badge {% if sighting.confidence_score >= 0.8 %}badge-success{% elif sighting.confidence_score >= 0.6 %}badge-warning{% else %}badge-secondary{% endif %}">
+                                                    {{ "%.1f"|format(sighting.confidence_score * 100) }}%
+                                                </span>
+                                            </td>
+                                            <td>{{ sighting.detection_method }}</td>
+                                            <td>
+                                                {% if sighting.thumbnail_path %}
+                                                <img src="{{ url_for('static', filename=sighting.thumbnail_path.replace('static/', '')) }}" 
+                                                     class="img-thumbnail" 
+                                                     style="max-width: 80px; max-height: 80px;"
+                                                     alt="Detection thumbnail">
+                                                {% else %}
+                                                <i class="fas fa-user text-muted"></i>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% else %}
+                    <!-- No Detections -->
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="alert alert-warning">
+                                <h5><i class="fas fa-exclamation-triangle"></i> No Detections Found</h5>
+                                <p>The person was not detected in this footage. This could mean:</p>
+                                <ul>
+                                    <li>The person did not appear in this footage</li>
+                                    <li>The person appeared but was not clearly visible</li>
+                                    <li>The detection confidence was below the threshold</li>
+                                    <li>The footage quality was too low for accurate detection</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Action Buttons -->
+                    <div class="row mt-4">
+                        <div class="col-md-12">
+                            <a href="{{ url_for('location.match_footage_for_case', case_id=case.id) }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Back to Footage Matches
+                            </a>
+                            <a href="{{ url_for('admin.case_detail', case_id=case.id) }}" class="btn btn-primary">
+                                <i class="fas fa-eye"></i> View Case Details
+                            </a>
+                            {% if total_detections > 0 %}
+                            <button class="btn btn-success" onclick="markAsFound()">
+                                <i class="fas fa-check"></i> Mark Person as Found
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function markAsFound() {
+    if (confirm('Are you sure you want to mark this person as found based on these detections?')) {
+        // Implementation for marking person as found
+        fetch(`/admin/cases/{{ case.id }}/mark-found`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({
+                'footage_id': {{ footage.id }},
+                'detection_count': {{ total_detections }}
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Person marked as found successfully!');
+                window.location.href = '/admin/cases/{{ case.id }}';
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('Error marking person as found: ' + error);
+        });
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,496 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Case Details: {{ case.person_name }}</h2>
+        <a href="{{ url_for('admin.cases') }}" class="btn btn-secondary">Back to Cases</a>
+    </div>
+    
+    <!-- Missing Person Photos -->
+    {% if case.target_images %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5><i class="fas fa-images me-2"></i>Subject Photos ({{ case.target_images|length }})</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                {% for image in case.target_images %}
+                <div class="col-md-3 mb-3">
+                    <div class="card">
+                        <img src="{{ url_for('static', filename=image.image_path|image_url) }}" 
+                             class="card-img-top" 
+                             alt="{{ case.person_name }}" 
+                             style="height: 200px; object-fit: cover; cursor: pointer;"
+                             onclick="openImageModal('{{ url_for('static', filename=image.image_path|image_url) }}')"
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        <div style="display:none; height: 200px; background: #f3f4f6; border: 2px dashed #d1d5db; align-items: center; justify-content: center; color: #9ca3af;">
+                            <i class="fas fa-image fa-3x"></i>
+                        </div>
+                        <div class="card-body p-2">
+                            <small class="text-muted">Photo {{ loop.index }}</small>
+                            {% if image.is_primary %}
+                                <span class="badge bg-primary">Primary</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Missing Person Videos -->
+    {% if case.search_videos %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5><i class="fas fa-video me-2"></i>Evidence Videos ({{ case.search_videos|length }})</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                {% for video in case.search_videos %}
+                <div class="col-md-6 mb-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <h6 class="card-title">{{ video.video_name or 'Video ' + loop.index|string }}</h6>
+                            <video controls class="w-100" style="max-height: 300px;" preload="metadata">
+                                <source src="{{ url_for('static', filename=video.video_path|video_url) }}" type="video/mp4">
+                                Your browser does not support the video tag.
+                            </video>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-info-circle me-2"></i>Case Information</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Case ID:</strong> {{ case.id }}</p>
+                    <p><strong>Investigation Type:</strong> 
+                        <span class="badge bg-primary">{{ case.case_type.replace('_', ' ').title() if case.case_type else 'Missing Person' }}</span>
+                    </p>
+                    <p><strong>Requester Type:</strong> 
+                        <span class="badge bg-secondary">{{ case.requester_type.replace('_', ' ').title() if case.requester_type else 'Family' }}</span>
+                    </p>
+                    {% if case.case_category %}
+                    <p><strong>Case Category:</strong> 
+                        <span class="badge bg-info">{{ case.case_category.replace('_', ' ').title() }}</span>
+                    </p>
+                    {% endif %}
+                    <p><strong>Subject Name:</strong> {{ case.person_name }}</p>
+                    <p><strong>Age:</strong> {{ case.age or 'Unknown' }}</p>
+                    <p><strong>Status:</strong> 
+                        <span class="badge bg-{{ case.status_color }}">
+                            {{ case.status }}
+                            {% if case.status == 'Case Solved' %} ✅
+                            {% elif case.status == 'Case Over' %} 🔒
+                            {% elif case.status == 'Under Processing' %} 🔄
+                            {% elif case.status == 'Pending Approval' %} ⏳
+                            {% elif case.status == 'Rejected' %} ❌
+                            {% endif %}
+                        </span>
+                    </p>
+                    {% if case.investigation_outcome %}
+                    <p><strong>Investigation Outcome:</strong> 
+                        <span class="badge 
+                            {% if 'Found Safe' in case.investigation_outcome %}bg-success
+                            {% elif 'Found Deceased' in case.investigation_outcome %}bg-dark
+                            {% elif 'Criminal Identified' in case.investigation_outcome %}bg-warning
+                            {% elif 'Evidence Collected' in case.investigation_outcome %}bg-info
+                            {% elif 'Still Missing' in case.investigation_outcome %}bg-danger
+                            {% else %}bg-secondary
+                            {% endif %}">
+                            {{ case.investigation_outcome }}
+                        </span>
+                    </p>
+                    {% endif %}
+                    <p><strong>Priority:</strong> 
+                        <span class="badge {% if case.priority == 'High' %}bg-danger{% elif case.priority == 'Medium' %}bg-warning{% else %}bg-info{% endif %}">
+                            {{ case.priority }}
+                        </span>
+                    </p>
+                    <p><strong>Created by:</strong> {{ case.creator.username }}</p>
+                    <p><strong>Created:</strong> {{ case.created_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
+                    {% if case.completed_at %}
+                    <p><strong>Completed:</strong> {{ case.completed_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
+                    {% endif %}
+                    <div class="mb-3">
+                        <strong>Last Seen Location:</strong>
+                        <div class="mt-2 p-3 bg-light rounded">
+                            <div class="row">
+                                <div class="col-12 mb-2">
+                                    <i class="fas fa-map-marker-alt text-danger me-2"></i>
+                                    <strong>{{ case.last_seen_location or 'Location not specified' }}</strong>
+                                </div>
+                            </div>
+                            {% if case.details %}
+                                {% set location_details = {} %}
+                                {% for line in case.details.split('\n') %}
+                                    {% if 'Location Area:' in line %}
+                                        {% set _ = location_details.update({'area': line.split(':', 1)[1].strip()}) %}
+                                    {% elif 'Location City:' in line %}
+                                        {% set _ = location_details.update({'city': line.split(':', 1)[1].strip()}) %}
+                                    {% elif 'Location State:' in line %}
+                                        {% set _ = location_details.update({'state': line.split(':', 1)[1].strip()}) %}
+                                    {% elif 'Location PIN:' in line %}
+                                        {% set _ = location_details.update({'pin': line.split(':', 1)[1].strip()}) %}
+                                    {% elif 'Landmarks:' in line %}
+                                        {% set _ = location_details.update({'landmarks': line.split(':', 1)[1].strip()}) %}
+                                    {% endif %}
+                                {% endfor %}
+                                
+                                {% if location_details %}
+                                <div class="row small text-muted mt-2">
+                                    {% if location_details.get('area') %}
+                                    <div class="col-md-6">
+                                        <i class="fas fa-building me-1"></i>Area: {{ location_details.area }}
+                                    </div>
+                                    {% endif %}
+                                    {% if location_details.get('city') %}
+                                    <div class="col-md-6">
+                                        <i class="fas fa-city me-1"></i>City: {{ location_details.city }}
+                                    </div>
+                                    {% endif %}
+                                    {% if location_details.get('state') %}
+                                    <div class="col-md-6">
+                                        <i class="fas fa-flag me-1"></i>State: {{ location_details.state }}
+                                    </div>
+                                    {% endif %}
+                                    {% if location_details.get('pin') %}
+                                    <div class="col-md-6">
+                                        <i class="fas fa-mail-bulk me-1"></i>PIN: {{ location_details.pin }}
+                                    </div>
+                                    {% endif %}
+                                    {% if location_details.get('landmarks') and location_details.landmarks != 'None' %}
+                                    <div class="col-12 mt-2">
+                                        <i class="fas fa-landmark me-1"></i>Landmarks: {{ location_details.landmarks }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% if case.date_missing %}
+                    <p><strong>Date Missing:</strong> {{ case.date_missing.strftime('%B %d, %Y') }}</p>
+                    {% endif %}
+                    {% if case.last_seen_time %}
+                    <p><strong>Last Seen Time:</strong> {{ case.last_seen_time.strftime('%I:%M %p') }}</p>
+                    {% endif %}
+                    {% if case.contact_address %}
+                    <p><strong>Contact Address:</strong> {{ case.contact_address }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Statistics</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Target Images:</strong> {{ case.target_images|length }}</p>
+                    <p><strong>Search Videos:</strong> {{ case.search_videos|length }}</p>
+                    <p><strong>Total Sightings:</strong> {{ case.total_sightings }}</p>
+                    <p><strong>High Confidence Sightings:</strong> {{ case.high_confidence_sightings }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    {% if case.details %}
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5><i class="fas fa-info-circle me-2"></i>Additional Details</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                {% set details_lines = case.details.split('\n') %}
+                {% for line in details_lines %}
+                    {% if ':' in line %}
+                        {% set key, value = line.split(':', 1) %}
+                        <div class="col-md-6 mb-2">
+                            <strong class="text-primary">{{ key.strip() }}:</strong>
+                            <span class="ms-2">{{ value.strip() }}</span>
+                        </div>
+                    {% else %}
+                        <div class="col-12 mb-2">
+                            <span>{{ line.strip() }}</span>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    {% if case.clothing_description %}
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5>Clothing Description</h5>
+        </div>
+        <div class="card-body">
+            <p>{{ case.clothing_description }}</p>
+        </div>
+    </div>
+    {% endif %}
+    
+    
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5>Processing Logs</h5>
+        </div>
+        <div class="card-body">
+            {% if logs %}
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Action</th>
+                            <th>Details</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in logs %}
+                        <tr>
+                            <td>{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                            <td>{{ log.action }}</td>
+                            <td>{{ log.details }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted">No processing logs available.</p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Admin Actions -->
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5><i class="fas fa-cogs me-2"></i>Admin Actions</h5>
+        </div>
+        <div class="card-body">
+            {% if case.status == 'Pending Approval' %}
+            <div class="alert alert-info">
+                <i class="fas fa-exclamation-circle me-2"></i>
+                <strong>Review Required:</strong> This case is pending your approval. Please review all photos, videos, and information before approving.
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <form method="POST" style="display: inline;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" formaction="{{ url_for('admin.approve_case', case_id=case.id) }}" 
+                                class="btn btn-success btn-lg w-100" 
+                                onclick="return confirm('✅ Approve this case and start AI processing?')">
+                            <i class="fas fa-check me-2"></i>Approve Case
+                        </button>
+                    </form>
+                </div>
+                <div class="col-md-6">
+                    <button type="button" class="btn btn-danger btn-lg w-100" data-bs-toggle="modal" data-bs-target="#rejectModal">
+                        <i class="fas fa-times me-2"></i>Reject Case
+                    </button>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Case Status Management (Admin Only) -->
+            {% if case.status not in ['Pending Approval'] %}
+            <div class="mt-4">
+                <h6><i class="fas fa-edit me-2"></i>Update Case Status</h6>
+                
+                <!-- AI Decision Info -->
+                {% if case.admin_message and ('AI' in case.admin_message or 'automatically' in case.admin_message) %}
+                <div class="alert alert-info mb-3">
+                    <i class="fas fa-robot me-2"></i>
+                    <strong>AI Decision:</strong> This case was processed by our AI validation system.
+                    <div class="mt-2">
+                        <small class="text-muted">You can override the AI decision if needed using the form below.</small>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <form method="POST" action="{{ url_for('admin.update_case_status', case_id=case.id) }}" id="statusUpdateForm">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="ai_override" id="aiOverride" value="false">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <label for="status" class="form-label">Status:</label>
+                            <select class="form-select" id="status" name="status" required>
+                                <option value="Approved" {{ 'selected' if case.status == 'Approved' else '' }}>Approved</option>
+                                <option value="Rejected" {{ 'selected' if case.status == 'Rejected' else '' }}>Rejected</option>
+                                <option value="Under Processing" {{ 'selected' if case.status == 'Under Processing' else '' }}>Under Processing</option>
+                                <option value="Case Solved" {{ 'selected' if case.status == 'Case Solved' else '' }}>Case Solved ✅</option>
+                                <option value="Case Over" {{ 'selected' if case.status == 'Case Over' else '' }}>Case Over 🔒</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="priority" class="form-label">Priority:</label>
+                            <select class="form-select" id="priority" name="priority">
+                                <option value="Low" {{ 'selected' if case.priority == 'Low' else '' }}>Low</option>
+                                <option value="Medium" {{ 'selected' if case.priority == 'Medium' else '' }}>Medium</option>
+                                <option value="High" {{ 'selected' if case.priority == 'High' else '' }}>High</option>
+                                <option value="Critical" {{ 'selected' if case.priority == 'Critical' else '' }}>Critical</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="investigation_outcome" class="form-label">Investigation Outcome:</label>
+                            <select class="form-select" id="investigation_outcome" name="investigation_outcome">
+                                <option value="">Select outcome...</option>
+                                <option value="Found Safe" {{ 'selected' if case.investigation_outcome == 'Found Safe' else '' }}>Found Safe</option>
+                                <option value="Found Deceased" {{ 'selected' if case.investigation_outcome == 'Found Deceased' else '' }}>Found Deceased</option>
+                                <option value="Still Missing" {{ 'selected' if case.investigation_outcome == 'Still Missing' else '' }}>Still Missing</option>
+                                <option value="Criminal Identified" {{ 'selected' if case.investigation_outcome == 'Criminal Identified' else '' }}>Criminal Identified</option>
+                                <option value="Evidence Collected" {{ 'selected' if case.investigation_outcome == 'Evidence Collected' else '' }}>Evidence Collected</option>
+                                <option value="Case Closed" {{ 'selected' if case.investigation_outcome == 'Case Closed' else '' }}>Case Closed</option>
+                                <option value="No Evidence Found" {{ 'selected' if case.investigation_outcome == 'No Evidence Found' else '' }}>No Evidence Found</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <label for="investigation_notes" class="form-label">Admin Notes (Internal):</label>
+                        <textarea class="form-control" id="investigation_notes" name="investigation_notes" rows="2" 
+                                  placeholder="Internal notes for admin reference...">{{ case.investigation_notes or '' }}</textarea>
+                    </div>
+                    <div class="mt-3">
+                        <label for="admin_message" class="form-label">Message to User:</label>
+                        <textarea class="form-control" id="admin_message" name="admin_message" rows="3" 
+                                  placeholder="Write a message for the user explaining the status change, findings, or next steps...">{{ case.admin_message or '' }}</textarea>
+                        <small class="form-text text-muted">This message will be sent to the user as notification and displayed in their case details.</small>
+                    </div>
+                    <!-- AI Override Section -->
+                    {% if case.admin_message and ('AI' in case.admin_message or 'automatically' in case.admin_message) %}
+                    <div class="mt-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="confirmOverride" onchange="toggleOverride()">
+                            <label class="form-check-label text-warning" for="confirmOverride">
+                                <i class="fas fa-exclamation-triangle me-1"></i>
+                                <strong>Override AI Decision</strong> - I want to manually change the AI's decision
+                            </label>
+                        </div>
+                        <div id="overrideReason" style="display: none;" class="mt-2">
+                            <label for="override_reason" class="form-label">Reason for Override:</label>
+                            <textarea class="form-control" name="override_reason" rows="2" 
+                                      placeholder="Explain why you're overriding the AI decision..."></textarea>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mt-3">
+                        <button type="submit" class="btn btn-primary" id="updateBtn">
+                            <i class="fas fa-save me-2"></i>Update Case Status
+                        </button>
+                        {% if case.admin_message and ('AI' in case.admin_message or 'automatically' in case.admin_message) %}
+                        <button type="submit" class="btn btn-warning" id="overrideBtn" style="display: none;">
+                            <i class="fas fa-user-cog me-2"></i>Override AI Decision
+                        </button>
+                        {% endif %}
+                    </div>
+                </form>
+                
+                <script>
+                function toggleOverride() {
+                    const checkbox = document.getElementById('confirmOverride');
+                    const overrideReason = document.getElementById('overrideReason');
+                    const aiOverrideInput = document.getElementById('aiOverride');
+                    const updateBtn = document.getElementById('updateBtn');
+                    const overrideBtn = document.getElementById('overrideBtn');
+                    
+                    if (checkbox.checked) {
+                        overrideReason.style.display = 'block';
+                        aiOverrideInput.value = 'true';
+                        updateBtn.style.display = 'none';
+                        if (overrideBtn) overrideBtn.style.display = 'inline-block';
+                    } else {
+                        overrideReason.style.display = 'none';
+                        aiOverrideInput.value = 'false';
+                        updateBtn.style.display = 'inline-block';
+                        if (overrideBtn) overrideBtn.style.display = 'none';
+                    }
+                }
+                </script>
+            </div>
+            {% endif %}
+            
+            {% if case.status == 'Under Processing' %}
+            <div class="mt-4">
+                <form method="POST" style="display: inline;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" formaction="{{ url_for('admin.requeue_case', case_id=case.id) }}" 
+                            class="btn btn-warning">
+                        <i class="fas fa-redo me-2"></i>Re-queue for Processing
+                    </button>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Reject Modal -->
+    <div class="modal fade" id="rejectModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Reject Case</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="POST" action="{{ url_for('admin.reject_case', case_id=case.id) }}">
+                    <div class="modal-body">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="mb-3">
+                            <label for="rejection_reason" class="form-label">Reason for Rejection:</label>
+                            <textarea class="form-control" id="rejection_reason" name="rejection_reason" rows="4" required 
+                                      placeholder="Please provide a clear reason for rejection..."></textarea>
+                        </div>
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            The user will be notified about the rejection and can resubmit the case.
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-danger">Reject Case</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Image Modal -->
+<div class="modal fade" id="imageModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">{{ case.person_name }} - Photo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="modalImage" class="img-fluid" alt="Full size photo">
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function openImageModal(src) {
+    document.getElementById('modalImage').src = src;
+    new bootstrap.Modal(document.getElementById('imageModal')).show();
+}
+</script>
+{% endblock %}

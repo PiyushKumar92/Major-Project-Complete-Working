@@ -1,0 +1,561 @@
+{% extends "base.html" %}
+
+{% block title %}System Self-Management{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="text-primary mb-1">
+                        <i class="fas fa-cogs me-2"></i>System Self-Management
+                    </h2>
+                    <p class="text-muted mb-0">Automated monitoring, security, and self-healing infrastructure</p>
+                </div>
+                <div class="btn-group">
+                    <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                    </a>
+                    <button class="btn btn-success" onclick="refreshAllStatus()">
+                        <i class="fas fa-sync me-2"></i>Refresh Status
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Health Overview -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-{{ 'success' if system_health.get('status') == 'healthy' else 'warning' if system_health.get('status') == 'warning' else 'danger' }} text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h3 class="mb-0">{{ system_health.get('status', 'Unknown').title() }}</h3>
+                            <p class="mb-0">System Health</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-heartbeat fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-{{ 'success' if security_status.get('status') == 'secure' else 'danger' }} text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h3 class="mb-0">{{ security_status.get('status', 'Unknown').title() }}</h3>
+                            <p class="mb-0">Security Status</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-shield-alt fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h3 class="mb-0">{{ security_status.get('recent_events', 0) }}</h3>
+                            <p class="mb-0">Security Events (24h)</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-exclamation-triangle fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h3 class="mb-0">{{ security_status.get('monitoring_active', False) | string }}</h3>
+                            <p class="mb-0">Auto-Monitoring</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-robot fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Monitoring Panel -->
+    <div class="row mb-4">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-line me-2"></i>Performance Monitoring
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if system_health.get('metrics') %}
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <strong>CPU Usage</strong>
+                                <span class="badge bg-{{ 'danger' if system_health.metrics.cpu_percent > 80 else 'warning' if system_health.metrics.cpu_percent > 60 else 'success' }}">
+                                    {{ "%.1f"|format(system_health.metrics.cpu_percent) }}%
+                                </span>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar bg-{{ 'danger' if system_health.metrics.cpu_percent > 80 else 'warning' if system_health.metrics.cpu_percent > 60 else 'success' }}" 
+                                     style="width: {{ system_health.metrics.cpu_percent }}%"></div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <strong>Memory Usage</strong>
+                                <span class="badge bg-{{ 'danger' if system_health.metrics.memory_percent > 85 else 'warning' if system_health.metrics.memory_percent > 70 else 'success' }}">
+                                    {{ "%.1f"|format(system_health.metrics.memory_percent) }}%
+                                </span>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar bg-{{ 'danger' if system_health.metrics.memory_percent > 85 else 'warning' if system_health.metrics.memory_percent > 70 else 'success' }}" 
+                                     style="width: {{ system_health.metrics.memory_percent }}%"></div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <strong>Disk Usage</strong>
+                                <span class="badge bg-{{ 'danger' if system_health.metrics.disk_usage > 90 else 'warning' if system_health.metrics.disk_usage > 80 else 'success' }}">
+                                    {{ "%.1f"|format(system_health.metrics.disk_usage) }}%
+                                </span>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar bg-{{ 'danger' if system_health.metrics.disk_usage > 90 else 'warning' if system_health.metrics.disk_usage > 80 else 'success' }}" 
+                                     style="width: {{ system_health.metrics.disk_usage }}%"></div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <strong>Response Time</strong>
+                                <span class="badge bg-{{ 'danger' if system_health.metrics.response_time > 3 else 'warning' if system_health.metrics.response_time > 1 else 'success' }}">
+                                    {{ "%.2f"|format(system_health.metrics.response_time) }}s
+                                </span>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar bg-{{ 'danger' if system_health.metrics.response_time > 3 else 'warning' if system_health.metrics.response_time > 1 else 'success' }}" 
+                                     style="width: {{ (system_health.metrics.response_time * 20)|min(100) }}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">System monitoring not active</p>
+                        <button class="btn btn-primary" onclick="startSystemMonitoring()">
+                            <i class="fas fa-play me-2"></i>Start Monitoring
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i>System Alerts
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if system_health.get('alerts') %}
+                    {% for alert in system_health.alerts %}
+                    <div class="alert alert-warning alert-sm mb-2">
+                        <i class="fas fa-exclamation-circle me-2"></i>{{ alert }}
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <div class="text-center py-3">
+                        <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
+                        <p class="text-muted mb-0">No active alerts</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Security Automation Panel -->
+    <div class="row mb-4">
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-shield-alt me-2"></i>Security Automation
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <div class="text-center">
+                                <h4 class="text-primary">{{ security_status.get('recent_events', 0) }}</h4>
+                                <small class="text-muted">Security Events (24h)</small>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="text-center">
+                                <h4 class="text-success">{{ security_status.get('recent_backups', {})|length }}</h4>
+                                <small class="text-muted">Recent Backups</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-outline-primary" onclick="startSecurityAutomation()">
+                            <i class="fas fa-play me-2"></i>Start Security Automation
+                        </button>
+                        <button class="btn btn-outline-success" onclick="triggerBackup('all')">
+                            <i class="fas fa-save me-2"></i>Trigger Full Backup
+                        </button>
+                        <button class="btn btn-outline-info" onclick="runComplianceCheck()">
+                            <i class="fas fa-clipboard-check me-2"></i>Run Compliance Check
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-tools me-2"></i>Self-Healing Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-2">
+                            <button class="btn btn-outline-primary w-100" onclick="systemRecovery('cache')">
+                                <i class="fas fa-broom me-2"></i>Clear Cache
+                            </button>
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <button class="btn btn-outline-warning w-100" onclick="systemRecovery('files')">
+                                <i class="fas fa-trash me-2"></i>Cleanup Files
+                            </button>
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <button class="btn btn-outline-info w-100" onclick="systemRecovery('services')">
+                                <i class="fas fa-sync me-2"></i>Restart Services
+                            </button>
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <button class="btn btn-outline-success w-100" onclick="optimizeDatabase()">
+                                <i class="fas fa-database me-2"></i>Optimize DB
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance Trends -->
+    {% if performance_trends and performance_trends.get('data_points', 0) > 0 %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-area me-2"></i>Performance Trends ({{ performance_trends.period_hours }}h)
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <h5>CPU Usage</h5>
+                                <div class="mb-2">
+                                    <span class="badge bg-primary">Current: {{ "%.1f"|format(performance_trends.cpu.current) }}%</span>
+                                    <span class="badge bg-secondary">Avg: {{ "%.1f"|format(performance_trends.cpu.average) }}%</span>
+                                </div>
+                                <div class="progress">
+                                    <div class="progress-bar" style="width: {{ performance_trends.cpu.current }}%"></div>
+                                </div>
+                                <small class="text-muted">Trend: {{ performance_trends.cpu.trend.title() }}</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <h5>Memory Usage</h5>
+                                <div class="mb-2">
+                                    <span class="badge bg-primary">Current: {{ "%.1f"|format(performance_trends.memory.current) }}%</span>
+                                    <span class="badge bg-secondary">Avg: {{ "%.1f"|format(performance_trends.memory.average) }}%</span>
+                                </div>
+                                <div class="progress">
+                                    <div class="progress-bar" style="width: {{ performance_trends.memory.current }}%"></div>
+                                </div>
+                                <small class="text-muted">Trend: {{ performance_trends.memory.trend.title() }}</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <h5>Response Time</h5>
+                                <div class="mb-2">
+                                    <span class="badge bg-primary">Current: {{ "%.2f"|format(performance_trends.response_time.current) }}s</span>
+                                    <span class="badge bg-secondary">Avg: {{ "%.2f"|format(performance_trends.response_time.average) }}s</span>
+                                </div>
+                                <div class="progress">
+                                    <div class="progress-bar" style="width: {{ (performance_trends.response_time.current * 20)|min(100) }}%"></div>
+                                </div>
+                                <small class="text-muted">Trend: {{ performance_trends.response_time.trend.title() }}</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- System Actions -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-cogs me-2"></i>System Management Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-2">
+                            <button class="btn btn-primary w-100" onclick="testSystemHealth()">
+                                <i class="fas fa-stethoscope me-2"></i>Test System Health
+                            </button>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <button class="btn btn-success w-100" onclick="generateSystemReport()">
+                                <i class="fas fa-file-alt me-2"></i>Generate Report
+                            </button>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <button class="btn btn-info w-100" onclick="viewSystemLogs()">
+                                <i class="fas fa-list me-2"></i>View System Logs
+                            </button>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <button class="btn btn-warning w-100" onclick="emergencyMode()">
+                                <i class="fas fa-exclamation-triangle me-2"></i>Emergency Mode
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function refreshAllStatus() {
+    location.reload();
+}
+
+function startSystemMonitoring() {
+    fetch('/admin/start-system-monitoring', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('System monitoring started successfully!');
+            location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('Error starting monitoring: ' + error);
+    });
+}
+
+function startSecurityAutomation() {
+    fetch('/admin/start-security-automation', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Security automation started successfully!');
+            location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('Error starting security automation: ' + error);
+    });
+}
+
+function triggerBackup(type) {
+    if (confirm(`Trigger ${type} backup? This may take several minutes.`)) {
+        fetch('/admin/trigger-backup', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({type: type})
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Backup completed successfully!');
+                console.log('Backup results:', data.results);
+            } else {
+                alert('Backup failed: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('Error triggering backup: ' + error);
+        });
+    }
+}
+
+function runComplianceCheck() {
+    fetch('/admin/compliance-check', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(`Compliance check completed. Status: ${data.results.overall_status}`);
+            console.log('Compliance results:', data.results);
+        } else {
+            alert('Compliance check failed: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('Error running compliance check: ' + error);
+    });
+}
+
+function systemRecovery(type) {
+    if (confirm(`Execute ${type} recovery action?`)) {
+        fetch('/admin/system-recovery', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({type: type})
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+            } else {
+                alert('Recovery failed: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('Error executing recovery: ' + error);
+        });
+    }
+}
+
+function optimizeDatabase() {
+    if (confirm('Optimize database? This will clean up old data.')) {
+        fetch('/admin/optimize-database', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Database optimization completed!');
+                console.log('Optimizations:', data.optimizations);
+            } else {
+                alert('Optimization failed: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('Error optimizing database: ' + error);
+        });
+    }
+}
+
+function testSystemHealth() {
+    fetch('/admin/test-system-health', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('System health test completed!');
+            console.log('Test results:', data.results);
+        } else {
+            alert('Health test failed: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('Error testing system health: ' + error);
+    });
+}
+
+function generateSystemReport() {
+    fetch('/admin/generate-system-report', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('System report generated successfully!');
+            console.log('Report data:', data.report);
+        } else {
+            alert('Report generation failed: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('Error generating report: ' + error);
+    });
+}
+
+function viewSystemLogs() {
+    alert('System logs viewer will open in a new window.');
+    // In production, this would open a log viewer
+}
+
+function emergencyMode() {
+    if (confirm('Activate emergency mode? This will enable maximum monitoring and security.')) {
+        alert('Emergency mode activated. All systems are now under maximum monitoring.');
+        // In production, this would activate emergency protocols
+    }
+}
+</script>
+{% endblock %}

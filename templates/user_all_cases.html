@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">
+                            <i class="fas fa-check-circle me-2"></i>All Approved Cases
+                        </h4>
+                        <span class="badge bg-light text-dark">{{ cases|length }} Cases</span>
+                    </div>
+                    <small class="opacity-75">Only approved cases are shown to users</small>
+                </div>
+                <div class="card-body">
+                    {% if cases %}
+                        <!-- Filter Options -->
+                        <div class="row mb-4">
+                            <div class="col-md-4">
+                                <select class="form-select" id="statusFilter">
+                                    <option value="">All Statuses</option>
+                                    <option value="Approved">Approved</option>
+                                    <option value="Under Processing">Under Processing</option>
+                                    <option value="Case Solved">Case Solved</option>
+                                    <option value="Case Over">Case Over</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <select class="form-select" id="typeFilter">
+                                    <option value="">All Types</option>
+                                    <option value="missing_person">Missing Person</option>
+                                    <option value="runaway">Runaway</option>
+                                    <option value="kidnapping">Kidnapping</option>
+                                    <option value="lost_child">Lost Child</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <input type="text" class="form-control" id="searchFilter" placeholder="Search by name or location...">
+                            </div>
+                        </div>
+
+                        <div class="row" id="casesContainer">
+                            {% for case in cases %}
+                            <div class="col-md-6 col-lg-4 mb-4 case-card" 
+                                 data-status="{{ case.status }}" 
+                                 data-type="{{ case.case_type }}"
+                                 data-name="{{ case.person_name.lower() }}"
+                                 data-location="{{ case.last_seen_location.lower() if case.last_seen_location else '' }}">
+                                <div class="card h-100 border-0 shadow-sm">
+                                    <div class="card-header p-2 {% if case.status == 'Case Solved' %}bg-success{% elif case.status == 'Case Over' %}bg-secondary{% elif case.status == 'Under Processing' %}bg-warning{% else %}bg-primary{% endif %} text-white">
+                                        <small class="fw-bold">{{ case.status }}</small>
+                                        <span class="float-end">
+                                            <i class="fas fa-calendar-alt me-1"></i>
+                                            {{ case.created_at.strftime('%d %b %Y') }}
+                                        </span>
+                                    </div>
+                                    
+                                    {% if case.primary_photo %}
+                                    <div class="position-relative">
+                                        <img src="{{ url_for('static', filename=case.primary_photo.image_path|image_url) }}" 
+                                             class="card-img-top" 
+                                             style="height: 200px; object-fit: cover;"
+                                             alt="Photo of {{ case.person_name }}">
+                                        <div class="position-absolute top-0 end-0 m-2">
+                                            <span class="badge bg-dark bg-opacity-75">
+                                                {{ case.case_type.replace('_', ' ').title() }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    {% else %}
+                                    <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                                        <div class="text-center">
+                                            <i class="fas fa-user fa-3x text-muted mb-2"></i>
+                                            <div class="position-absolute top-0 end-0 m-2">
+                                                <span class="badge bg-dark bg-opacity-75">
+                                                    {{ case.case_type.replace('_', ' ').title() }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    <div class="card-body">
+                                        <h5 class="card-title text-primary">{{ case.person_name }}</h5>
+                                        
+                                        <div class="mb-2">
+                                            {% if case.age %}
+                                            <span class="badge bg-info me-1">Age: {{ case.age }}</span>
+                                            {% endif %}
+                                            <span class="badge bg-warning">{{ case.priority }}</span>
+                                        </div>
+                                        
+                                        {% if case.last_seen_location %}
+                                        <p class="text-muted mb-2">
+                                            <i class="fas fa-map-marker-alt me-1"></i>
+                                            <small>{{ case.last_seen_location[:50] }}{% if case.last_seen_location|length > 50 %}...{% endif %}</small>
+                                        </p>
+                                        {% endif %}
+                                        
+                                        {% if case.date_missing %}
+                                        <p class="text-muted mb-2">
+                                            <i class="fas fa-clock me-1"></i>
+                                            <small>Missing since: {{ case.date_missing.strftime('%d %b %Y') }}</small>
+                                        </p>
+                                        {% endif %}
+
+                                        {% if case.status == 'Case Solved' %}
+                                        <div class="alert alert-success alert-sm mb-2">
+                                            <i class="fas fa-check-circle me-1"></i>
+                                            <small>This case has been resolved successfully!</small>
+                                        </div>
+                                        {% elif case.status == 'Case Over' %}
+                                        <div class="alert alert-secondary alert-sm mb-2">
+                                            <i class="fas fa-times-circle me-1"></i>
+                                            <small>This case investigation has been completed.</small>
+                                        </div>
+                                        {% endif %}
+                                        
+                                        <div class="d-flex justify-content-between align-items-center mt-3">
+                                            <small class="text-muted">
+                                                Case #{{ case.id }}
+                                            </small>
+                                            <a href="{{ url_for('main.public_case_details', case_id=case.id) }}" 
+                                               class="btn btn-primary btn-sm">
+                                                <i class="fas fa-eye me-1"></i>View Details
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="text-center mt-4">
+                            <p class="text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Showing only approved cases. If you have information about any case, please contact authorities or use our chat system.
+                            </p>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No Approved Cases Available</h5>
+                            <p class="text-muted">There are currently no approved cases to display.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    transition: transform 0.2s;
+}
+.card:hover {
+    transform: translateY(-2px);
+}
+.alert-sm {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.875rem;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const statusFilter = document.getElementById('statusFilter');
+    const typeFilter = document.getElementById('typeFilter');
+    const searchFilter = document.getElementById('searchFilter');
+    const casesContainer = document.getElementById('casesContainer');
+    const caseCards = document.querySelectorAll('.case-card');
+
+    function filterCases() {
+        const statusValue = statusFilter.value.toLowerCase();
+        const typeValue = typeFilter.value.toLowerCase();
+        const searchValue = searchFilter.value.toLowerCase();
+
+        let visibleCount = 0;
+
+        caseCards.forEach(card => {
+            const cardStatus = card.dataset.status.toLowerCase();
+            const cardType = card.dataset.type.toLowerCase();
+            const cardName = card.dataset.name;
+            const cardLocation = card.dataset.location;
+
+            const statusMatch = !statusValue || cardStatus.includes(statusValue);
+            const typeMatch = !typeValue || cardType === typeValue;
+            const searchMatch = !searchValue || 
+                cardName.includes(searchValue) || 
+                cardLocation.includes(searchValue);
+
+            if (statusMatch && typeMatch && searchMatch) {
+                card.style.display = 'block';
+                visibleCount++;
+            } else {
+                card.style.display = 'none';
+            }
+        });
+
+        // Update count in header
+        const countBadge = document.querySelector('.badge.bg-light.text-dark');
+        if (countBadge) {
+            countBadge.textContent = `${visibleCount} Cases`;
+        }
+    }
+
+    statusFilter.addEventListener('change', filterCases);
+    typeFilter.addEventListener('change', filterCases);
+    searchFilter.addEventListener('input', filterCases);
+});
+</script>
+{% endblock %}

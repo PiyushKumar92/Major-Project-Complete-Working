@@ -1,0 +1,42 @@
+# Enhanced AI/ML Requirements for YOLO v8, FaceNet, and DeepSORT
+# Install these for advanced AI capabilities
+
+# YOLO v8 - Advanced Object Detection
+ultralytics>=8.0.0
+
+# PyTorch for FaceNet and Deep Learning
+torch>=2.0.0
+torchvision>=0.15.0
+torchaudio>=2.0.0
+
+# DeepSORT for Multi-Object Tracking
+deep-sort-realtime>=1.3.0
+
+# Additional ML Libraries
+scikit-image>=0.20.0
+albumentations>=1.3.0
+timm>=0.9.0
+
+# GPU Acceleration (Optional)
+# Uncomment if you have CUDA GPU
+# torch-audio>=2.0.0+cu118
+# torch>=2.0.0+cu118
+# torchvision>=0.15.0+cu118
+
+# Advanced Computer Vision
+opencv-contrib-python>=4.8.0
+
+# Performance Optimization
+numba>=0.57.0
+joblib>=1.3.0
+
+# Model Management
+huggingface-hub>=0.16.0
+transformers>=4.30.0
+
+# Visualization
+seaborn>=0.12.0
+plotly>=5.15.0
+
+# Note: Install with: pip install -r requirements_enhanced_ai.txt
+# For basic functionality, the system will fallback to existing methods

@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}Location Matching Criteria - Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-map-marker-alt"></i>
+                        Location Matching Criteria
+                    </h3>
+                </div>
+                <div class="card-body">
+                    {% if criteria %}
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5>Distance Thresholds</h5>
+                                <ul class="list-group mb-3">
+                                    <li class="list-group-item d-flex justify-content-between">
+                                        <span>Exact Match</span>
+                                        <span class="badge badge-success">{{ criteria.distance_thresholds.exact_match }}m</span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between">
+                                        <span>Close Match</span>
+                                        <span class="badge badge-warning">{{ criteria.distance_thresholds.close_match }}m</span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between">
+                                        <span>Nearby Match</span>
+                                        <span class="badge badge-info">{{ criteria.distance_thresholds.nearby_match }}m</span>
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h5>Confidence Scores</h5>
+                                <ul class="list-group mb-3">
+                                    <li class="list-group-item d-flex justify-content-between">
+                                        <span>High Confidence</span>
+                                        <span class="badge badge-success">{{ criteria.confidence_scores.high }}%</span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between">
+                                        <span>Medium Confidence</span>
+                                        <span class="badge badge-warning">{{ criteria.confidence_scores.medium }}%</span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between">
+                                        <span>Low Confidence</span>
+                                        <span class="badge badge-info">{{ criteria.confidence_scores.low }}%</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="row mt-4">
+                            <div class="col-md-12">
+                                <h5>Matching Algorithm Details</h5>
+                                <div class="alert alert-info">
+                                    <h6>How Location Matching Works:</h6>
+                                    <ol>
+                                        <li><strong>Geographic Distance:</strong> Calculate distance between case location and CCTV footage location</li>
+                                        <li><strong>Time Window:</strong> Consider footage within relevant time periods</li>
+                                        <li><strong>Location Type:</strong> Match similar location types (residential, commercial, etc.)</li>
+                                        <li><strong>Coverage Area:</strong> Account for camera coverage radius</li>
+                                        <li><strong>Quality Score:</strong> Factor in footage quality and clarity</li>
+                                    </ol>
+                                </div>
+                            </div>
+                        </div>
+
+                        {% if criteria.additional_factors %}
+                        <div class="row mt-4">
+                            <div class="col-md-12">
+                                <h5>Additional Matching Factors</h5>
+                                <div class="table-responsive">
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>Factor</th>
+                                                <th>Weight</th>
+                                                <th>Description</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for factor in criteria.additional_factors %}
+                                            <tr>
+                                                <td>{{ factor.name }}</td>
+                                                <td>
+                                                    <span class="badge badge-primary">{{ factor.weight }}%</span>
+                                                </td>
+                                                <td>{{ factor.description }}</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            No matching criteria information available.
+                        </div>
+                    {% endif %}
+
+                    <div class="row mt-4">
+                        <div class="col-md-12">
+                            <a href="{{ url_for('admin.dashboard') }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Back to Dashboard
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

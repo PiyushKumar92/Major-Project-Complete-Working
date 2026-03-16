@@ -1,0 +1,423 @@
+{% extends "base.html" %}
+
+{% block title %}Timeline Report - {{ case.person_name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-1">📊 Comprehensive Timeline Report</h2>
+                    <p class="text-muted mb-0">Legal-Grade Appearance Timeline for {{ case.person_name }}</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('admin.case_detail', case_id=case.id) }}" class="btn btn-outline-secondary mr-2">
+                        <i class="fas fa-arrow-left"></i> Back to Case
+                    </a>
+                    <button class="btn btn-primary" onclick="exportReport()">
+                        <i class="fas fa-download"></i> Export Report
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Executive Summary -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-chart-line"></i> Executive Summary</h5>
+                </div>
+                <div class="card-body">
+                    {% set summary = comprehensive_report.executive_summary or comprehensive_report.summary %}
+                    <div class="row">
+                        <div class="col-md-3 text-center">
+                            <div class="summary-stat">
+                                {% if summary.detection_status == 'DETECTED' %}
+                                    <i class="fas fa-check-circle fa-3x text-success mb-2"></i>
+                                    <h4 class="text-success">DETECTED</h4>
+                                {% else %}
+                                    <i class="fas fa-times-circle fa-3x text-danger mb-2"></i>
+                                    <h4 class="text-danger">NOT DETECTED</h4>
+                                {% endif %}
+                                <p class="text-muted">Detection Status</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <div class="summary-stat">
+                                <h4 class="text-primary">{{ summary.total_footage_files or summary.footage_files_analyzed or 0 }}</h4>
+                                <p class="text-muted">Footage Files Analyzed</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <div class="summary-stat">
+                                <h4 class="text-info">{{ summary.total_appearances or 0 }}</h4>
+                                <p class="text-muted">Total Appearances</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <div class="summary-stat">
+                                <h4 class="text-warning">{{ summary.total_detection_time or '0s' }}</h4>
+                                <p class="text-muted">Total Detection Time</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if summary.investigation_timeline %}
+                    <div class="mt-3">
+                        <div class="alert alert-info">
+                            <strong>Investigation Timeline:</strong> {{ summary.investigation_timeline }}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if summary.message %}
+                    <div class="mt-3">
+                        <div class="alert alert-warning">
+                            <strong>Analysis Result:</strong> {{ summary.message }}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Master Timeline Table -->
+    {% if comprehensive_report.master_appearance_timeline or comprehensive_report.appearance_timeline %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-table"></i> Detailed Appearance Timeline</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead class="thead-dark">
+                                <tr>
+                                    <th>Footage File</th>
+                                    <th>Location</th>
+                                    <th>Appearance</th>
+                                    <th>Start Time</th>
+                                    <th>End Time</th>
+                                    <th>Total Duration</th>
+                                    <th>Avg. Confidence</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% set timeline_data = comprehensive_report.master_appearance_timeline or comprehensive_report.appearance_timeline %}
+                                {% for entry in timeline_data %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ entry['Footage File'] or entry.footage_file }}</strong>
+                                    </td>
+                                    <td>
+                                        <i class="fas fa-map-marker-alt text-primary"></i>
+                                        {{ entry['Location'] or entry.location }}
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-info">{{ entry['Appearance'] or entry.appearance }}</span>
+                                    </td>
+                                    <td>
+                                        <code>{{ entry['Start Time'] or entry.start_time }}</code>
+                                    </td>
+                                    <td>
+                                        <code>{{ entry['End Time'] or entry.end_time }}</code>
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-success">{{ entry['Total Duration'] or entry.total_duration }}</span>
+                                    </td>
+                                    <td>
+                                        {% set confidence = entry['Avg. Confidence'] or entry.avg_confidence %}
+                                        {% set conf_num = confidence.replace('%', '') | float %}
+                                        {% if conf_num >= 85 %}
+                                            <span class="badge badge-success">{{ confidence }}</span>
+                                        {% elif conf_num >= 65 %}
+                                            <span class="badge badge-warning">{{ confidence }}</span>
+                                        {% else %}
+                                            <span class="badge badge-danger">{{ confidence }}</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Footage Breakdown -->
+    {% if comprehensive_report.footage_breakdown %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-video"></i> Footage Analysis Breakdown</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for footage in comprehensive_report.footage_breakdown %}
+                        <div class="col-md-6 mb-3">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6 class="card-title">
+                                        <i class="fas fa-file-video"></i> {{ footage.footage_file }}
+                                    </h6>
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <p class="mb-1"><strong>Location:</strong> {{ footage.location }}</p>
+                                            <p class="mb-1"><strong>Appearances:</strong> 
+                                                {% if footage.appearances > 0 %}
+                                                    <span class="badge badge-success">{{ footage.appearances }}</span>
+                                                {% else %}
+                                                    <span class="badge badge-secondary">{{ footage.get('status', 'NOT DETECTED') }}</span>
+                                                {% endif %}
+                                            </p>
+                                        </div>
+                                        <div class="col-6">
+                                            {% if footage.detection_time %}
+                                            <p class="mb-1"><strong>Detection Time:</strong> {{ footage.detection_time }}</p>
+                                            {% endif %}
+                                            {% if footage.max_confidence %}
+                                            <p class="mb-1"><strong>Max Confidence:</strong> 
+                                                <span class="badge badge-primary">{{ footage.max_confidence }}%</span>
+                                            </p>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Cross-Reference Analysis -->
+    {% if comprehensive_report.cross_reference_analysis %}
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-map"></i> Location Analysis</h5>
+                </div>
+                <div class="card-body">
+                    {% set location_analysis = comprehensive_report.cross_reference_analysis.location_correlation %}
+                    <p><strong>Unique Locations:</strong> {{ location_analysis.unique_locations }}</p>
+                    <p><strong>Multi-Location Tracking:</strong> 
+                        {% if location_analysis.multi_location_tracking %}
+                            <span class="badge badge-success">Yes</span>
+                        {% else %}
+                            <span class="badge badge-secondary">No</span>
+                        {% endif %}
+                    </p>
+                    {% if location_analysis.location_list %}
+                    <p><strong>Locations:</strong></p>
+                    <ul>
+                        {% for location in location_analysis.location_list %}
+                        <li>{{ location }}</li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-clock"></i> Temporal Analysis</h5>
+                </div>
+                <div class="card-body">
+                    {% set temporal_analysis = comprehensive_report.cross_reference_analysis.temporal_analysis %}
+                    {% if temporal_analysis.first_detection %}
+                    <p><strong>First Detection:</strong> <code>{{ temporal_analysis.first_detection }}</code></p>
+                    <p><strong>Last Detection:</strong> <code>{{ temporal_analysis.last_detection }}</code></p>
+                    <p><strong>Detection Span:</strong> {{ temporal_analysis.detection_span }}</p>
+                    {% else %}
+                    <p class="text-muted">No temporal data available</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Technical Analysis -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-cogs"></i> Detection Methods</h5>
+                </div>
+                <div class="card-body">
+                    {% set technical = comprehensive_report.technical_analysis or comprehensive_report.technical_details %}
+                    {% if technical.detection_algorithms %}
+                    <ul class="list-unstyled">
+                        {% for algorithm in technical.detection_algorithms %}
+                        <li><i class="fas fa-check text-success"></i> {{ algorithm }}</li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                    
+                    {% if technical.confidence_thresholds %}
+                    <div class="mt-3">
+                        <strong>Confidence Thresholds:</strong>
+                        <ul class="list-unstyled ml-3">
+                            {% for threshold, description in technical.confidence_thresholds.items() %}
+                            <li><span class="badge badge-info">{{ threshold }}</span> {{ description }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-shield-alt"></i> Quality Assurance</h5>
+                </div>
+                <div class="card-body">
+                    {% if technical.quality_assurance %}
+                    <ul class="list-unstyled">
+                        {% for key, value in technical.quality_assurance.items() %}
+                        <li><strong>{{ key.replace('_', ' ').title() }}:</strong> {{ value }}</li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                    
+                    <div class="mt-3">
+                        <div class="alert alert-info">
+                            <small>
+                                <strong>Analysis Method:</strong> 5-Method Multi-Modal Ensemble<br>
+                                <strong>Generated:</strong> {{ comprehensive_report.generated_at[:19] if comprehensive_report.generated_at else 'Unknown' }}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Legal Notice -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-warning">
+                <h6><i class="fas fa-gavel"></i> Legal Disclaimer</h6>
+                <p class="mb-0">
+                    {{ comprehensive_report.legal_disclaimer or comprehensive_report.legal_notice or 
+                       'This AI-generated report provides investigative guidance. All findings should be independently verified by qualified investigators.' }}
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.summary-stat {
+    padding: 1rem;
+    border-radius: 8px;
+    background: #f8f9fa;
+}
+
+.summary-stat:hover {
+    background: #e9ecef;
+    transform: translateY(-2px);
+    transition: all 0.3s ease;
+}
+
+.table th {
+    border-top: none;
+    font-weight: 600;
+}
+
+.card {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border: none;
+}
+
+.card-header {
+    border-bottom: 2px solid #dee2e6;
+}
+
+code {
+    background: #f8f9fa;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.9em;
+}
+</style>
+
+<script>
+function exportReport() {
+    // Show export options
+    const exportOptions = `
+        <div class="modal fade" id="exportModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Export Timeline Report</h5>
+                        <button type="button" class="close" data-dismiss="modal">
+                            <span>&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Choose export format:</p>
+                        <div class="list-group">
+                            <a href="/admin/detection/export-timeline/{{ case.id }}?format=json" 
+                               class="list-group-item list-group-item-action">
+                                <i class="fas fa-file-code"></i> JSON Format (Technical)
+                            </a>
+                            <a href="/admin/detection/export-timeline/{{ case.id }}?format=pdf" 
+                               class="list-group-item list-group-item-action">
+                                <i class="fas fa-file-pdf"></i> PDF Report (Legal)
+                            </a>
+                            <a href="/admin/detection/export-timeline/{{ case.id }}?format=csv" 
+                               class="list-group-item list-group-item-action">
+                                <i class="fas fa-file-csv"></i> CSV Data (Analysis)
+                            </a>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Add modal to page if not exists
+    if (!document.getElementById('exportModal')) {
+        document.body.insertAdjacentHTML('beforeend', exportOptions);
+    }
+    
+    $('#exportModal').modal('show');
+}
+
+// Print functionality
+function printReport() {
+    window.print();
+}
+
+// Add print styles
+const printStyles = `
+    <style media="print">
+        .btn, .alert-warning { display: none !important; }
+        .card { border: 1px solid #000 !important; }
+        .table { font-size: 12px; }
+        @page { margin: 1in; }
+    </style>
+`;
+document.head.insertAdjacentHTML('beforeend', printStyles);
+</script>
+{% endblock %}

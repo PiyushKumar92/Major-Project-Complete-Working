@@ -1,0 +1,95 @@
+# Environment variables and secrets
+.env
+.env.local
+.env.production
+config.py
+secrets.py
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+instance/
+
+# AWS credentials
+.aws/
+aws_credentials.json
+credentials.json
+
+# API keys and tokens
+api_keys.txt
+tokens.txt
+
+# User uploaded content
+static/uploads/
+static/cases/
+static/footage/
+static/detections/
+static/target_images/
+
+# Logs
+*.log
+logs/
+app.log
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environment
+venv/
+env/
+ENV/
+.venv/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Temporary files
+*.tmp
+*.temp
+temp/
+tmp/
+
+# Model files (large files)
+*.h5
+*.pkl
+*.model
+models/weights/
+checkpoints/
+
+# Face recognition data
+face_encodings/
+known_faces/
+
+# Backup files
+*.bak
+*.backup
+backup/

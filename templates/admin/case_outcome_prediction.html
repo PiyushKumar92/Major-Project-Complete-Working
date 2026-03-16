@@ -1,0 +1,512 @@
+{% extends "admin/base.html" %}
+
+{% block page_title %}Case Outcome Prediction{% endblock %}
+{% block page_subtitle %}ML-powered case outcome prediction and analysis{% endblock %}
+
+{% block title %}Case Outcome Prediction - {{ case.person_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .prediction-card {
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+    }
+    .prediction-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+    }
+    .probability-circle {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: white;
+        margin: 0 auto;
+    }
+    .success-high { background: linear-gradient(135deg, #28a745, #20c997); }
+    .success-medium { background: linear-gradient(135deg, #ffc107, #fd7e14); }
+    .success-low { background: linear-gradient(135deg, #dc3545, #e83e8c); }
+    
+    .timeline-bar {
+        height: 30px;
+        border-radius: 15px;
+        background: linear-gradient(90deg, #28a745 0%, #ffc107 50%, #dc3545 100%);
+        position: relative;
+        overflow: hidden;
+    }
+    .timeline-indicator {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 4px;
+        height: 40px;
+        background: #fff;
+        border: 2px solid #333;
+        border-radius: 2px;
+    }
+    .factor-item {
+        padding: 0.5rem;
+        margin: 0.25rem 0;
+        border-radius: 5px;
+        border-left: 4px solid;
+    }
+    .success-factor { 
+        background-color: #d4edda; 
+        border-left-color: #28a745; 
+    }
+    .risk-factor { 
+        background-color: #f8d7da; 
+        border-left-color: #dc3545; 
+    }
+    .resource-badge {
+        font-size: 0.8rem;
+        padding: 0.3rem 0.6rem;
+        border-radius: 15px;
+    }
+    .confidence-meter {
+        height: 20px;
+        border-radius: 10px;
+        overflow: hidden;
+        background: #e9ecef;
+    }
+    .confidence-fill {
+        height: 100%;
+        border-radius: 10px;
+        transition: width 0.5s ease;
+    }
+</style>
+{% endblock %}
+
+{% block admin_content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-1">
+                        <i class="fas fa-chart-line"></i> Case Outcome Prediction
+                    </h2>
+                    <p class="text-muted mb-0">
+                        ML-based success probability and resolution analysis for 
+                        <strong>{{ case.person_name }}</strong> (Case #{{ case.id }})
+                    </p>
+                </div>
+                <div>
+                    <a href="{{ url_for('admin.case_detail', case_id=case.id) }}" class="btn btn-outline-primary">
+                        <i class="fas fa-arrow-left"></i> Back to Case
+                    </a>
+                    <button class="btn btn-primary" onclick="regeneratePrediction()">
+                        <i class="fas fa-sync-alt"></i> Regenerate
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if prediction %}
+    <!-- Main Prediction Metrics -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card prediction-card">
+                <div class="card-body text-center">
+                    <h5 class="card-title">
+                        <i class="fas fa-bullseye"></i> Success Probability
+                    </h5>
+                    {% set success_prob = (prediction.success_probability * 100)|round %}
+                    {% if success_prob >= 70 %}
+                        <div class="probability-circle success-high">
+                            {{ success_prob }}%
+                        </div>
+                        <p class="text-success mt-2 mb-0"><strong>High Probability</strong></p>
+                    {% elif success_prob >= 40 %}
+                        <div class="probability-circle success-medium">
+                            {{ success_prob }}%
+                        </div>
+                        <p class="text-warning mt-2 mb-0"><strong>Medium Probability</strong></p>
+                    {% else %}
+                        <div class="probability-circle success-low">
+                            {{ success_prob }}%
+                        </div>
+                        <p class="text-danger mt-2 mb-0"><strong>Low Probability</strong></p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card prediction-card">
+                <div class="card-body text-center">
+                    <h5 class="card-title">
+                        <i class="fas fa-clock"></i> Estimated Timeline
+                    </h5>
+                    <div class="timeline-bar mb-3">
+                        {% set timeline_pos = ((prediction.estimated_timeline / 90) * 100)|round %}
+                        <div class="timeline-indicator" style="left: {{ timeline_pos }}%;"></div>
+                    </div>
+                    <h3 class="text-primary">{{ prediction.estimated_timeline }} days</h3>
+                    <p class="text-muted mb-0">
+                        {% if prediction.estimated_timeline <= 7 %}
+                            Very Fast Resolution
+                        {% elif prediction.estimated_timeline <= 21 %}
+                            Standard Timeline
+                        {% elif prediction.estimated_timeline <= 45 %}
+                            Extended Investigation
+                        {% else %}
+                            Long-term Case
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card prediction-card">
+                <div class="card-body text-center">
+                    <h5 class="card-title">
+                        <i class="fas fa-chart-bar"></i> Resolution Likelihood
+                    </h5>
+                    {% set resolution_prob = (prediction.resolution_likelihood * 100)|round %}
+                    <div class="confidence-meter mb-3">
+                        <div class="confidence-fill bg-info" style="width: {{ resolution_prob }}%;"></div>
+                    </div>
+                    <h3 class="text-info">{{ resolution_prob }}%</h3>
+                    <p class="text-muted mb-0">Near-term Resolution</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detailed Analysis -->
+    <div class="row mb-4">
+        <!-- Success Factors -->
+        <div class="col-md-6">
+            <div class="card prediction-card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-check-circle"></i> Success Factors
+                        <span class="badge badge-light text-success ml-2">{{ prediction.success_factors|length }}</span>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if prediction.success_factors %}
+                        {% for factor in prediction.success_factors %}
+                        <div class="factor-item success-factor">
+                            <i class="fas fa-plus-circle text-success mr-2"></i>
+                            {{ factor }}
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-3">
+                            <i class="fas fa-info-circle text-muted fa-2x mb-2"></i>
+                            <p class="text-muted mb-0">No specific success factors identified</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Risk Factors -->
+        <div class="col-md-6">
+            <div class="card prediction-card">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-exclamation-triangle"></i> Risk Factors
+                        <span class="badge badge-light text-danger ml-2">{{ prediction.risk_factors|length }}</span>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if prediction.risk_factors %}
+                        {% for factor in prediction.risk_factors %}
+                        <div class="factor-item risk-factor">
+                            <i class="fas fa-minus-circle text-danger mr-2"></i>
+                            {{ factor }}
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-3">
+                            <i class="fas fa-shield-alt text-success fa-2x mb-2"></i>
+                            <p class="text-success mb-0">No significant risk factors identified</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resource Requirements -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card prediction-card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-cogs"></i> Resource Requirements & Recommendations
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 text-center">
+                            <h6>AI Analysis Hours</h6>
+                            <span class="resource-badge bg-primary text-white">
+                                {{ prediction.resource_requirements.ai_analysis_hours or 0 }} hours
+                            </span>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <h6>Manual Review Hours</h6>
+                            <span class="resource-badge bg-info text-white">
+                                {{ prediction.resource_requirements.manual_review_hours or 0 }} hours
+                            </span>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <h6>Admin Involvement</h6>
+                            {% set involvement = prediction.resource_requirements.admin_involvement_level or 'low' %}
+                            {% if involvement == 'high' %}
+                                <span class="resource-badge bg-danger text-white">High</span>
+                            {% elif involvement == 'medium' %}
+                                <span class="resource-badge bg-warning text-white">Medium</span>
+                            {% else %}
+                                <span class="resource-badge bg-success text-white">Low</span>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <h6>Cost Category</h6>
+                            {% set cost = prediction.resource_requirements.estimated_cost_category or 'standard' %}
+                            {% if cost == 'premium' %}
+                                <span class="resource-badge bg-warning text-white">Premium</span>
+                            {% elif cost == 'enhanced' %}
+                                <span class="resource-badge bg-info text-white">Enhanced</span>
+                            {% else %}
+                                <span class="resource-badge bg-secondary text-white">Standard</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    {% if prediction.resource_requirements.surveillance_footage_needed %}
+                    <div class="alert alert-info mt-3">
+                        <i class="fas fa-video"></i>
+                        <strong>Additional Footage Needed:</strong> 
+                        {{ prediction.resource_requirements.surveillance_footage_needed }} more surveillance footage files recommended for optimal analysis.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Prediction Confidence & Metadata -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card prediction-card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-pie"></i> Prediction Confidence
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% set conf_level = (prediction.confidence_level * 100)|round %}
+                    <div class="text-center">
+                        <div class="confidence-meter mb-3" style="height: 30px;">
+                            {% if conf_level >= 80 %}
+                                <div class="confidence-fill bg-success" style="width: {{ conf_level }}%;"></div>
+                            {% elif conf_level >= 60 %}
+                                <div class="confidence-fill bg-warning" style="width: {{ conf_level }}%;"></div>
+                            {% else %}
+                                <div class="confidence-fill bg-danger" style="width: {{ conf_level }}%;"></div>
+                            {% endif %}
+                        </div>
+                        <h4>{{ conf_level }}%</h4>
+                        <p class="text-muted mb-0">
+                            {% if conf_level >= 80 %}
+                                High Confidence - Reliable prediction
+                            {% elif conf_level >= 60 %}
+                                Medium Confidence - Generally reliable
+                            {% else %}
+                                Low Confidence - Use with caution
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card prediction-card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle"></i> Prediction Metadata
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        {% if prediction.prediction_date %}
+                        <tr>
+                            <td><strong>Generated:</strong></td>
+                            <td>{{ prediction.prediction_date }}</td>
+                        </tr>
+                        {% endif %}
+                        <tr>
+                            <td><strong>Case Type:</strong></td>
+                            <td><span class="badge badge-primary">{{ case.case_type or 'Missing Person' }}</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Priority:</strong></td>
+                            <td><span class="badge badge-secondary">{{ case.priority or 'Medium' }}</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Days Since Created:</strong></td>
+                            <td>{{ (moment.utcnow() - case.created_at).days }} days</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Current Status:</strong></td>
+                            <td><span class="badge badge-info">{{ case.status }}</span></td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Recommendations -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card prediction-card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-lightbulb"></i> AI Recommendations
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-arrow-right text-primary"></i> Immediate Actions</h6>
+                            <ul class="list-unstyled">
+                                {% if prediction.success_probability < 0.5 %}
+                                <li><i class="fas fa-exclamation-triangle text-warning"></i> Consider additional evidence collection</li>
+                                <li><i class="fas fa-search text-info"></i> Expand search area or methods</li>
+                                {% endif %}
+                                {% if prediction.resource_requirements.surveillance_footage_needed %}
+                                <li><i class="fas fa-video text-primary"></i> Upload additional surveillance footage</li>
+                                {% endif %}
+                                {% if prediction.confidence_level < 0.6 %}
+                                <li><i class="fas fa-user-check text-success"></i> Manual review recommended</li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-clock text-primary"></i> Timeline Optimization</h6>
+                            <ul class="list-unstyled">
+                                {% if prediction.estimated_timeline > 30 %}
+                                <li><i class="fas fa-users text-info"></i> Consider additional resources</li>
+                                <li><i class="fas fa-tachometer-alt text-warning"></i> Prioritize high-impact activities</li>
+                                {% endif %}
+                                {% if prediction.resolution_likelihood > 0.7 %}
+                                <li><i class="fas fa-rocket text-success"></i> High resolution potential - accelerate efforts</li>
+                                {% endif %}
+                                <li><i class="fas fa-chart-line text-primary"></i> Monitor progress weekly</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% else %}
+    <!-- No Prediction Available -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card prediction-card">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-chart-line fa-4x text-muted mb-4"></i>
+                    <h4>No Prediction Available</h4>
+                    <p class="text-muted mb-4">
+                        No outcome prediction has been generated for this case yet. 
+                        Click the button below to generate a comprehensive ML-based prediction.
+                    </p>
+                    <button class="btn btn-primary btn-lg" onclick="generatePrediction()">
+                        <i class="fas fa-magic"></i> Generate Prediction
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function generatePrediction() {
+    const button = event.target;
+    const originalText = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating Prediction...';
+    button.disabled = true;
+    
+    fetch(`/admin/predict-case-outcome/{{ case.id }}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrfToken()
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('success', 'Prediction generated successfully! Refreshing page...');
+            setTimeout(() => {
+                location.reload();
+            }, 2000);
+        } else {
+            showAlert('error', data.error || 'Failed to generate prediction');
+            button.innerHTML = originalText;
+            button.disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('error', 'Network error occurred');
+        button.innerHTML = originalText;
+        button.disabled = false;
+    });
+}
+
+function regeneratePrediction() {
+    if (!confirm('This will regenerate the prediction with current data. Continue?')) {
+        return;
+    }
+    generatePrediction();
+}
+
+function showAlert(type, message) {
+    const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+    const icon = type === 'success' ? 'fas fa-check-circle' : 'fas fa-exclamation-circle';
+    
+    const alertHtml = `
+        <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+            <i class="${icon}"></i> ${message}
+            <button type="button" class="close" data-dismiss="alert">
+                <span>&times;</span>
+            </button>
+        </div>
+    `;
+    
+    document.querySelector('.container-fluid').insertAdjacentHTML('afterbegin', alertHtml);
+    
+    setTimeout(() => {
+        const alert = document.querySelector('.alert');
+        if (alert) {
+            alert.remove();
+        }
+    }, 5000);
+}
+
+function getCsrfToken() {
+    return document.querySelector('meta[name=csrf-token]')?.getAttribute('content') || '';
+}
+</script>
+{% endblock %}

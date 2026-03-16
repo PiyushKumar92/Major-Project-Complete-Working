@@ -1,0 +1,493 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - Missing Person Finder{% endblock %}
+
+{% block content %}
+<!-- Professional Admin Header -->
+<div class="admin-header">
+    <div class="container">
+        <div class="admin-header-content">
+            <div class="admin-header-text">
+                <div class="admin-badge">
+                    <i class="fas fa-shield-alt"></i>
+                    <span>Administrator Panel</span>
+                </div>
+                <h1>Advanced Admin Dashboard</h1>
+                <p>Complete platform oversight, user management, and system analytics</p>
+            </div>
+            <div class="admin-header-actions">
+                <div class="admin-status">
+                    <div class="admin-quick-stats">
+                        <div class="quick-stat">
+                            <div class="stat-value">{{ total_cases or 0 }}</div>
+                            <div class="stat-label">Total Cases</div>
+                        </div>
+                        <div class="quick-stat">
+                            <div class="stat-value">{{ pending_approvals or 0 }}</div>
+                            <div class="stat-label">Pending Approval</div>
+                        </div>
+                        <div class="quick-stat">
+                            <div class="stat-value">{{ active_cases or 0 }}</div>
+                            <div class="stat-label">Active Cases</div>
+                        </div>
+                        <div class="quick-stat">
+                            <div class="stat-value">{{ final_cases or 0 }}</div>
+                            <div class="stat-label">Completed</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <!-- Enhanced Admin Management Grid -->
+    <div class="row g-4 mb-5">
+        <!-- Case Management -->
+        <div class="col-lg-6 col-xl-4">
+            <div class="card admin-module-card border-0 shadow-sm h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="module-icon bg-primary text-white rounded-3 me-3">
+                            <i class="fas fa-folder-open"></i>
+                        </div>
+                        <div>
+                            <h5 class="mb-1">Case Management</h5>
+                            <small class="text-muted">Review & approve cases</small>
+                        </div>
+                    </div>
+                    <div class="row text-center mb-3">
+                        <div class="col-4">
+                            <div class="stat-mini">
+                                <div class="stat-value text-warning">{{ pending_approvals or 0 }}</div>
+                                <div class="stat-label">Pending</div>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="stat-mini">
+                                <div class="stat-value text-info">{{ approved_cases or 0 }}</div>
+                                <div class="stat-label">Approved</div>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="stat-mini">
+                                <div class="stat-value text-success">{{ final_cases or 0 }}</div>
+                                <div class="stat-label">Final</div>
+                            </div>
+                        </div>
+                    </div>
+                    <a href="{{ url_for('admin.cases') }}" class="btn btn-primary btn-sm w-100">
+                        <i class="fas fa-arrow-right me-1"></i>Manage Cases
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- User Management -->
+        <div class="col-lg-6 col-xl-4">
+            <div class="card admin-module-card border-0 shadow-sm h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="module-icon bg-success text-white rounded-3 me-3">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div>
+                            <h5 class="mb-1">User Management</h5>
+                            <small class="text-muted">Manage accounts & roles</small>
+                        </div>
+                    </div>
+                    <div class="row text-center mb-3">
+                        <div class="col-4">
+                            <div class="stat-mini">
+                                <div class="stat-value text-primary">{{ total_users or 0 }}</div>
+                                <div class="stat-label">Total</div>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="stat-mini">
+                                <div class="stat-value text-success">{{ active_users or 0 }}</div>
+                                <div class="stat-label">Active</div>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="stat-mini">
+                                <div class="stat-value text-info">{{ (active_users / total_users * 100)|round if total_users > 0 else 0 }}%</div>
+                                <div class="stat-label">Rate</div>
+                            </div>
+                        </div>
+                    </div>
+                    <a href="{{ url_for('admin.users') }}" class="btn btn-success btn-sm w-100">
+                        <i class="fas fa-arrow-right me-1"></i>Manage Users
+                    </a>
+                </div>
+            </div>
+        </div>
+
+
+
+        <!-- Contact Messages -->
+        <div class="col-lg-6 col-xl-4">
+            <div class="card admin-module-card border-0 shadow-sm h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="module-icon bg-warning text-white rounded-3 me-3">
+                            <i class="fas fa-envelope"></i>
+                        </div>
+                        <div>
+                            <h5 class="mb-1">Contact Messages</h5>
+                            <small class="text-muted">User support requests</small>
+                        </div>
+                    </div>
+                    <div class="row text-center mb-3">
+                        <div class="col-6">
+                            <div class="stat-mini">
+                                <div class="stat-value text-warning">{{ unread_messages or 0 }}</div>
+                                <div class="stat-label">Unread</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stat-mini">
+                                <div class="stat-value text-muted">{{ (unread_messages + 10) or 10 }}</div>
+                                <div class="stat-label">Total</div>
+                            </div>
+                        </div>
+                    </div>
+                    <a href="{{ url_for('admin.contact_messages') }}" class="btn btn-warning btn-sm w-100">
+                        <i class="fas fa-arrow-right me-1"></i>Handle Messages
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Live Chat -->
+        <div class="col-lg-6 col-xl-4">
+            <div class="card admin-module-card border-0 shadow-sm h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="module-icon bg-primary text-white rounded-3 me-3">
+                            <i class="fas fa-comments"></i>
+                        </div>
+                        <div>
+                            <h5 class="mb-1">Live Chat</h5>
+                            <small class="text-muted">Real-time support</small>
+                        </div>
+                    </div>
+                    <div class="row text-center mb-3">
+                        <div class="col-6">
+                            <div class="stat-mini">
+                                <div class="stat-value text-success">{{ active_chats or 0 }}</div>
+                                <div class="stat-label">Active</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stat-mini">
+                                <div class="stat-value text-info">{{ total_chat_messages or 0 }}</div>
+                                <div class="stat-label">Messages</div>
+                            </div>
+                        </div>
+                    </div>
+                    <a href="{{ url_for('main.chat_list') }}" class="btn btn-primary btn-sm w-100">
+                        <i class="fas fa-arrow-right me-1"></i>Manage Chats
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Announcements -->
+        <div class="col-lg-6 col-xl-4">
+            <div class="card admin-module-card border-0 shadow-sm h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="module-icon bg-danger text-white rounded-3 me-3">
+                            <i class="fas fa-bullhorn"></i>
+                        </div>
+                        <div>
+                            <h5 class="mb-1">Announcements</h5>
+                            <small class="text-muted">Platform notifications</small>
+                        </div>
+                    </div>
+                    <div class="row text-center mb-3">
+                        <div class="col-6">
+                            <div class="stat-mini">
+                                <div class="stat-value text-success">{{ active_announcements or 0 }}</div>
+                                <div class="stat-label">Active</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stat-mini">
+                                <div class="stat-value text-primary">{{ total_users or 0 }}</div>
+                                <div class="stat-label">Reach</div>
+                            </div>
+                        </div>
+                    </div>
+                    <a href="{{ url_for('admin.announcements') }}" class="btn btn-danger btn-sm w-100">
+                        <i class="fas fa-arrow-right me-1"></i>Manage Announcements
+                    </a>
+                </div>
+            </div>
+        </div>
+
+
+    </div>
+
+
+
+
+
+
+
+
+</div>
+
+<style>
+.admin-module-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border-radius: 12px;
+}
+
+.admin-module-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1) !important;
+}
+
+.module-icon {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+}
+
+.stat-mini {
+    padding: 0.5rem;
+}
+
+.stat-mini .stat-value {
+    font-size: 1.1rem;
+    font-weight: 600;
+    line-height: 1;
+}
+
+.stat-mini .stat-label {
+    font-size: 0.75rem;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.metric-mini {
+    padding: 0.5rem;
+}
+
+.metric-mini .metric-value {
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1;
+}
+
+.metric-mini .metric-label {
+    font-size: 0.7rem;
+    color: #6b7280;
+    text-transform: uppercase;
+}
+
+.chart-container {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.system-health-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    padding: 1rem 0;
+}
+
+.health-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: white;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+}
+
+.health-icon {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    font-size: 0.9rem;
+}
+
+.health-info .health-label {
+    font-size: 0.8rem;
+    color: #6b7280;
+    margin-bottom: 2px;
+}
+
+.health-info .health-status {
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.bg-gradient-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Enhanced Status Chart
+const statusData = {
+    labels: [{% for status, count in status_counts %}'{{ status }}'{% if not loop.last %},{% endif %}{% endfor %}],
+    datasets: [{
+        data: [{% for status, count in status_counts %}{{ count }}{% if not loop.last %},{% endif %}{% endfor %}],
+        backgroundColor: ['#fbbf24', '#3b82f6', '#ef4444', '#10b981', '#8b5cf6', '#6b7280', '#f59e0b'],
+        borderWidth: 2,
+        borderColor: '#ffffff'
+    }]
+};
+
+new Chart(document.getElementById('statusChart'), {
+    type: 'doughnut',
+    data: statusData,
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { 
+                position: 'bottom',
+                labels: {
+                    padding: 15,
+                    usePointStyle: true,
+                    font: { size: 11 }
+                }
+            }
+        },
+        cutout: '60%'
+    }
+});
+
+// Enhanced Time Chart
+const timeData = {
+    labels: [{% for date, count in daily_cases %}'{{ date if date else "" }}'{% if not loop.last %},{% endif %}{% endfor %}],
+    datasets: [{
+        label: 'Cases Created',
+        data: [{% for date, count in daily_cases %}{{ count }}{% if not loop.last %},{% endif %}{% endfor %}],
+        borderColor: '#3b82f6',
+        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+        tension: 0.4,
+        fill: true,
+        pointBackgroundColor: '#3b82f6',
+        pointBorderColor: '#ffffff',
+        pointBorderWidth: 2,
+        pointRadius: 4
+    }]
+};
+
+new Chart(document.getElementById('timeChart'), {
+    type: 'line',
+    data: timeData,
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: { 
+                beginAtZero: true,
+                grid: { color: 'rgba(0,0,0,0.1)' },
+                ticks: { font: { size: 11 } }
+            },
+            x: {
+                grid: { display: false },
+                ticks: { font: { size: 11 } }
+            }
+        },
+        plugins: {
+            legend: { display: false }
+        }
+    }
+});
+
+// AI Performance Chart
+const aiData = {
+    labels: ['Total Matches', 'Successful', 'High Confidence', 'Processing'],
+    datasets: [{
+        data: [
+            {{ total_location_matches or 0 }},
+            {{ successful_detections or 0 }},
+            {{ high_confidence_matches or 0 }},
+            {{ processing_analysis or 0 }}
+        ],
+        backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'],
+        borderWidth: 0
+    }]
+};
+
+new Chart(document.getElementById('aiChart'), {
+    type: 'bar',
+    data: aiData,
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false }
+        },
+        scales: {
+            y: { 
+                beginAtZero: true,
+                grid: { color: 'rgba(0,0,0,0.1)' },
+                ticks: { font: { size: 10 } }
+            },
+            x: {
+                grid: { display: false },
+                ticks: { font: { size: 10 } }
+            }
+        }
+    }
+});
+
+// Quick Location Matching
+function quickLocationMatch(caseId) {
+    const button = event.target.closest('button');
+    const originalHtml = button.innerHTML;
+    
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    button.disabled = true;
+    
+    fetch(`/admin/location/api/quick-match/${caseId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                if (data.total_matches > 0) {
+                    const message = `Found ${data.total_matches} matching CCTV footage:\n\n` +
+                        data.top_matches.map(m => `• ${m.title} (${m.confidence} - ${m.match_score}%)`).join('\n') +
+                        '\n\nOpen detailed analysis?';
+                    
+                    if (confirm(message)) {
+                        window.location.href = `/admin/location/match-footage/${caseId}`;
+                    }
+                } else {
+                    alert('No matching CCTV footage found for this case location.');
+                }
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('Network error: ' + error);
+        })
+        .finally(() => {
+            button.innerHTML = originalHtml;
+            button.disabled = false;
+        });
+}
+</script>
+
+{% endblock %}

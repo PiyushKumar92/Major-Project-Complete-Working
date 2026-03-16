@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security & Compliance Dashboard - Missing Person Investigation</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .security-card {
+            border-left: 4px solid #dc3545;
+            transition: all 0.3s ease;
+        }
+        .security-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .status-active { color: #28a745; }
+        .status-inactive { color: #dc3545; }
+        .audit-form {
+            background: linear-gradient(135deg, #dc3545 0%, #6f42c1 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 30px;
+        }
+        .log-entry {
+            border-radius: 8px;
+            margin-bottom: 10px;
+            padding: 15px;
+            border-left: 4px solid #007bff;
+        }
+        .log-success { border-left-color: #28a745; }
+        .log-failure { border-left-color: #dc3545; }
+        .permission-badge {
+            margin: 2px;
+            font-size: 0.8em;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-danger">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('main.dashboard') }}">
+                <i class="fas fa-shield-alt"></i> Missing Person Investigation
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="{{ url_for('main.dashboard') }}">
+                    <i class="fas fa-home"></i> Dashboard
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-12">
+                <h2><i class="fas fa-shield-alt"></i> Security & Compliance Dashboard</h2>
+                <p class="text-muted">Enterprise-grade security, encryption, RBAC, audit trails, and GDPR compliance</p>
+            </div>
+        </div>
+
+        <!-- Security Status Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card security-card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-lock fa-2x text-primary mb-2"></i>
+                        <h5>Encryption</h5>
+                        <span class="badge bg-success">{{ security_status.encryption.status|title }}</span>
+                        <small class="d-block mt-1">{{ security_status.encryption.algorithm }}</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="card security-card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-users-cog fa-2x text-success mb-2"></i>
+                        <h5>RBAC</h5>
+                        <span class="badge bg-success">{{ security_status.rbac.status|title }}</span>
+                        <small class="d-block mt-1">{{ security_status.rbac.total_roles }} roles</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="card security-card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-clipboard-list fa-2x text-info mb-2"></i>
+                        <h5>Audit Trail</h5>
+                        <span class="badge bg-success">{{ security_status.audit_trail.status|title }}</span>
+                        <small class="d-block mt-1">{{ security_status.audit_trail.retention_period }} retention</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="card security-card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-balance-scale fa-2x text-warning mb-2"></i>
+                        <h5>GDPR</h5>
+                        <span class="badge bg-success">{{ security_status.gdpr_compliance.status|title }}</span>
+                        <small class="d-block mt-1">Full compliance</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Security Tools -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-key"></i> Data Encryption</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="encryptionForm">
+                            <div class="mb-3">
+                                <label class="form-label">Data to Encrypt</label>
+                                <textarea class="form-control" id="dataToEncrypt" rows="3" placeholder='{"name": "John Doe", "phone": "+91-9876543210"}'></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-lock"></i> Encrypt Data
+                            </button>
+                        </form>
+                        <div id="encryptionResult" class="mt-3" style="display: none;">
+                            <h6>Encrypted Result:</h6>
+                            <pre class="bg-light p-2 rounded"></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-user-shield"></i> Role Management</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="roleAssignmentForm">
+                            <div class="mb-3">
+                                <label class="form-label">User ID</label>
+                                <input type="text" class="form-control" id="targetUserId" placeholder="user_123">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Role</label>
+                                <select class="form-select" id="userRole">
+                                    <option value="admin">Admin</option>
+                                    <option value="investigator">Investigator</option>
+                                    <option value="viewer">Viewer</option>
+                                    <option value="guest">Guest</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-user-plus"></i> Assign Role
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- GDPR Compliance Tools -->
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-check-circle"></i> GDPR Consent</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="consentForm">
+                            <div class="mb-3">
+                                <label class="form-label">Subject ID</label>
+                                <input type="text" class="form-control" id="subjectId" placeholder="person_123">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Consent Type</label>
+                                <select class="form-select" id="consentType">
+                                    <option value="data_processing">Data Processing</option>
+                                    <option value="facial_recognition">Facial Recognition</option>
+                                    <option value="data_sharing">Data Sharing</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Purpose</label>
+                                <input type="text" class="form-control" id="consentPurpose" placeholder="Missing person investigation">
+                            </div>
+                            <button type="submit" class="btn btn-warning">
+                                <i class="fas fa-clipboard-check"></i> Record Consent
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-download"></i> Data Export</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="exportForm">
+                            <div class="mb-3">
+                                <label class="form-label">Subject ID</label>
+                                <input type="text" class="form-control" id="exportSubjectId" placeholder="person_123">
+                            </div>
+                            <p class="text-muted small">Export all data for a subject as per GDPR Article 20</p>
+                            <button type="submit" class="btn btn-info">
+                                <i class="fas fa-download"></i> Export Data
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-user-slash"></i> Data Anonymization</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="anonymizeForm">
+                            <div class="mb-3">
+                                <label class="form-label">Personal Data</label>
+                                <textarea class="form-control" id="personalData" rows="3" placeholder='{"name": "John Doe", "email": "john@example.com"}'></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-secondary">
+                                <i class="fas fa-mask"></i> Anonymize
+                            </button>
+                        </form>
+                        <div id="anonymizeResult" class="mt-3" style="display: none;">
+                            <h6>Anonymized Result:</h6>
+                            <pre class="bg-light p-2 rounded"></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Audit Trail Search -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="audit-form">
+                    <h4><i class="fas fa-search"></i> Audit Trail Search</h4>
+                    <p>Search and analyze system audit logs</p>
+                    
+                    <form id="auditSearchForm">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label class="form-label">User ID</label>
+                                    <input type="text" class="form-control" id="auditUserId" placeholder="user_123">
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label class="form-label">Action</label>
+                                    <select class="form-select" id="auditAction">
+                                        <option value="">All Actions</option>
+                                        <option value="login">Login</option>
+                                        <option value="logout">Logout</option>
+                                        <option value="view_case">View Case</option>
+                                        <option value="create_case">Create Case</option>
+                                        <option value="update_case">Update Case</option>
+                                        <option value="delete_case">Delete Case</option>
+                                        <option value="search">Search</option>
+                                        <option value="export_data">Export Data</option>
+                                        <option value="access_pii">Access PII</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label class="form-label">Start Date</label>
+                                    <input type="datetime-local" class="form-control" id="auditStartDate">
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label class="form-label">End Date</label>
+                                    <input type="datetime-local" class="form-control" id="auditEndDate">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-light btn-lg">
+                            <i class="fas fa-search"></i> Search Audit Logs
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Audit Results -->
+        <div id="auditResults" class="row" style="display: none;">
+            <div class="col-12">
+                <h4><i class="fas fa-list"></i> Audit Log Results</h4>
+                <div id="auditLogsContainer"></div>
+            </div>
+        </div>
+
+        <!-- System Statistics -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-chart-bar"></i> Security Statistics</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-3">
+                                <h3 class="text-danger">{{ system_info.total_roles }}</h3>
+                                <small>User Roles</small>
+                            </div>
+                            <div class="col-3">
+                                <h3 class="text-success">{{ system_info.total_permissions }}</h3>
+                                <small>Permissions</small>
+                            </div>
+                            <div class="col-3">
+                                <h3 class="text-info">{{ security_status.rbac.active_sessions }}</h3>
+                                <small>Active Sessions</small>
+                            </div>
+                            <div class="col-3">
+                                <h3 class="text-warning">AES-128</h3>
+                                <small>Encryption</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-cog"></i> Compliance Status</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-2">
+                            <strong>Data Encryption:</strong> 
+                            <span class="badge bg-success">Active</span>
+                        </div>
+                        <div class="mb-2">
+                            <strong>Access Control:</strong> 
+                            <span class="badge bg-success">RBAC Enabled</span>
+                        </div>
+                        <div class="mb-2">
+                            <strong>Audit Logging:</strong> 
+                            <span class="badge bg-success">Complete</span>
+                        </div>
+                        <div class="mb-2">
+                            <strong>GDPR Compliance:</strong> 
+                            <span class="badge bg-success">Full Compliance</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Encryption Form
+        document.getElementById('encryptionForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const data = document.getElementById('dataToEncrypt').value;
+            
+            try {
+                const jsonData = JSON.parse(data);
+                
+                fetch('/security/api/encrypt-data', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({data: jsonData})
+                })
+                .then(response => response.json())
+                .then(result => {
+                    if (result.success) {
+                        document.getElementById('encryptionResult').style.display = 'block';
+                        document.querySelector('#encryptionResult pre').textContent = JSON.stringify(result.encrypted_data, null, 2);
+                    } else {
+                        alert('Encryption failed: ' + result.error);
+                    }
+                });
+            } catch (e) {
+                alert('Invalid JSON format');
+            }
+        });
+
+        // Role Assignment Form
+        document.getElementById('roleAssignmentForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const userId = document.getElementById('targetUserId').value;
+            const role = document.getElementById('userRole').value;
+            
+            fetch('/security/api/assign-role', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({user_id: userId, role: role})
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    alert('Role assigned successfully');
+                } else {
+                    alert('Role assignment failed: ' + result.error);
+                }
+            });
+        });
+
+        // Consent Form
+        document.getElementById('consentForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const subjectId = document.getElementById('subjectId').value;
+            const consentType = document.getElementById('consentType').value;
+            const purpose = document.getElementById('consentPurpose').value;
+            
+            fetch('/security/api/gdpr/consent', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    subject_id: subjectId,
+                    consent_type: consentType,
+                    purpose: purpose,
+                    consent_given: true
+                })
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    alert('Consent recorded successfully');
+                } else {
+                    alert('Consent recording failed: ' + result.error);
+                }
+            });
+        });
+
+        // Export Form
+        document.getElementById('exportForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const subjectId = document.getElementById('exportSubjectId').value;
+            
+            fetch(`/security/api/gdpr/export-data/${subjectId}`)
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    const blob = new Blob([JSON.stringify(result.exported_data, null, 2)], {type: 'application/json'});
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `gdpr_export_${subjectId}.json`;
+                    a.click();
+                } else {
+                    alert('Data export failed: ' + result.error);
+                }
+            });
+        });
+
+        // Anonymize Form
+        document.getElementById('anonymizeForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const data = document.getElementById('personalData').value;
+            
+            try {
+                const jsonData = JSON.parse(data);
+                
+                fetch('/security/api/anonymize-data', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({data: jsonData})
+                })
+                .then(response => response.json())
+                .then(result => {
+                    if (result.success) {
+                        document.getElementById('anonymizeResult').style.display = 'block';
+                        document.querySelector('#anonymizeResult pre').textContent = JSON.stringify(result.anonymized_data, null, 2);
+                    } else {
+                        alert('Anonymization failed: ' + result.error);
+                    }
+                });
+            } catch (e) {
+                alert('Invalid JSON format');
+            }
+        });
+
+        // Audit Search Form
+        document.getElementById('auditSearchForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const params = new URLSearchParams();
+            const userId = document.getElementById('auditUserId').value;
+            const action = document.getElementById('auditAction').value;
+            const startDate = document.getElementById('auditStartDate').value;
+            const endDate = document.getElementById('auditEndDate').value;
+            
+            if (userId) params.append('user_id', userId);
+            if (action) params.append('action', action);
+            if (startDate) params.append('start_date', startDate);
+            if (endDate) params.append('end_date', endDate);
+            params.append('limit', '50');
+            
+            fetch(`/security/api/audit-logs?${params}`)
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    displayAuditLogs(result.logs);
+                } else {
+                    alert('Audit search failed: ' + result.error);
+                }
+            });
+        });
+
+        function displayAuditLogs(logs) {
+            const container = document.getElementById('auditLogsContainer');
+            let html = '';
+
+            if (logs.length === 0) {
+                html = '<div class="alert alert-info">No audit logs found for the specified criteria.</div>';
+            } else {
+                logs.forEach(log => {
+                    const successClass = log.success ? 'log-success' : 'log-failure';
+                    const successIcon = log.success ? 'fa-check-circle text-success' : 'fa-times-circle text-danger';
+                    
+                    html += `
+                        <div class="log-entry ${successClass}">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6><i class="fas ${successIcon}"></i> ${log.action.toUpperCase()}</h6>
+                                    <p class="mb-1"><strong>User:</strong> ${log.user_id}</p>
+                                    <p class="mb-1"><strong>IP:</strong> ${log.ip_address}</p>
+                                    ${log.resource_id ? `<p class="mb-1"><strong>Resource:</strong> ${log.resource_id}</p>` : ''}
+                                    <small class="text-muted">${new Date(log.timestamp).toLocaleString()}</small>
+                                </div>
+                                <div class="text-end">
+                                    <span class="badge ${log.success ? 'bg-success' : 'bg-danger'}">${log.success ? 'Success' : 'Failed'}</span>
+                                </div>
+                            </div>
+                            ${log.details && log.details !== '{}' ? `
+                                <div class="mt-2">
+                                    <small><strong>Details:</strong> ${log.details}</small>
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                });
+            }
+
+            container.innerHTML = html;
+            document.getElementById('auditResults').style.display = 'block';
+        }
+    </script>
+</body>
+</html>

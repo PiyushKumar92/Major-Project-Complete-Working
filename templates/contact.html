@@ -1,0 +1,210 @@
+{% extends "base.html" %}
+
+{% block title %}Contact & Help - Missing Person Finder{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="hero-section">
+    <div class="container text-center">
+        <h1 class="hero-title">Contact & Help</h1>
+        <p class="hero-subtitle">Get support, report issues, or share feedback with our dedicated team</p>
+    </div>
+</div>
+
+<div class="content-container">
+    <div class="row g-4">
+        <!-- Contact Form -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="mb-0"><i class="fas fa-envelope me-2"></i>Send us a Message</h3>
+                    <p class="text-muted mb-0">We're here to help! Fill out the form below and we'll get back to you as soon as possible.</p>
+                </div>
+                <div class="card-body">
+                    <form method="POST" class="needs-validation" novalidate>
+                        {% if form %}
+                            {{ form.hidden_tag() }}
+                        {% endif %}
+                        
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Full Name *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                    <input type="text" name="name" class="form-control" placeholder="Enter your full name" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Email Address *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                                    <input type="email" name="email" class="form-control" placeholder="Enter your email" required>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Subject *</label>
+                            <select name="subject" class="form-select" required>
+                                <option value="">Choose a subject...</option>
+                                <option value="general">General Inquiry</option>
+                                <option value="technical">Technical Support</option>
+                                <option value="case">Case Assistance</option>
+                                <option value="billing">Billing Question</option>
+                                <option value="feedback">Feedback</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="form-label">Message *</label>
+                            <textarea name="message" class="form-control" rows="6" placeholder="Please describe your inquiry in detail..." required></textarea>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-paper-plane me-2"></i>Send Message
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Contact Information -->
+        <div class="col-lg-4">
+            <!-- Quick Help -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-question-circle me-2"></i>Quick Help</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-start mb-3">
+                        <i class="fas fa-book fa-lg text-primary me-3 mt-1"></i>
+                        <div>
+                            <h6 class="mb-1">User Guide</h6>
+                            <p class="text-muted small mb-0">Step-by-step instructions on creating and managing cases</p>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-start mb-3">
+                        <i class="fas fa-video fa-lg text-info me-3 mt-1"></i>
+                        <div>
+                            <h6 class="mb-1">Video Tutorials</h6>
+                            <p class="text-muted small mb-0">Watch guides to learn how to use our AI technology</p>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-start">
+                        <i class="fas fa-comments fa-lg text-success me-3 mt-1"></i>
+                        <div>
+                            <h6 class="mb-1">FAQ</h6>
+                            <p class="text-muted small mb-0">Find answers to commonly asked questions</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Contact Details -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-phone me-2"></i>Contact Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <i class="fas fa-envelope fa-lg text-primary me-3"></i>
+                        <div>
+                            <h6 class="mb-1">Email Support</h6>
+                            <p class="text-muted mb-0">support@missingpersonfinder.com</p>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center mb-3">
+                        <i class="fas fa-phone fa-lg text-success me-3"></i>
+                        <div>
+                            <h6 class="mb-1">Emergency Hotline</h6>
+                            <p class="text-muted mb-0">1-800-MISSING (24/7)</p>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-clock fa-lg text-info me-3"></i>
+                        <div>
+                            <h6 class="mb-1">Response Time</h6>
+                            <p class="text-muted mb-0">Within 24 hours</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Emergency Resources -->
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Emergency Resources</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="tel:911" class="btn btn-danger">
+                            <i class="fas fa-phone-alt me-2"></i>Call 911 (Emergency)
+                        </a>
+                        <a href="https://www.missingkids.org/gethelpnow/search" target="_blank" class="btn btn-outline-primary">
+                            <i class="fas fa-external-link-alt me-2"></i>National Center for Missing Children
+                        </a>
+                        <a href="https://www.fbi.gov/wanted/kidnap" target="_blank" class="btn btn-outline-primary">
+                            <i class="fas fa-external-link-alt me-2"></i>FBI Missing Persons
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Support Features -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0"><i class="fas fa-headset me-2"></i>Our Support Promise</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row g-4">
+                        <div class="col-md-3 text-center">
+                            <i class="fas fa-clock fa-3x text-primary mb-3"></i>
+                            <h5>24/7 Availability</h5>
+                            <p class="text-muted">Our AI systems work around the clock, and emergency support is always available</p>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <i class="fas fa-users fa-3x text-success mb-3"></i>
+                            <h5>Expert Team</h5>
+                            <p class="text-muted">Dedicated specialists in AI technology and missing person cases</p>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <i class="fas fa-shield-alt fa-3x text-info mb-3"></i>
+                            <h5>Confidential</h5>
+                            <p class="text-muted">All communications are secure and treated with utmost confidentiality</p>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <i class="fas fa-heart fa-3x text-danger mb-3"></i>
+                            <h5>Compassionate</h5>
+                            <p class="text-muted">We understand the emotional nature of missing person cases</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    
+<script>
+// Form validation
+(function() {
+    'use strict';
+    window.addEventListener('load', function() {
+        var forms = document.getElementsByClassName('needs-validation');
+        var validation = Array.prototype.filter.call(forms, function(form) {
+            form.addEventListener('submit', function(event) {
+                if (form.checkValidity() === false) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                form.classList.add('was-validated');
+            }, false);
+        });
+    }, false);
+})();
+</script>
+{% endblock %}

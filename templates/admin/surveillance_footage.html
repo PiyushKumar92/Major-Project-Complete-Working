@@ -1,0 +1,327 @@
+{% extends "base.html" %}
+
+{% block title %}Surveillance Footage Management{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="text-primary mb-1">
+                        <i class="fas fa-video me-2"></i>Surveillance Footage Management
+                    </h2>
+                    <p class="text-muted mb-0">Manage CCTV footage and AI analysis for missing person cases</p>
+                </div>
+                <a href="{{ url_for('admin.upload_surveillance_footage') }}" class="btn btn-primary">
+                    <i class="fas fa-upload me-2"></i>Upload New Footage
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="mb-0">{{ footage_list.total }}</h4>
+                            <p class="mb-0">Total Footage</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-video fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="mb-0">{{ total_matches }}</h4>
+                            <p class="mb-0">AI Matches</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-brain fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="mb-0">{{ successful_detections }}</h4>
+                            <p class="mb-0">Successful Detections</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-search fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="mb-0">{{ (successful_detections / total_matches * 100) | round(1) if total_matches > 0 else 0 }}%</h4>
+                            <p class="mb-0">Success Rate</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-chart-line fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footage Grid -->
+    <div class="row">
+        {% if footage_list.items %}
+        {% for footage in footage_list.items %}
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header bg-light">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0 text-truncate">{{ footage.title }}</h6>
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="#" onclick="viewFootageDetails({{ footage.id }})">
+                                    <i class="fas fa-eye me-2"></i>View Details
+                                </a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('static', filename=footage.video_path) }}" target="_blank">
+                                    <i class="fas fa-play me-2"></i>Play Video
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item text-primary" href="#" onclick="startAIAnalysis({{ footage.id }})">
+                                    <i class="fas fa-brain me-2"></i>Start AI Analysis
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item text-danger" href="#" onclick="deleteFootage({{ footage.id }})">
+                                    <i class="fas fa-trash me-2"></i>Delete
+                                </a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        {% if footage.video_path %}
+                        <video class="w-100" style="height: 200px; object-fit: cover;" controls preload="metadata">
+                            <source src="{{ url_for('static', filename=footage.video_path) }}" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                        {% else %}
+                        <div class="bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                            <div class="text-center text-muted">
+                                <i class="fas fa-video fa-3x mb-2"></i>
+                                <br><small>No Video Available</small>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="row text-center mb-3">
+                        <div class="col-4">
+                            <small class="text-muted">Duration</small>
+                            <div class="fw-bold">{{ footage.formatted_duration }}</div>
+                        </div>
+                        <div class="col-4">
+                            <small class="text-muted">Quality</small>
+                            <div class="fw-bold">{{ footage.quality }}</div>
+                        </div>
+                        <div class="col-4">
+                            <small class="text-muted">Size</small>
+                            <div class="fw-bold">{{ footage.formatted_file_size }}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-2">
+                        <i class="fas fa-map-marker-alt text-primary me-2"></i>
+                        <strong>{{ footage.location_name }}</strong>
+                    </div>
+                    
+                    {% if footage.description %}
+                    <p class="text-muted small mb-2">{{ footage.description[:100] }}{% if footage.description|length > 100 %}...{% endif %}</p>
+                    {% endif %}
+                    
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">
+                            <i class="fas fa-calendar me-1"></i>
+                            {{ footage.created_at.strftime('%d %b %Y') }}
+                        </small>
+                        {% set has_matches = footage.matches|selectattr('person_found', 'equalto', true)|list|length > 0 %}
+                        <span class="badge bg-{{ 'success' if has_matches else 'primary' if footage.matches else 'warning' }}">
+                            {% if has_matches %}
+                                Success
+                            {% elif footage.matches %}
+                                Analyzed
+                            {% else %}
+                                Pending
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <!-- Empty State -->
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-video fa-4x text-muted mb-4"></i>
+                    <h4 class="text-muted mb-3">No CCTV Footage Uploaded</h4>
+                    <p class="text-muted mb-4">Upload surveillance footage to start AI analysis for missing person cases.</p>
+                    <a href="{{ url_for('admin.upload_surveillance_footage') }}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-upload me-2"></i>Upload First Footage
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Pagination -->
+    {% if footage_list.pages > 1 %}
+    <div class="row">
+        <div class="col-12">
+            <nav aria-label="Footage pagination">
+                <ul class="pagination justify-content-center">
+                    {% if footage_list.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('admin.surveillance_footage', page=footage_list.prev_num) }}">Previous</a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for page_num in footage_list.iter_pages() %}
+                        {% if page_num %}
+                            {% if page_num != footage_list.page %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('admin.surveillance_footage', page=page_num) }}">{{ page_num }}</a>
+                            </li>
+                            {% else %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ page_num }}</span>
+                            </li>
+                            {% endif %}
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if footage_list.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('admin.surveillance_footage', page=footage_list.next_num) }}">Next</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Footage Details Modal -->
+<div class="modal fade" id="footageDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Footage Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="footageDetailsContent">
+                <!-- Content loaded via AJAX -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function viewFootageDetails(footageId) {
+    // Load footage details via AJAX
+    fetch(`/admin/surveillance-footage/${footageId}/details`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('footageDetailsContent').innerHTML = data.html;
+            new bootstrap.Modal(document.getElementById('footageDetailsModal')).show();
+        })
+        .catch(error => {
+            console.error('Error loading footage details:', error);
+            alert('Error loading footage details');
+        });
+}
+
+function startAIAnalysis(footageId) {
+    if (confirm('🤖 Start AI Analysis?\n\nThis will:\n- Analyze all frames in the video\n- Match against all approved cases\n- Generate detection results\n\nThis may take a few minutes.')) {
+        // Get CSRF token
+        let csrfToken = '';
+        const metaToken = document.querySelector('meta[name="csrf-token"]');
+        if (metaToken) {
+            csrfToken = metaToken.getAttribute('content');
+        }
+        
+        const headers = {'Content-Type': 'application/json'};
+        if (csrfToken) {
+            headers['X-CSRFToken'] = csrfToken;
+        }
+        
+        fetch(`/admin/surveillance-footage/${footageId}/analyze`, {
+            method: 'POST',
+            headers: headers
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(`✅ AI Analysis Started!\n\n${data.message}\n\nRefresh the page in a few minutes to see results.`);
+                location.reload();
+            } else {
+                alert(`❌ Error: ${data.error}`);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('❌ Error starting AI analysis');
+        });
+    }
+}
+
+function deleteFootage(footageId) {
+    if (confirm('⚠️ Delete this footage?\n\nThis will permanently delete:\n- Video file\n- All AI analysis results\n- All detections\n\nThis action cannot be undone!')) {
+        fetch(`/admin/surveillance-footage/${footageId}/delete`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.content || ''
+            }
+        })
+        .then(response => {
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                alert('❌ Error deleting footage');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('❌ Error deleting footage');
+        });
+    }
+}
+</script>
+{% endblock %}

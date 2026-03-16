@@ -1,0 +1,26 @@
+{
+    "enabled": true,
+    "api_endpoint": "http://localhost:8080/api/police",
+    "api_key": "demo_police_key",
+    "timeout": 30,
+    "retry_attempts": 3,
+    "departments": [
+        {
+            "id": "DELHI_POLICE",
+            "name": "Delhi Police",
+            "endpoint": "http://delhi-police-api.gov.in/missing-persons",
+            "contact": "+91-11-23490000"
+        },
+        {
+            "id": "MUMBAI_POLICE", 
+            "name": "Mumbai Police",
+            "endpoint": "http://mumbai-police-api.gov.in/missing-persons",
+            "contact": "+91-22-22621855"
+        }
+    ],
+    "search_parameters": {
+        "max_results": 50,
+        "confidence_threshold": 0.7,
+        "include_closed_cases": false
+    }
+}

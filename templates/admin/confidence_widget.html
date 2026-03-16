@@ -1,0 +1,130 @@
+<!-- Confidence Distribution Widget -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-chart-pie me-2"></i>Confidence Distribution
+            <a href="{{ url_for('admin.confidence_analysis') }}" class="btn btn-sm btn-outline-primary float-end">
+                <i class="fas fa-expand me-1"></i>Detailed Analysis
+            </a>
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <!-- Quick Stats -->
+            <div class="col-md-3">
+                <div class="text-center mb-3">
+                    <h4 class="text-primary mb-1" id="total-detections">-</h4>
+                    <small class="text-muted">Total Detections</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="text-center mb-3">
+                    <h4 class="text-success mb-1" id="avg-confidence">-</h4>
+                    <small class="text-muted">Avg Confidence</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="text-center mb-3">
+                    <h4 class="text-info mb-1" id="reliability-score">-</h4>
+                    <small class="text-muted">Reliability</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="text-center mb-3">
+                    <h4 class="text-warning mb-1" id="high-quality">-</h4>
+                    <small class="text-muted">High Quality</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Distribution Bars -->
+        <div class="row">
+            <div class="col-12">
+                <h6 class="mb-3">Distribution Breakdown:</h6>
+                <div id="confidence-distribution">
+                    <!-- Distribution bars will be loaded here -->
+                    <div class="text-center py-3">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="text-muted mt-2">Loading confidence analysis...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Insights -->
+        <div class="row mt-3">
+            <div class="col-12">
+                <div id="quick-insights">
+                    <!-- Insights will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Load confidence distribution data
+function loadConfidenceWidget() {
+    fetch('/admin/api/confidence-analysis')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const analysis = data.analysis;
+                
+                // Update quick stats
+                document.getElementById('total-detections').textContent = analysis.total_detections;
+                document.getElementById('avg-confidence').textContent = (analysis.statistics.mean * 100).toFixed(1) + '%';
+                document.getElementById('reliability-score').textContent = analysis.statistics.reliability_score;
+                document.getElementById('high-quality').textContent = analysis.statistics.quality_breakdown.high_quality.count;
+                
+                // Update distribution bars
+                let distributionHtml = '';
+                Object.entries(analysis.distribution).forEach(([key, data]) => {
+                    distributionHtml += `
+                        <div class="mb-2">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="small fw-bold">${data.label}</span>
+                                <span class="badge" style="background-color: ${data.color}">${data.count}</span>
+                            </div>
+                            <div class="progress" style="height: 8px;">
+                                <div class="progress-bar" 
+                                     style="width: ${data.percentage}%; background-color: ${data.color};">
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                document.getElementById('confidence-distribution').innerHTML = distributionHtml;
+                
+                // Update insights (show top 2)
+                let insightsHtml = '';
+                analysis.insights.slice(0, 2).forEach(insight => {
+                    insightsHtml += `
+                        <div class="alert alert-${insight.type} py-2 mb-2">
+                            <i class="${insight.icon} me-2"></i>
+                            <strong>${insight.title}:</strong> ${insight.message}
+                        </div>
+                    `;
+                });
+                document.getElementById('quick-insights').innerHTML = insightsHtml;
+                
+            } else {
+                document.getElementById('confidence-distribution').innerHTML = 
+                    '<div class="alert alert-warning">Unable to load confidence data</div>';
+            }
+        })
+        .catch(error => {
+            console.error('Error loading confidence widget:', error);
+            document.getElementById('confidence-distribution').innerHTML = 
+                '<div class="alert alert-danger">Error loading confidence analysis</div>';
+        });
+}
+
+// Load widget on page load
+document.addEventListener('DOMContentLoaded', loadConfidenceWidget);
+
+// Refresh every 60 seconds
+setInterval(loadConfidenceWidget, 60000);
+</script>

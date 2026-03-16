@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Visualization - Real Data System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+    <style>
+        .visualization-container { height: 600px; border: 1px solid #ddd; border-radius: 10px; position: relative; }
+        .controls-panel { background: #f8f9fa; border-radius: 10px; padding: 15px; }
+        .camera-info { background: #e9ecef; border-radius: 8px; padding: 10px; margin-bottom: 10px; }
+        .detection-marker { position: absolute; background: #dc3545; color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content-center; font-size: 10px; }
+        .route-legend { display: flex; align-items: center; margin-bottom: 10px; }
+        .legend-color { width: 20px; height: 3px; margin-right: 10px; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-cube"></i> 3D Visualization
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/timeline-dashboard">Timeline</a>
+                <a class="nav-link" href="/mobile-app">Mobile App</a>
+                <a class="nav-link" href="/dashboard">Dashboard</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <!-- User Guide Alert -->
+        <div class="alert alert-info alert-dismissible fade show" role="alert">
+            <h5 class="alert-heading"><i class="fas fa-info-circle"></i> 3D Visualization Guide</h5>
+            <p><strong>Kya Dikh Raha Hai:</strong></p>
+            <ul class="mb-2">
+                <li><strong>Blue Boxes</strong> = CCTV Cameras (<span id="camera-count">6</span> cameras in network)</li>
+                <li><strong>Red Spheres</strong> = Person Detection Points (<span id="detection-count">26</span> detections)</li>
+                <li><strong>Blue Lines</strong> = Person Movement Route (<span id="route-count">1</span> tracked path)</li>
+                <li><strong>Gray Grid</strong> = Ground plane (200m x 200m area)</li>
+            </ul>
+            <p><strong>Controls:</strong></p>
+            <ul class="mb-0">
+                <li><strong>Left Mouse + Drag</strong> = Rotate 360° view</li>
+                <li><strong>Scroll Wheel</strong> = Zoom in/out</li>
+                <li><strong>Right Mouse + Drag</strong> = Pan/move view</li>
+                <li><strong>Click on Camera</strong> = View camera details (right panel)</li>
+            </ul>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        
+        <div class="row">
+            <!-- 3D Visualization -->
+            <div class="col-md-9">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-video"></i> 3D Camera Network</h5>
+                        <div class="float-end">
+                            <button class="btn btn-sm btn-outline-primary" onclick="resetView()">
+                                <i class="fas fa-home"></i> Reset View
+                            </button>
+                            <button class="btn btn-sm btn-outline-success" onclick="toggleAnimation()">
+                                <i class="fas fa-play" id="animation-icon"></i> <span id="animation-text">Play</span>
+                            </button>
+                            <button class="btn btn-sm btn-outline-info" onclick="takeScreenshot()">
+                                <i class="fas fa-camera"></i> Screenshot
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div id="3d-container" class="visualization-container"></div>
+                    </div>
+                </div>
+
+                <!-- Route Analysis -->
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <h6><i class="fas fa-route"></i> Route Analysis</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="route-legend">
+                                    <div class="legend-color" style="background: #007bff;"></div>
+                                    <span>Person Route 1</span>
+                                </div>
+                                <div class="route-legend">
+                                    <div class="legend-color" style="background: #28a745;"></div>
+                                    <span>Person Route 2</span>
+                                </div>
+                                <div class="route-legend">
+                                    <div class="legend-color" style="background: #ffc107;"></div>
+                                    <span>Predicted Path</span>
+                                </div>
+                            </div>
+                            <div class="col-md-8">
+                                <canvas id="route-chart" width="400" height="150"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Controls Panel -->
+            <div class="col-md-3">
+                <div class="controls-panel">
+                    <h6><i class="fas fa-sliders-h"></i> Visualization Controls</h6>
+                    
+                    <!-- View Controls -->
+                    <div class="mb-3">
+                        <label class="form-label">View Mode</label>
+                        <select class="form-select form-select-sm" id="view-mode">
+                            <option value="overview">Overview</option>
+                            <option value="camera">Camera View</option>
+                            <option value="route">Route Focus</option>
+                            <option value="detection">Detection View</option>
+                        </select>
+                    </div>
+
+                    <!-- Time Controls -->
+                    <div class="mb-3">
+                        <label class="form-label">Time Range</label>
+                        <input type="range" class="form-range" id="time-slider" min="0" max="100" value="100">
+                        <div class="d-flex justify-content-between">
+                            <small>Past</small>
+                            <small>Present</small>
+                        </div>
+                    </div>
+
+                    <!-- Layer Controls -->
+                    <div class="mb-3">
+                        <label class="form-label">Layers</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="show-cameras" checked>
+                            <label class="form-check-label" for="show-cameras">Cameras</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="show-detections" checked>
+                            <label class="form-check-label" for="show-detections">Detections</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="show-routes" checked>
+                            <label class="form-check-label" for="show-routes">Routes</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="show-coverage">
+                            <label class="form-check-label" for="show-coverage">Coverage Areas</label>
+                        </div>
+                    </div>
+
+                    <!-- Statistics -->
+                    <div class="mb-3">
+                        <h6>Statistics</h6>
+                        <div class="camera-info">
+                            <small><strong>Active Cameras:</strong> <span id="active-cameras">0</span></small><br>
+                            <small><strong>Total Detections:</strong> <span id="total-detections">0</span></small><br>
+                            <small><strong>Routes Tracked:</strong> <span id="routes-tracked">0</span></small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Camera Details -->
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <h6><i class="fas fa-info-circle"></i> Camera Details</h6>
+                    </div>
+                    <div class="card-body">
+                        <div id="camera-details">
+                            <div class="text-center text-muted">
+                                <i class="fas fa-mouse-pointer fa-2x mb-2"></i>
+                                <p><small>Click on a camera to view details</small></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detection Info -->
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <h6><i class="fas fa-search"></i> Latest Detections</h6>
+                    </div>
+                    <div class="card-body">
+                        <div id="detection-list">
+                            <!-- Detection items will be populated here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        
+        window.THREE = THREE;
+        window.OrbitControls = OrbitControls;
+    </script>
+    <script>
+        let scene, camera, renderer, controls;
+        let cameraObjects = [];
+        let detectionObjects = [];
+        let routeObjects = [];
+        let animationId;
+        let isAnimating = false;
+        let networkData = {};
+
+        // Show initial help overlay
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                if (!localStorage.getItem('3d_help_shown')) {
+                    showHelpOverlay();
+                    localStorage.setItem('3d_help_shown', 'true');
+                }
+            }, 1000);
+        });
+
+        function showHelpOverlay() {
+            const overlay = document.createElement('div');
+            overlay.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: white;
+                padding: 30px;
+                border-radius: 15px;
+                box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+                z-index: 9999;
+                max-width: 500px;
+                text-align: center;
+            `;
+            overlay.innerHTML = `
+                <h4 style="color: #007bff; margin-bottom: 20px;">
+                    <i class="fas fa-cube"></i> 3D Visualization - Real Data
+                </h4>
+                <p style="margin-bottom: 15px;">
+                    <strong>Aapka Real CCTV Data!</strong><br>
+                    Database se actual footage aur detections dikha rahe hain.
+                </p>
+                <div style="text-align: left; margin: 20px 0;">
+                    <p><strong>Abhi Dikh Raha Hai:</strong></p>
+                    <ul style="margin-left: 20px;">
+                        <li><span id="demo-cameras">6</span> Real Cameras (Blue boxes)</li>
+                        <li><span id="demo-detections">26</span> Real Detections (Red spheres)</li>
+                        <li><span id="demo-routes">1+</span> Detection Routes (Blue lines)</li>
+                    </ul>
+                </div>
+                <p style="margin-bottom: 20px;">
+                    <strong>Mouse se interact karein:</strong><br>
+                    Drag = Rotate | Scroll = Zoom | Right-click = Pan
+                </p>
+                <button onclick="this.parentElement.remove()" 
+                        class="btn btn-primary"
+                        style="padding: 10px 30px;">
+                    Samajh Gaya, Shuru Karein!
+                </button>
+            `;
+            document.body.appendChild(overlay);
+        }
+
+        // Initialize 3D visualization
+        document.addEventListener('DOMContentLoaded', function() {
+            // Wait for THREE.js modules to load
+            let attempts = 0;
+            const maxAttempts = 10;
+            
+            function tryInit() {
+                attempts++;
+                if (typeof THREE !== 'undefined' && typeof OrbitControls !== 'undefined') {
+                    console.log('THREE.js loaded successfully');
+                    init3DVisualization();
+                    loadNetworkData();
+                } else if (attempts < maxAttempts) {
+                    console.log('Waiting for THREE.js... attempt', attempts);
+                    setTimeout(tryInit, 500);
+                } else {
+                    console.error('THREE.js failed to load after', maxAttempts, 'attempts');
+                }
+            }
+            
+            setTimeout(tryInit, 100);
+        });
+
+        function init3DVisualization() {
+            const container = document.getElementById('3d-container');
+            
+            // Scene setup
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xf0f0f0);
+            
+            // Camera setup
+            camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera.position.set(100, 100, 100);
+            
+            // Renderer setup
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            container.appendChild(renderer.domElement);
+            
+            // Controls
+            controls = new OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+            scene.add(ambientLight);
+            
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(50, 50, 50);
+            directionalLight.castShadow = true;
+            scene.add(directionalLight);
+            
+            // Ground plane
+            const groundGeometry = new THREE.PlaneGeometry(200, 200);
+            const groundMaterial = new THREE.MeshLambertMaterial({ color: 0xcccccc });
+            const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+            ground.rotation.x = -Math.PI / 2;
+            ground.receiveShadow = true;
+            scene.add(ground);
+            
+            // Grid helper
+            const gridHelper = new THREE.GridHelper(200, 20, 0x888888, 0xcccccc);
+            scene.add(gridHelper);
+            
+            // Start render loop
+            animate();
+            
+            // Setup mouse interaction after everything is initialized
+            setTimeout(setupMouseInteraction, 100);
+            
+            // Handle window resize
+            window.addEventListener('resize', onWindowResize);
+        }
+
+        function loadNetworkData() {
+            console.log('Fetching data from API...');
+            fetch('/admin/api/3d/camera-network')
+                .then(response => {
+                    console.log('API Response:', response.status);
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('API Data:', data);
+                    if (data.success) {
+                        console.log('Cameras:', data.network.cameras.length);
+                        console.log('Detections:', data.network.detections.length);
+                        console.log('Routes:', data.network.routes.length);
+                        networkData = data.network;
+                        create3DObjects(data.network);
+                        updateStatistics(data.network);
+                        
+                        if (document.getElementById('demo-cameras')) {
+                            document.getElementById('demo-cameras').textContent = data.network.cameras.length;
+                        }
+                        if (document.getElementById('demo-detections')) {
+                            document.getElementById('demo-detections').textContent = data.network.detections.length;
+                        }
+                        if (document.getElementById('demo-routes')) {
+                            document.getElementById('demo-routes').textContent = data.network.routes.length;
+                        }
+                    } else {
+                        console.error('API Error:', data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Fetch Error:', error);
+                });
+        }
+
+        function create3DObjects(network) {
+            clearScene();
+            
+            network.cameras.forEach(cam => createCamera(cam));
+            network.detections.forEach(detection => createDetection(detection));
+            network.routes.forEach(route => createRoute(route));
+        }
+
+        function createCamera(cameraData) {
+            // Camera body
+            const cameraGeometry = new THREE.BoxGeometry(8, 6, 12);
+            const cameraMaterial = new THREE.MeshLambertMaterial({ 
+                color: cameraData.status === 'active' ? 0x007bff : 0x6c757d 
+            });
+            const cameraMesh = new THREE.Mesh(cameraGeometry, cameraMaterial);
+            
+            // Position camera
+            cameraMesh.position.set(cameraData.position[0], cameraData.position[2] + 10, cameraData.position[1]);
+            cameraMesh.rotation.set(
+                THREE.MathUtils.degToRad(cameraData.rotation[0]),
+                THREE.MathUtils.degToRad(cameraData.rotation[1]),
+                THREE.MathUtils.degToRad(cameraData.rotation[2])
+            );
+            
+            cameraMesh.castShadow = true;
+            cameraMesh.userData = { type: 'camera', data: cameraData };
+            
+            // Camera label
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            canvas.width = 128;
+            canvas.height = 32;
+            context.fillStyle = '#ffffff';
+            context.fillRect(0, 0, canvas.width, canvas.height);
+            context.fillStyle = '#000000';
+            context.font = '16px Arial';
+            context.textAlign = 'center';
+            context.fillText(cameraData.id, canvas.width / 2, 20);
+            
+            const texture = new THREE.CanvasTexture(canvas);
+            const labelMaterial = new THREE.SpriteMaterial({ map: texture });
+            const label = new THREE.Sprite(labelMaterial);
+            label.position.set(0, 15, 0);
+            label.scale.set(20, 5, 1);
+            
+            // Group camera and label
+            const cameraGroup = new THREE.Group();
+            cameraGroup.add(cameraMesh);
+            cameraGroup.add(label);
+            
+            scene.add(cameraGroup);
+            cameraObjects.push(cameraGroup);
+        }
+
+        function createDetection(detectionData) {
+            const detectionGeometry = new THREE.SphereGeometry(2, 16, 16);
+            const detectionMaterial = new THREE.MeshLambertMaterial({ 
+                color: 0xff4444,
+                transparent: true,
+                opacity: detectionData.confidence
+            });
+            const detectionMesh = new THREE.Mesh(detectionGeometry, detectionMaterial);
+            
+            detectionMesh.position.set(detectionData.position[0], detectionData.position[2] + 2, detectionData.position[1]);
+            detectionMesh.userData = { type: 'detection', data: detectionData };
+            
+            scene.add(detectionMesh);
+            detectionObjects.push(detectionMesh);
+        }
+
+        function createRoute(routeData) {
+            const points = routeData.path.map(point => 
+                new THREE.Vector3(point[0], point[2] + 1, point[1])
+            );
+            
+            const geometry = new THREE.BufferGeometry().setFromPoints(points);
+            const material = new THREE.LineBasicMaterial({ 
+                color: 0x007bff,
+                linewidth: 3
+            });
+            const line = new THREE.Line(geometry, material);
+            
+            line.userData = { type: 'route', data: routeData };
+            
+            scene.add(line);
+            routeObjects.push(line);
+        }
+
+        function clearScene() {
+            // Remove existing objects
+            cameraObjects.forEach(obj => scene.remove(obj));
+            detectionObjects.forEach(obj => scene.remove(obj));
+            routeObjects.forEach(obj => scene.remove(obj));
+            
+            cameraObjects = [];
+            detectionObjects = [];
+            routeObjects = [];
+        }
+
+        function animate() {
+            animationId = requestAnimationFrame(animate);
+            
+            controls.update();
+            
+            // Animate detections
+            if (isAnimating) {
+                detectionObjects.forEach((detection, index) => {
+                    detection.rotation.y += 0.02;
+                    detection.position.y = Math.sin(Date.now() * 0.001 + index) * 2 + 5;
+                });
+            }
+            
+            renderer.render(scene, camera);
+        }
+
+        function onWindowResize() {
+            const container = document.getElementById('3d-container');
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        }
+
+        function resetView() {
+            camera.position.set(100, 100, 100);
+            controls.reset();
+        }
+
+        function toggleAnimation() {
+            isAnimating = !isAnimating;
+            const icon = document.getElementById('animation-icon');
+            const text = document.getElementById('animation-text');
+            
+            if (isAnimating) {
+                icon.className = 'fas fa-pause';
+                text.textContent = 'Pause';
+            } else {
+                icon.className = 'fas fa-play';
+                text.textContent = 'Play';
+            }
+        }
+
+        function takeScreenshot() {
+            const canvas = renderer.domElement;
+            const link = document.createElement('a');
+            link.download = '3d_visualization_screenshot.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+
+        function updateStatistics(network) {
+            const activeCameras = network.cameras.filter(cam => cam.status === 'active').length;
+            document.getElementById('active-cameras').textContent = activeCameras;
+            document.getElementById('total-detections').textContent = network.detections.length;
+            document.getElementById('routes-tracked').textContent = network.routes.length;
+            
+            // Update header counts
+            if (document.getElementById('camera-count')) {
+                document.getElementById('camera-count').textContent = network.cameras.length;
+            }
+            if (document.getElementById('detection-count')) {
+                document.getElementById('detection-count').textContent = network.detections.length;
+            }
+            if (document.getElementById('route-count')) {
+                document.getElementById('route-count').textContent = network.routes.length;
+            }
+            
+            updateDetectionList(network.detections);
+        }
+
+        function updateDetectionList(detections) {
+            const container = document.getElementById('detection-list');
+            
+            const listHtml = detections.slice(0, 5).map(detection => `
+                <div class="mb-2 p-2 bg-light rounded">
+                    <small>
+                        <strong>ID:</strong> ${detection.id}<br>
+                        <strong>Confidence:</strong> ${(detection.confidence * 100).toFixed(1)}%<br>
+                        <strong>Time:</strong> ${new Date(detection.timestamp).toLocaleTimeString()}
+                    </small>
+                </div>
+            `).join('');
+            
+            container.innerHTML = listHtml || '<small class="text-muted">No recent detections</small>';
+        }
+
+        // Event listeners for controls
+        document.getElementById('view-mode').addEventListener('change', function() {
+            const mode = this.value;
+            switch(mode) {
+                case 'overview':
+                    camera.position.set(100, 100, 100);
+                    break;
+                case 'camera':
+                    camera.position.set(50, 30, 50);
+                    break;
+                case 'route':
+                    camera.position.set(0, 50, 100);
+                    break;
+                case 'detection':
+                    camera.position.set(25, 25, 25);
+                    break;
+            }
+            controls.update();
+        });
+
+        document.getElementById('show-cameras').addEventListener('change', function() {
+            cameraObjects.forEach(obj => obj.visible = this.checked);
+        });
+
+        document.getElementById('show-detections').addEventListener('change', function() {
+            detectionObjects.forEach(obj => obj.visible = this.checked);
+        });
+
+        document.getElementById('show-routes').addEventListener('change', function() {
+            routeObjects.forEach(obj => obj.visible = this.checked);
+        });
+
+        // Mouse interaction
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+
+        // Add event listener only after renderer is initialized
+        function setupMouseInteraction() {
+            if (renderer && renderer.domElement) {
+                renderer.domElement.addEventListener('click', onMouseClick);
+            }
+        }
+
+        function onMouseClick(event) {
+            if (!renderer || !renderer.domElement) return;
+            
+            const rect = renderer.domElement.getBoundingClientRect();
+            mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            
+            const allObjects = [...cameraObjects, ...detectionObjects];
+            const intersects = raycaster.intersectObjects(allObjects, true);
+
+            if (intersects.length > 0) {
+                const object = intersects[0].object;
+                if (object.userData && object.userData.type === 'camera') {
+                    showCameraDetails(object.userData.data);
+                }
+            }
+        }
+
+        function showCameraDetails(cameraData) {
+            const detailsHtml = `
+                <div>
+                    <h6>${cameraData.id}</h6>
+                    <p><strong>Status:</strong> 
+                        <span class="badge bg-${cameraData.status === 'active' ? 'success' : 'secondary'}">${cameraData.status}</span>
+                    </p>
+                    <p><strong>Position:</strong><br>
+                        X: ${cameraData.position[0]}<br>
+                        Y: ${cameraData.position[1]}<br>
+                        Z: ${cameraData.position[2]}
+                    </p>
+                    <p><strong>Coverage:</strong> ${cameraData.coverage}m</p>
+                    <button class="btn btn-sm btn-primary w-100">View Feed</button>
+                </div>
+            `;
+            
+            document.getElementById('camera-details').innerHTML = detailsHtml;
+        }
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

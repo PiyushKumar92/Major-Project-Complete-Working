@@ -1,0 +1,63 @@
+{
+    "enabled": true,
+    "cameras": [
+        {
+            "id": "TC001",
+            "name": "Main Street Junction",
+            "url": "http://traffic-cam-1.city.gov/stream",
+            "location": {
+                "lat": 28.6139,
+                "lng": 77.2090,
+                "address": "Connaught Place, New Delhi"
+            },
+            "active": true,
+            "recording_enabled": true
+        },
+        {
+            "id": "TC002",
+            "name": "Highway Toll Plaza",
+            "url": "http://traffic-cam-2.city.gov/stream",
+            "location": {
+                "lat": 28.7041,
+                "lng": 77.1025,
+                "address": "NH-1 Toll Plaza, Delhi"
+            },
+            "active": true,
+            "recording_enabled": true
+        },
+        {
+            "id": "TC003",
+            "name": "Airport Road",
+            "url": "http://traffic-cam-3.city.gov/stream",
+            "location": {
+                "lat": 28.5562,
+                "lng": 77.1000,
+                "address": "IGI Airport Road, Delhi"
+            },
+            "active": true,
+            "recording_enabled": true
+        },
+        {
+            "id": "TC004",
+            "name": "Railway Station",
+            "url": "http://traffic-cam-4.city.gov/stream",
+            "location": {
+                "lat": 28.6428,
+                "lng": 77.2197,
+                "address": "New Delhi Railway Station"
+            },
+            "active": true,
+            "recording_enabled": true
+        }
+    ],
+    "api_settings": {
+        "endpoint": "http://traffic-api.city.gov/cameras",
+        "api_key": "demo_traffic_key",
+        "timeout": 30
+    },
+    "search_parameters": {
+        "max_footage_hours": 72,
+        "confidence_threshold": 0.75,
+        "frame_skip": 30
+    }
+}

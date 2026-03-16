@@ -1,0 +1,327 @@
+{% extends "base.html" %}
+
+{% block title %}User Dashboard - Missing Person Finder{% endblock %}
+
+{% block content %}
+<!-- User Dashboard Header -->
+<section class="dashboard-header">
+    <div class="container">
+        <div class="dashboard-header-content">
+            <div>
+                <h1 class="dashboard-title">Welcome back, {{ current_user.username }}!</h1>
+                <p class="dashboard-subtitle">Manage your missing person cases and track AI search progress from your centralized dashboard.</p>
+                {% if current_user.unread_notifications_count > 0 %}
+                <div class="alert alert-info mt-2">
+                    <i class="fas fa-bell me-2"></i>
+                    You have {{ current_user.unread_notifications_count }} new notification(s). 
+                    <a href="{{ url_for('main.notifications') }}" class="alert-link">View all</a>
+                </div>
+                {% endif %}
+            </div>
+            <a href="{{ url_for('main.register_case') }}" class="btn btn-secondary btn-lg">
+                <i class="fas fa-plus"></i>
+                New Case
+            </a>
+        </div>
+    </div>
+</section>
+
+<div class="container dashboard-content">
+    <!-- Stats Cards -->
+    <div class="dashboard-stats">
+        <div class="card">
+            <div class="card-body dashboard-stat-card">
+                <div class="dashboard-stat-icon dashboard-stat-icon-primary">
+                    <i class="fas fa-folder-open"></i>
+                </div>
+                <div>
+                    <div class="dashboard-stat-number">{{ user_stats.total_cases or 0 }}</div>
+                    <div class="dashboard-stat-label">Total Cases</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-body dashboard-stat-card">
+                <div class="dashboard-stat-icon dashboard-stat-icon-warning">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div>
+                    <div class="dashboard-stat-number dashboard-stat-number-warning">{{ user_stats.pending_approval or 0 }}</div>
+                    <div class="dashboard-stat-label">Pending Approval</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-body dashboard-stat-card">
+                <div class="dashboard-stat-icon dashboard-stat-icon-info">
+                    <i class="fas fa-cog"></i>
+                </div>
+                <div>
+                    <div class="dashboard-stat-number dashboard-stat-number-info">{{ user_stats.approved_cases or 0 }}</div>
+                    <div class="dashboard-stat-label">Approved Cases</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-body dashboard-stat-card">
+                <div class="dashboard-stat-icon dashboard-stat-icon-success">
+                    <i class="fas fa-eye"></i>
+                </div>
+                <div>
+                    <div class="dashboard-stat-number dashboard-stat-number-success">{{ user_stats.total_sightings or 0 }}</div>
+                    <div class="dashboard-stat-label">AI Sightings</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-body dashboard-stat-card">
+                <div class="dashboard-stat-icon dashboard-stat-icon-success">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div>
+                    <div class="dashboard-stat-number dashboard-stat-number-success">{{ user_stats.under_processing or 0 }}</div>
+                    <div class="dashboard-stat-label">Under Processing</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard-main">
+        <!-- Quick Stats Overview -->
+        <div class="card">
+            <div class="card-header dashboard-card-header">
+                <h3 class="dashboard-card-title">
+                    <i class="fas fa-chart-bar"></i>
+                    Case Overview
+                </h3>
+                <a href="{{ url_for('main.public_cases') }}" class="btn btn-outline btn-sm">View All Cases</a>
+            </div>
+            <div class="card-body">
+                {% if user_stats.total_cases > 0 %}
+                    <div class="row text-center">
+                        <div class="col-md-3">
+                            <div class="p-3">
+                                <h4 class="text-warning">{{ user_stats.pending_approval or 0 }}</h4>
+                                <small class="text-muted">Pending Approval</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="p-3">
+                                <h4 class="text-info">{{ user_stats.approved_cases or 0 }}</h4>
+                                <small class="text-muted">Approved</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="p-3">
+                                <h4 class="text-primary">{{ user_stats.under_processing or 0 }}</h4>
+                                <small class="text-muted">Processing</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="p-3">
+                                <h4 class="text-success">{{ user_stats.completed_cases or 0 }}</h4>
+                                <small class="text-muted">Completed</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Additional Status Details -->
+                    {% if user_stats.rejected_cases > 0 or user_stats.withdrawn_cases > 0 %}
+                    <div class="row text-center border-top pt-3 mt-3">
+                        {% if user_stats.rejected_cases > 0 %}
+                        <div class="col-md-6">
+                            <div class="p-2">
+                                <h5 class="text-danger">{{ user_stats.rejected_cases }}</h5>
+                                <small class="text-muted">Rejected (Need Revision)</small>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if user_stats.withdrawn_cases > 0 %}
+                        <div class="col-md-6">
+                            <div class="p-2">
+                                <h5 class="text-dark">{{ user_stats.withdrawn_cases }}</h5>
+                                <small class="text-muted">Withdrawn (Can Resubmit)</small>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    <div class="text-center mt-3">
+                        <p class="text-muted mb-2">To view detailed information about your cases, visit the <strong>All Cases</strong> section.</p>
+                        <a href="{{ url_for('main.profile') }}" class="btn btn-primary">
+                            <i class="fas fa-folder-open me-1"></i>View My Cases
+                        </a>
+                    </div>
+                {% else %}
+                    <div class="dashboard-empty-state">
+                        <i class="fas fa-folder-open dashboard-empty-icon"></i>
+                        <h4 class="dashboard-empty-title">No cases yet</h4>
+                        <p class="dashboard-empty-text">Create your first case to start searching for missing persons.</p>
+                        <a href="{{ url_for('main.register_case') }}" class="btn btn-primary">
+                            <i class="fas fa-plus"></i>
+                            Create First Case
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Recent Announcements -->
+        {% if recent_announcements %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h3 class="dashboard-card-title">
+                    <i class="fas fa-bullhorn"></i>
+                    Platform Updates
+                </h3>
+            </div>
+            <div class="card-body">
+                {% for announcement in recent_announcements %}
+                <div class="alert alert-{{ announcement.type }} mb-3" role="alert" id="dashboard-announcement-{{ announcement.id }}">
+                    <div class="d-flex align-items-start">
+                        <div class="me-3">
+                            {% if announcement.type == 'info' %}
+                                <i class="fas fa-info-circle"></i>
+                            {% elif announcement.type == 'success' %}
+                                <i class="fas fa-check-circle"></i>
+                            {% elif announcement.type == 'warning' %}
+                                <i class="fas fa-exclamation-triangle"></i>
+                            {% elif announcement.type == 'danger' %}
+                                <i class="fas fa-exclamation-circle"></i>
+                            {% endif %}
+                        </div>
+                        <div class="flex-grow-1">
+                            <h6 class="alert-heading mb-1">{{ announcement.title }}</h6>
+                            <p class="mb-1">{{ announcement.content }}</p>
+                            <small class="text-muted">
+                                <i class="fas fa-calendar me-1"></i>{{ announcement.ist_created_at.strftime('%B %d, %Y at %I:%M %p') }} IST
+                                {% if announcement.expires_at %}
+                                    • <i class="fas fa-clock me-1"></i>Valid until {{ announcement.expires_at.strftime('%B %d, %Y') }}
+                                {% endif %}
+                            </small>
+                        </div>
+                        <div class="ms-2">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="markDashboardAnnouncementRead({{ announcement.id }})" title="Mark as Read">
+                                <i class="fas fa-check"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Quick Actions -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="dashboard-card-title">
+                    <i class="fas fa-bolt"></i>
+                    Quick Actions
+                </h3>
+            </div>
+            <div class="card-body dashboard-actions">
+                <a href="{{ url_for('main.register_case') }}" class="btn btn-primary dashboard-action-btn">
+                    <i class="fas fa-plus-circle"></i>
+                    New Case
+                </a>
+                
+                <a href="{{ url_for('main.profile') }}" class="btn btn-outline dashboard-action-btn">
+                    <i class="fas fa-folder-open"></i>
+                    My Cases
+                </a>
+                
+                <a href="{{ url_for('main.public_cases') }}" class="btn btn-outline dashboard-action-btn">
+                    <i class="fas fa-list-alt"></i>
+                    All Cases
+                </a>
+                
+
+                
+                <a href="{{ url_for('main.chat_list') }}" class="btn btn-outline dashboard-action-btn">
+                    <i class="fas fa-comments"></i>
+                    Support Chat
+                </a>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- How It Works Section -->
+    <div class="card dashboard-how-it-works">
+        <div class="card-header">
+            <h3 class="dashboard-card-title">
+                <i class="fas fa-lightbulb"></i>
+                How Our AI Technology Works
+            </h3>
+        </div>
+        <div class="card-body">
+            <div class="dashboard-steps">
+                <div class="dashboard-step">
+                    <div class="dashboard-step-number">1</div>
+                    <h5>Upload Photos</h5>
+                    <p>Provide clear, recent photos of the missing person</p>
+                </div>
+                
+                <div class="dashboard-step">
+                    <div class="dashboard-step-number">2</div>
+                    <h5>Add Search Videos</h5>
+                    <p>Upload surveillance footage or crowd videos</p>
+                </div>
+                
+                <div class="dashboard-step">
+                    <div class="dashboard-step-number">3</div>
+                    <h5>AI Analysis</h5>
+                    <p>Advanced facial recognition analyzes matches</p>
+                </div>
+                
+                <div class="dashboard-step">
+                    <div class="dashboard-step-number">4</div>
+                    <h5>Get Results</h5>
+                    <p>Receive detailed results with confidence scores</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function markDashboardAnnouncementRead(announcementId) {
+    fetch('/api/announcement/' + announcementId + '/mark-read', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const announcementElement = document.getElementById('dashboard-announcement-' + announcementId);
+            if (announcementElement) {
+                announcementElement.style.transition = 'opacity 0.3s ease';
+                announcementElement.style.opacity = '0';
+                setTimeout(() => {
+                    announcementElement.remove();
+                    // Check if no more announcements, hide the section
+                    const remainingAnnouncements = document.querySelectorAll('[id^="dashboard-announcement-"]');
+                    if (remainingAnnouncements.length === 0) {
+                        const announcementSection = announcementElement.closest('.card');
+                        if (announcementSection) {
+                            announcementSection.style.transition = 'opacity 0.3s ease';
+                            announcementSection.style.opacity = '0';
+                            setTimeout(() => announcementSection.remove(), 300);
+                        }
+                    }
+                }, 300);
+            }
+        }
+    })
+    .catch(error => console.error('Error marking announcement as read:', error));
+}
+</script>
+{% endblock %}

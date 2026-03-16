@@ -1,0 +1,238 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Back Button -->
+            <div class="mb-3">
+                <a href="{{ url_for('main.public_cases') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>Back to Cases
+                </a>
+            </div>
+            
+            <!-- Case Header -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">
+                            <i class="fas fa-user me-2"></i>{{ case.person_name }}
+                        </h4>
+                        <span class="badge bg-{{ case.status_color }} fs-6">{{ case.status }}</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            {% if case.primary_photo %}
+                            <img src="{{ url_for('static', filename=case.primary_photo.image_path|image_url) }}" 
+                                 class="img-fluid rounded shadow-sm mb-3" 
+                                 alt="Photo of {{ case.person_name }}"
+                                 style="max-height: 300px; width: 100%; object-fit: cover;">
+                            {% else %}
+                            <div class="bg-light rounded d-flex align-items-center justify-content-center mb-3" style="height: 300px;">
+                                <i class="fas fa-user fa-4x text-muted"></i>
+                            </div>
+                            {% endif %}
+                            
+                            <!-- Additional Photos -->
+                            {% if case.target_images|length > 1 %}
+                            <div class="row">
+                                {% for image in case.target_images[1:4] %}
+                                <div class="col-4 mb-2">
+                                    <img src="{{ url_for('static', filename=image.image_path|image_url) }}" 
+                                         class="img-fluid rounded shadow-sm" 
+                                         style="height: 80px; width: 100%; object-fit: cover;"
+                                         alt="Additional photo">
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-8">
+                            <div class="row">
+                                <div class="col-sm-6 mb-3">
+                                    <h6 class="text-muted mb-1">Case ID</h6>
+                                    <p class="fw-bold">#{{ case.id }}</p>
+                                </div>
+                                <div class="col-sm-6 mb-3">
+                                    <h6 class="text-muted mb-1">Case Type</h6>
+                                    <p class="fw-bold">{{ case.case_type.replace('_', ' ').title() }}</p>
+                                </div>
+                                <div class="col-sm-6 mb-3">
+                                    <h6 class="text-muted mb-1">Age</h6>
+                                    <p class="fw-bold">{{ case.age or 'Unknown' }}</p>
+                                </div>
+                                <div class="col-sm-6 mb-3">
+                                    <h6 class="text-muted mb-1">Priority</h6>
+                                    <span class="badge bg-warning">{{ case.priority }}</span>
+                                </div>
+                                <div class="col-sm-6 mb-3">
+                                    <h6 class="text-muted mb-1">Date Missing</h6>
+                                    <p class="fw-bold">{{ case.date_missing.strftime('%d %B %Y') if case.date_missing else 'Unknown' }}</p>
+                                </div>
+                                <div class="col-sm-6 mb-3">
+                                    <h6 class="text-muted mb-1">Case Registered</h6>
+                                    <p class="fw-bold">{{ case.created_at.strftime('%d %B %Y') }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Location Information -->
+            {% if case.last_seen_location %}
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-map-marker-alt me-2"></i>Last Known Location
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-2">
+                        <i class="fas fa-location-arrow me-2 text-info"></i>
+                        <strong>{{ case.last_seen_location }}</strong>
+                    </p>
+                    {% if case.last_seen_time %}
+                    <p class="mb-0">
+                        <i class="fas fa-clock me-2 text-info"></i>
+                        <strong>Time:</strong> {{ case.last_seen_time.strftime('%I:%M %p') }}
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Case Details -->
+            {% if case.details %}
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Case Details
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% set details_lines = case.details.split('\n') %}
+                    {% for line in details_lines %}
+                        {% if ':' in line %}
+                            {% set key, value = line.split(':', 1) %}
+                            {% if value.strip() and value.strip() not in ['N/A', 'Unknown', 'Not provided', 'None'] %}
+                            <div class="row mb-2">
+                                <div class="col-sm-4">
+                                    <strong>{{ key.strip() }}:</strong>
+                                </div>
+                                <div class="col-sm-8">
+                                    {{ value.strip() }}
+                                </div>
+                            </div>
+                            {% endif %}
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Contact Information -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">
+                        <i class="fas fa-phone me-2"></i>Have Information?
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-exclamation-triangle me-2"></i>Important Notice</h6>
+                        <p class="mb-2">If you have any information about this case, please contact:</p>
+                        <ul class="mb-0">
+                            <li><strong>Local Police:</strong> 100 (Emergency)</li>
+                            <li><strong>Missing Person Helpline:</strong> 1094</li>
+                            <li><strong>Website Contact:</strong> <a href="{{ url_for('main.contact') }}">Contact Form</a></li>
+                        </ul>
+                    </div>
+                    
+                    {% if case.details %}
+                        {% set contact_info = [] %}
+                        {% for line in case.details.split('\n') %}
+                            {% if 'Contact Phone:' in line or 'Contact Email:' in line %}
+                                {% set key, value = line.split(':', 1) %}
+                                {% if value.strip() and value.strip() not in ['N/A', 'Unknown', 'Not provided', 'None'] %}
+                                    {% set _ = contact_info.append((key.strip(), value.strip())) %}
+                                {% endif %}
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if contact_info %}
+                        <div class="mt-3">
+                            <h6>Case Contact Information:</h6>
+                            {% for key, value in contact_info %}
+                            <p class="mb-1">
+                                <strong>{{ key }}:</strong> 
+                                {% if 'Email' in key %}
+                                    <a href="mailto:{{ value }}">{{ value }}</a>
+                                {% elif 'Phone' in key %}
+                                    <a href="tel:{{ value }}">{{ value }}</a>
+                                {% else %}
+                                    {{ value }}
+                                {% endif %}
+                            </p>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Case Statistics -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-bar me-2"></i>Case Statistics
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-3 mb-3">
+                            <div class="border rounded p-3">
+                                <h4 class="text-primary mb-1">{{ case.target_images|length }}</h4>
+                                <small class="text-muted">Photos Available</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="border rounded p-3">
+                                <h4 class="text-info mb-1">{{ case.search_videos|length }}</h4>
+                                <small class="text-muted">Videos Uploaded</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="border rounded p-3">
+                                <h4 class="text-success mb-1">{{ case.total_sightings }}</h4>
+                                <small class="text-muted">Total Sightings</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="border rounded p-3">
+                                <h4 class="text-warning mb-1">
+                                    {{ case.created_at | days_since }}
+                                </h4>
+                                <small class="text-muted">Days Active</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    transition: all 0.3s ease;
+}
+.img-fluid:hover {
+    transform: scale(1.05);
+    transition: transform 0.3s ease;
+}
+</style>
+{% endblock %}

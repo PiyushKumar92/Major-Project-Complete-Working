@@ -1,0 +1,34 @@
+{
+    "enabled": true,
+    "platforms": {
+        "facebook": {
+            "api_key": "demo_fb_key",
+            "api_secret": "demo_fb_secret",
+            "endpoint": "https://graph.facebook.com/v18.0",
+            "search_enabled": true
+        },
+        "twitter": {
+            "api_key": "demo_twitter_key",
+            "api_secret": "demo_twitter_secret",
+            "bearer_token": "demo_bearer_token",
+            "endpoint": "https://api.twitter.com/2",
+            "search_enabled": true
+        },
+        "instagram": {
+            "api_key": "demo_ig_key",
+            "api_secret": "demo_ig_secret",
+            "endpoint": "https://graph.instagram.com",
+            "search_enabled": true
+        }
+    },
+    "search_parameters": {
+        "max_results_per_platform": 20,
+        "time_range_days": 30,
+        "confidence_threshold": 0.6,
+        "include_private_posts": false
+    },
+    "rate_limits": {
+        "requests_per_hour": 100,
+        "requests_per_day": 1000
+    }
+}

@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+
+{% block title %}Privacy & Security - Missing Person Finder{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="hero-section">
+    <div class="container text-center">
+        <h1 class="hero-title">Privacy & Security</h1>
+        <p class="hero-subtitle">Your data protection and privacy are our top priorities</p>
+    </div>
+</div>
+
+<div class="content-container">
+    <!-- Data Protection Section -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="mb-0"><i class="fas fa-shield-alt me-2 text-success"></i>Data Protection</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5><i class="fas fa-lock me-2 text-primary"></i>Encryption</h5>
+                            <ul class="list-unstyled">
+                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i>All data encrypted in transit using HTTPS/TLS</li>
+                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Database encryption at rest</li>
+                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Secure file storage with access controls</li>
+                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Password hashing using industry standards</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h5><i class="fas fa-user-shield me-2 text-info"></i>Access Control</h5>
+                            <ul class="list-unstyled">
+                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Role-based access permissions</li>
+                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Admin audit trails and logging</li>
+                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Secure authentication system</li>
+                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Session management and timeouts</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Privacy Policy Section -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="mb-0"><i class="fas fa-file-contract me-2 text-warning"></i>Privacy Policy</h3>
+                </div>
+                <div class="card-body">
+                    <h5>Information We Collect</h5>
+                    <p>We collect only the information necessary to provide our missing person search services:</p>
+                    <ul>
+                        <li><strong>Account Information:</strong> Username, email address, and encrypted password</li>
+                        <li><strong>Case Data:</strong> Photos, videos, and details of missing persons (with consent)</li>
+                        <li><strong>Usage Data:</strong> Platform usage statistics for service improvement</li>
+                        <li><strong>Technical Data:</strong> IP addresses, browser information for security purposes</li>
+                    </ul>
+
+                    <h5 class="mt-4">How We Use Your Information</h5>
+                    <ul>
+                        <li>Process missing person cases using AI facial recognition</li>
+                        <li>Provide search results and notifications</li>
+                        <li>Improve our AI algorithms and platform performance</li>
+                        <li>Ensure platform security and prevent misuse</li>
+                        <li>Communicate important updates and support</li>
+                    </ul>
+
+                    <h5 class="mt-4">Data Sharing</h5>
+                    <p>We <strong>never</strong> sell or share your personal data with third parties for commercial purposes. Data may only be shared:</p>
+                    <ul>
+                        <li>With law enforcement agencies when legally required</li>
+                        <li>With your explicit consent for specific cases</li>
+                        <li>In anonymized form for research and development</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Security Measures Section -->
+    <div class="row mb-5">
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h4 class="mb-0"><i class="fas fa-server me-2 text-primary"></i>Technical Security</h4>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled">
+                        <li class="mb-3">
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="fas fa-database text-success me-2"></i>
+                                <strong>Secure Database</strong>
+                            </div>
+                            <small class="text-muted">SQLAlchemy ORM with parameterized queries preventing SQL injection</small>
+                        </li>
+                        <li class="mb-3">
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="fas fa-code text-info me-2"></i>
+                                <strong>Input Validation</strong>
+                            </div>
+                            <small class="text-muted">Comprehensive file validation and sanitization for uploads</small>
+                        </li>
+                        <li class="mb-3">
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="fas fa-tasks text-warning me-2"></i>
+                                <strong>Background Processing</strong>
+                            </div>
+                            <small class="text-muted">Secure Celery task queue with Redis for AI processing</small>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h4 class="mb-0"><i class="fas fa-users me-2 text-success"></i>User Rights</h4>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled">
+                        <li class="mb-3">
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="fas fa-eye text-primary me-2"></i>
+                                <strong>Data Access</strong>
+                            </div>
+                            <small class="text-muted">View and download all your personal data anytime</small>
+                        </li>
+                        <li class="mb-3">
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="fas fa-edit text-info me-2"></i>
+                                <strong>Data Correction</strong>
+                            </div>
+                            <small class="text-muted">Update or correct your information through your profile</small>
+                        </li>
+                        <li class="mb-3">
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="fas fa-trash text-danger me-2"></i>
+                                <strong>Data Deletion</strong>
+                            </div>
+                            <small class="text-muted">Request complete account and data deletion</small>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contact Section -->
+    <div class="text-center py-4">
+        <h3 class="mb-3">Questions About Privacy?</h3>
+        <p class="lead text-muted mb-4">Our team is here to help with any privacy or security concerns.</p>
+        <a href="{{ url_for('main.contact') }}" class="btn btn-primary btn-lg">
+            <i class="fas fa-envelope me-2"></i>Contact Support
+        </a>
+    </div>
+</div>
+{% endblock %}

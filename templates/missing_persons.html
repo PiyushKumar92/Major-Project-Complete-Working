@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}Missing Persons Directory - Missing Person Finder{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <h1><i class="fas fa-users"></i> Missing Persons Directory</h1>
+        <p>Browse active missing person cases and help spread awareness</p>
+    </div>
+</div>
+
+<div class="container">
+    {% if cases %}
+        <div class="cases-grid">
+            {% for case in cases %}
+            <div class="case-card">
+                <div class="case-image">
+                    {% set photo_url = get_case_photo_url(case) %}
+                    {% if photo_url %}
+                        <img src="{{ url_for('static', filename=photo_url) }}" 
+                             alt="{{ case.person_name }}" 
+                             style="width: 100%; height: 200px; object-fit: cover;" 
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        <div class="case-placeholder" style="display: none;">
+                            <i class="fas fa-user"></i>
+                        </div>
+                    {% else %}
+                        <div class="case-placeholder">
+                            <i class="fas fa-user"></i>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="case-content">
+                    <h3 class="case-title">{{ case.person_name }}</h3>
+                    <div class="case-meta">
+                        <p><strong>Age:</strong> {{ case.age or 'Unknown' }}</p>
+                        <p><strong>Last Seen:</strong> {{ case.last_seen_location or 'Unknown location' }}</p>
+                        <p><strong>Date Missing:</strong> {{ case.date_missing.strftime('%B %d, %Y') if case.date_missing else 'Unknown' }}</p>
+                        <p><strong>Status:</strong> <span class="status-badge status-{{ case.status.lower() }}">{{ case.status }}</span></p>
+                    </div>
+                    
+                    {% if case.details %}
+                        <div class="case-description">
+                            <p>{{ case.details[:150] }}{% if case.details|length > 150 %}...{% endif %}</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <i class="fas fa-users"></i>
+            </div>
+            <h3 class="empty-state-title">No Missing Persons Cases</h3>
+            <p class="empty-state-desc">There are currently no active missing person cases in the directory.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+
+{% block title %}CCTV Footage Matches - Case {{ case_id }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-video"></i>
+                        CCTV Footage Matches for Case #{{ case_id }}
+                    </h3>
+                    <div class="card-tools">
+                        <span class="badge badge-info">{{ matches.matching_footage_count }} Matches Found</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if matches.matching_footage_count > 0 %}
+                    <!-- Case Location Info -->
+                    <div class="alert alert-info mb-4">
+                        <h5><i class="fas fa-map-marker-alt"></i> Last Seen Location</h5>
+                        <p><strong>{{ matches.case_location }}</strong></p>
+                        <small>Searching for CCTV footage near this location...</small>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <button class="btn btn-success" onclick="analyzeAllFootage()">
+                                <i class="fas fa-play"></i> Analyze All Top Matches
+                            </button>
+                            <button class="btn btn-info" onclick="showMatchCriteria()">
+                                <i class="fas fa-info-circle"></i> View Matching Criteria
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Footage Matches -->
+                    <div class="row">
+                        {% for match in matches.matches %}
+                        <div class="col-md-6 mb-4">
+                            <div class="card {% if match.match_score >= 0.8 %}border-success{% elif match.match_score >= 0.6 %}border-warning{% else %}border-secondary{% endif %}">
+                                <div class="card-header">
+                                    <h6 class="mb-0">
+                                        {{ match.footage_title }}
+                                        <span class="badge {% if match.match_score >= 0.8 %}badge-success{% elif match.match_score >= 0.6 %}badge-warning{% else %}badge-secondary{% endif %} float-right">
+                                            {{ "%.1f"|format(match.match_score * 100) }}% Match
+                                        </span>
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <p><strong>Location:</strong> {{ match.location_name }}</p>
+                                    
+                                    <!-- Match Details -->
+                                    <div class="mb-3">
+                                        <small class="text-muted">Match Details:</small>
+                                        <ul class="list-unstyled small">
+                                            {% for component, details in match.match_details.items() %}
+                                            <li>
+                                                <i class="fas {% if details.match %}fa-check text-success{% else %}fa-times text-danger{% endif %}"></i>
+                                                {{ component.replace('_', ' ').title() }}: 
+                                                <span class="badge badge-light">{{ "%.0f"|format(details.similarity * 100) }}%</span>
+                                            </li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+
+                                    <!-- Footage Info -->
+                                    <div class="row mb-3">
+                                        <div class="col-6">
+                                            <small><strong>Date:</strong><br>{{ match.footage_data.date_recorded.strftime('%Y-%m-%d') if match.footage_data.date_recorded else 'Unknown' }}</small>
+                                        </div>
+                                        <div class="col-6">
+                                            <small><strong>Duration:</strong><br>{{ match.footage_data.duration or 'Unknown' }}</small>
+                                        </div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-6">
+                                            <small><strong>Quality:</strong><br>{{ match.footage_data.quality or 'Unknown' }}</small>
+                                        </div>
+                                        <div class="col-6">
+                                            <small><strong>Size:</strong><br>{{ match.footage_data.file_size_mb }}MB</small>
+                                        </div>
+                                    </div>
+
+                                    <!-- Action Buttons -->
+                                    <div class="btn-group btn-group-sm w-100">
+                                        <a href="{{ url_for('location.analyze_specific_footage', case_id=case_id, footage_id=match.footage_id) }}" 
+                                           class="btn btn-primary">
+                                            <i class="fas fa-search"></i> Analyze
+                                        </a>
+                                        <button class="btn btn-info" onclick="previewFootage({{ match.footage_id }})">
+                                            <i class="fas fa-eye"></i> Preview
+                                        </button>
+                                        <button class="btn btn-secondary" onclick="downloadFootage({{ match.footage_id }})">
+                                            <i class="fas fa-download"></i> Download
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Pagination if needed -->
+                    {% if matches.matches|length > 10 %}
+                    <div class="row mt-4">
+                        <div class="col-md-12 text-center">
+                            <p class="text-muted">Showing top {{ matches.matches|length }} matches out of {{ matches.total_footage_available }} total footage files</p>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% else %}
+                    <!-- No Matches Found -->
+                    <div class="alert alert-warning">
+                        <h5><i class="fas fa-exclamation-triangle"></i> No Matching Footage Found</h5>
+                        <p>No CCTV footage was found near the last seen location: <strong>{{ matches.case_location }}</strong></p>
+                        <p>This could mean:</p>
+                        <ul>
+                            <li>No CCTV cameras are installed in that area</li>
+                            <li>The location information is too vague</li>
+                            <li>The footage hasn't been uploaded to the system yet</li>
+                        </ul>
+                        <hr>
+                        <p class="mb-0">
+                            <a href="{{ url_for('admin.upload_surveillance_footage') }}" class="btn btn-primary">
+                                <i class="fas fa-upload"></i> Upload New Footage
+                            </a>
+                            <a href="{{ url_for('admin.case_detail', case_id=case_id) }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Back to Case
+                            </a>
+                        </p>
+                    </div>
+                    {% endif %}
+
+                    <!-- Back Button -->
+                    <div class="row mt-4">
+                        <div class="col-md-12">
+                            <a href="{{ url_for('admin.cases') }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Back to Cases
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Analysis Progress Modal -->
+<div class="modal fade" id="analysisModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Analyzing Footage</h5>
+            </div>
+            <div class="modal-body">
+                <div class="progress mb-3">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                         role="progressbar" style="width: 0%" id="analysisProgress"></div>
+                </div>
+                <p id="analysisStatus">Starting analysis...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function analyzeAllFootage() {
+    if (confirm('This will analyze all top matching footage. This may take several minutes. Continue?')) {
+        $('#analysisModal').modal('show');
+        
+        fetch(`/admin/location/api/analyze-all/{{ case_id }}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            $('#analysisModal').modal('hide');
+            if (data.success) {
+                alert(`Analysis complete! Found ${data.total_detections} total detections across ${data.analyzed_footage} footage files.`);
+                location.reload();
+            } else {
+                alert('Analysis failed: ' + data.error);
+            }
+        })
+        .catch(error => {
+            $('#analysisModal').modal('hide');
+            alert('Error during analysis: ' + error);
+        });
+    }
+}
+
+function previewFootage(footageId) {
+    // Implementation for footage preview
+    window.open(`/admin/surveillance/preview/${footageId}`, '_blank');
+}
+
+function downloadFootage(footageId) {
+    // Implementation for footage download
+    window.location.href = `/admin/surveillance/download/${footageId}`;
+}
+
+function showMatchCriteria() {
+    window.open('{{ url_for("location.matching_criteria") }}', '_blank');
+}
+
+// Auto-update progress (if needed)
+let analysisInterval;
+function startProgressTracking() {
+    let progress = 0;
+    analysisInterval = setInterval(() => {
+        progress += Math.random() * 10;
+        if (progress > 90) progress = 90;
+        
+        document.getElementById('analysisProgress').style.width = progress + '%';
+        document.getElementById('analysisStatus').textContent = `Analyzing footage... ${Math.round(progress)}% complete`;
+    }, 1000);
+}
+
+function stopProgressTracking() {
+    if (analysisInterval) {
+        clearInterval(analysisInterval);
+        document.getElementById('analysisProgress').style.width = '100%';
+        document.getElementById('analysisStatus').textContent = 'Analysis complete!';
+    }
+}
+</script>
+{% endblock %}

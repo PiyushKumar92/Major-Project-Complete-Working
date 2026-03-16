@@ -1,0 +1,272 @@
+{% extends "base.html" %}
+
+{% block title %}FAQ - Missing Person Finder{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="hero-section">
+    <div class="container text-center">
+        <h1 class="hero-title">Frequently Asked Questions</h1>
+        <p class="hero-subtitle">Find answers to common questions about our AI-powered platform</p>
+    </div>
+</div>
+
+<div class="content-container">
+    <!-- Getting Started Section -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="mb-0"><i class="fas fa-rocket me-2 text-primary"></i>Getting Started</h3>
+                </div>
+                <div class="card-body">
+                    <div class="accordion" id="gettingStartedAccordion">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapse1">
+                                    <i class="fas fa-user-plus me-2"></i>How do I create an account?
+                                </button>
+                            </h2>
+                            <div id="collapse1" class="accordion-collapse collapse show" data-bs-parent="#gettingStartedAccordion">
+                                <div class="accordion-body">
+                                    <p>Creating an account is simple:</p>
+                                    <ol>
+                                        <li>Click the "Register" button in the top navigation</li>
+                                        <li>Fill in your username, email, and password</li>
+                                        <li>Verify your email address (if required)</li>
+                                        <li>Start creating missing person cases immediately</li>
+                                    </ol>
+                                    <p class="mb-0">Registration is completely free and takes less than 2 minutes.</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse2">
+                                    <i class="fas fa-plus me-2"></i>How do I register a missing person case?
+                                </button>
+                            </h2>
+                            <div id="collapse2" class="accordion-collapse collapse" data-bs-parent="#gettingStartedAccordion">
+                                <div class="accordion-body">
+                                    <p>After logging in, follow these steps:</p>
+                                    <ol>
+                                        <li>Click "New Case" in the navigation or dashboard</li>
+                                        <li>Fill in the missing person's details (name, age, description)</li>
+                                        <li>Upload clear, recent photos of the person</li>
+                                        <li>Optionally upload search videos (surveillance footage, etc.)</li>
+                                        <li>Submit the case for AI processing</li>
+                                    </ol>
+                                    <p class="mb-0">Our AI will start processing immediately and notify you of any matches.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Technology Section -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="mb-0"><i class="fas fa-brain me-2 text-success"></i>AI Technology</h3>
+                </div>
+                <div class="card-body">
+                    <div class="accordion" id="technologyAccordion">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse3">
+                                    <i class="fas fa-cogs me-2"></i>How does the AI facial recognition work?
+                                </button>
+                            </h2>
+                            <div id="collapse3" class="accordion-collapse collapse" data-bs-parent="#technologyAccordion">
+                                <div class="accordion-body">
+                                    <p>Our AI system uses advanced computer vision technology:</p>
+                                    <ul>
+                                        <li><strong>Face Detection:</strong> Uses HOG and CNN models to locate faces in images/videos</li>
+                                        <li><strong>Feature Extraction:</strong> Creates unique facial encodings using deep learning</li>
+                                        <li><strong>Similarity Matching:</strong> Compares encodings to find potential matches</li>
+                                        <li><strong>Confidence Scoring:</strong> Provides percentage confidence for each match</li>
+                                    </ul>
+                                    <p class="mb-0">The system achieves 95%+ accuracy in controlled conditions.</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse4">
+                                    <i class="fas fa-clock me-2"></i>How long does processing take?
+                                </button>
+                            </h2>
+                            <div id="collapse4" class="accordion-collapse collapse" data-bs-parent="#technologyAccordion">
+                                <div class="accordion-body">
+                                    <p>Processing times depend on the content:</p>
+                                    <ul>
+                                        <li><strong>Photos only:</strong> 1-2 minutes</li>
+                                        <li><strong>Short videos (< 5 min):</strong> 5-10 minutes</li>
+                                        <li><strong>Long videos (> 10 min):</strong> 15-30 minutes</li>
+                                    </ul>
+                                    <p>You'll receive real-time notifications as matches are found. The system processes in the background using Celery task queues.</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse5">
+                                    <i class="fas fa-percentage me-2"></i>What do confidence scores mean?
+                                </button>
+                            </h2>
+                            <div id="collapse5" class="accordion-collapse collapse" data-bs-parent="#technologyAccordion">
+                                <div class="accordion-body">
+                                    <p>Confidence scores indicate match likelihood:</p>
+                                    <ul>
+                                        <li><strong>90%+:</strong> Very high confidence - likely match</li>
+                                        <li><strong>80-89%:</strong> High confidence - strong possibility</li>
+                                        <li><strong>70-79%:</strong> Medium confidence - worth investigating</li>
+                                        <li><strong>60-69%:</strong> Low confidence - possible but uncertain</li>
+                                        <li><strong>< 60%:</strong> Very low confidence - unlikely match</li>
+                                    </ul>
+                                    <p class="mb-0">Always verify matches manually, especially for important decisions.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Privacy & Security Section -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="mb-0"><i class="fas fa-shield-alt me-2 text-warning"></i>Privacy & Security</h3>
+                </div>
+                <div class="card-body">
+                    <div class="accordion" id="privacyAccordion">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse6">
+                                    <i class="fas fa-lock me-2"></i>Is my data secure?
+                                </button>
+                            </h2>
+                            <div id="collapse6" class="accordion-collapse collapse" data-bs-parent="#privacyAccordion">
+                                <div class="accordion-body">
+                                    <p>Yes, we implement enterprise-grade security:</p>
+                                    <ul>
+                                        <li>All data encrypted in transit (HTTPS/TLS)</li>
+                                        <li>Database encryption at rest</li>
+                                        <li>Secure file storage with access controls</li>
+                                        <li>Regular security audits and updates</li>
+                                        <li>Role-based access permissions</li>
+                                    </ul>
+                                    <p class="mb-0">View our <a href="{{ url_for('main.privacy') }}">Privacy & Security</a> page for complete details.</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse7">
+                                    <i class="fas fa-share me-2"></i>Who can see my cases?
+                                </button>
+                            </h2>
+                            <div id="collapse7" class="accordion-collapse collapse" data-bs-parent="#privacyAccordion">
+                                <div class="accordion-body">
+                                    <p>Case visibility is controlled:</p>
+                                    <ul>
+                                        <li><strong>You:</strong> Full access to your cases and results</li>
+                                        <li><strong>Admins:</strong> Can view cases for support and moderation</li>
+                                        <li><strong>Public Directory:</strong> Basic case info (name, photo) for active cases only</li>
+                                        <li><strong>Other Users:</strong> Cannot access your private case details</li>
+                                    </ul>
+                                    <p class="mb-0">You can withdraw cases anytime to remove them from public view.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Technical Support Section -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="mb-0"><i class="fas fa-headset me-2 text-info"></i>Technical Support</h3>
+                </div>
+                <div class="card-body">
+                    <div class="accordion" id="supportAccordion">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse8">
+                                    <i class="fas fa-file-image me-2"></i>What file formats are supported?
+                                </button>
+                            </h2>
+                            <div id="collapse8" class="accordion-collapse collapse" data-bs-parent="#supportAccordion">
+                                <div class="accordion-body">
+                                    <p><strong>Supported Image Formats:</strong></p>
+                                    <ul>
+                                        <li>JPEG (.jpg, .jpeg)</li>
+                                        <li>PNG (.png)</li>
+                                        <li>GIF (.gif)</li>
+                                        <li>BMP (.bmp)</li>
+                                        <li>WebP (.webp)</li>
+                                    </ul>
+                                    <p><strong>Supported Video Formats:</strong></p>
+                                    <ul>
+                                        <li>MP4 (.mp4)</li>
+                                        <li>AVI (.avi)</li>
+                                        <li>MOV (.mov)</li>
+                                        <li>MKV (.mkv)</li>
+                                        <li>WebM (.webm)</li>
+                                    </ul>
+                                    <p class="mb-0">Maximum file size: 16MB for images, 100MB for videos.</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse9">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>What if I encounter an error?
+                                </button>
+                            </h2>
+                            <div id="collapse9" class="accordion-collapse collapse" data-bs-parent="#supportAccordion">
+                                <div class="accordion-body">
+                                    <p>If you experience issues:</p>
+                                    <ol>
+                                        <li>Check your internet connection</li>
+                                        <li>Refresh the page and try again</li>
+                                        <li>Clear your browser cache and cookies</li>
+                                        <li>Try using a different browser</li>
+                                        <li>Contact support with error details</li>
+                                    </ol>
+                                    <p class="mb-0">Include screenshots and error messages when contacting support for faster resolution.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contact Section -->
+    <div class="text-center py-4">
+        <h3 class="mb-3">Still Have Questions?</h3>
+        <p class="lead text-muted mb-4">Our support team is ready to help you with any questions or concerns.</p>
+        <a href="{{ url_for('main.contact') }}" class="btn btn-primary btn-lg">
+            <i class="fas fa-envelope me-2"></i>Contact Support
+        </a>
+    </div>
+</div>
+{% endblock %}

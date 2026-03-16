@@ -1,0 +1,441 @@
+/* Advanced AI Analysis Styles */
+.ai-analysis-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    color: white !important;
+    border: none !important;
+    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3) !important;
+}
+
+.detection-frame {
+    border: 3px solid #28a745 !important;
+    border-radius: 8px !important;
+    transition: all 0.3s ease !important;
+    cursor: pointer !important;
+}
+
+.detection-frame:hover {
+    border-color: #007bff !important;
+    transform: scale(1.05) !important;
+    box-shadow: 0 5px 15px rgba(0, 123, 255, 0.3) !important;
+}
+
+.confidence-bar {
+    height: 25px !important;
+    border-radius: 12px !important;
+    overflow: hidden !important;
+    background: #e9ecef !important;
+}
+
+.confidence-bar .progress-bar {
+    font-weight: 600 !important;
+    font-size: 12px !important;
+    line-height: 25px !important;
+}
+
+/* Surveillance Footage Grid */
+.footage-card {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    border: 2px solid transparent !important;
+}
+
+.footage-card:hover {
+    transform: translateY(-5px) !important;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1) !important;
+    border-color: #007bff !important;
+}
+
+.footage-video {
+    border-radius: 8px !important;
+    overflow: hidden !important;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Location Intelligence Styles */
+.hotspot-card {
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%) !important;
+    color: white !important;
+    border: none !important;
+    transition: all 0.3s ease !important;
+}
+
+.hotspot-card:hover {
+    transform: translateY(-3px) !important;
+    box-shadow: 0 10px 25px rgba(255, 107, 107, 0.3) !important;
+}
+
+.coverage-gap {
+    background: linear-gradient(135deg, #ffa726 0%, #ff7043 100%) !important;
+    color: white !important;
+    border: none !important;
+}
+
+.coverage-success {
+    background: linear-gradient(135deg, #66bb6a 0%, #43a047 100%) !important;
+    color: white !important;
+    border: none !important;
+}
+
+/* Status Badges Enhancement */
+.status-badge {
+    padding: 6px 12px !important;
+    border-radius: 20px !important;
+    font-weight: 600 !important;
+    font-size: 11px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+}
+
+.status-pending {
+    background: linear-gradient(135deg, #ffc107 0%, #ff8f00 100%) !important;
+    color: white !important;
+}
+
+.status-processing {
+    background: linear-gradient(135deg, #17a2b8 0%, #007bff 100%) !important;
+    color: white !important;
+    animation: pulse 2s infinite !important;
+}
+
+.status-completed {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%) !important;
+    color: white !important;
+}
+
+.status-failed {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%) !important;
+    color: white !important;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
+}
+
+/* Advanced Table Styles */
+.admin-table {
+    border-radius: 12px !important;
+    overflow: hidden !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08) !important;
+}
+
+.admin-table thead {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    color: white !important;
+}
+
+.admin-table tbody tr {
+    transition: all 0.2s ease !important;
+}
+
+.admin-table tbody tr:hover {
+    background: rgba(102, 126, 234, 0.05) !important;
+    transform: scale(1.01) !important;
+}
+
+/* Upload Progress Enhancement */
+.upload-progress {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
+    border: 2px dashed #007bff !important;
+    border-radius: 12px !important;
+    padding: 2rem !important;
+    text-align: center !important;
+}
+
+.upload-progress.active {
+    border-color: #28a745 !important;
+    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%) !important;
+}
+
+/* Modal Enhancements */
+.modal-content {
+    border-radius: 15px !important;
+    border: none !important;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2) !important;
+}
+
+.modal-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    color: white !important;
+    border-radius: 15px 15px 0 0 !important;
+}
+
+/* Real-time Updates */
+.real-time-indicator {
+    display: inline-block !important;
+    width: 8px !important;
+    height: 8px !important;
+    background: #28a745 !important;
+    border-radius: 50% !important;
+    animation: blink 1.5s infinite !important;
+    margin-right: 8px !important;
+}
+
+@keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0.3; }
+}
+
+/* Advanced Button Styles */
+.btn-ai {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    border: none !important;
+    color: white !important;
+    font-weight: 600 !important;
+    padding: 10px 20px !important;
+    border-radius: 25px !important;
+    transition: all 0.3s ease !important;
+}
+
+.btn-ai:hover {
+    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3) !important;
+    color: white !important;
+}
+
+.btn-surveillance {
+    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%) !important;
+    border: none !important;
+    color: white !important;
+    font-weight: 600 !important;
+    padding: 10px 20px !important;
+    border-radius: 25px !important;
+    transition: all 0.3s ease !important;
+}
+
+.btn-surveillance:hover {
+    background: linear-gradient(135deg, #38ef7d 0%, #11998e 100%) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 25px rgba(17, 153, 142, 0.3) !important;
+    color: white !important;
+}
+
+/* Advanced Status Badge Styles */
+.badge-pending-approval {
+    background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%) !important;
+    color: white !important;
+    padding: 6px 12px !important;
+    border-radius: 20px !important;
+    font-weight: 600 !important;
+    font-size: 11px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3) !important;
+}
+
+.badge-queued {
+    background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%) !important;
+    color: white !important;
+    padding: 6px 12px !important;
+    border-radius: 20px !important;
+    font-weight: 600 !important;
+    font-size: 11px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    box-shadow: 0 2px 8px rgba(33, 150, 243, 0.3) !important;
+}
+
+.badge-processing {
+    background: linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%) !important;
+    color: white !important;
+    padding: 6px 12px !important;
+    border-radius: 20px !important;
+    font-weight: 600 !important;
+    font-size: 11px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    box-shadow: 0 2px 8px rgba(156, 39, 176, 0.3) !important;
+    animation: pulse 2s infinite !important;
+}
+
+.badge-active {
+    background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%) !important;
+    color: white !important;
+    padding: 6px 12px !important;
+    border-radius: 20px !important;
+    font-weight: 600 !important;
+    font-size: 11px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3) !important;
+}
+
+.badge-completed {
+    background: linear-gradient(135deg, #8bc34a 0%, #689f38 100%) !important;
+    color: white !important;
+    padding: 6px 12px !important;
+    border-radius: 20px !important;
+    font-weight: 600 !important;
+    font-size: 11px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    box-shadow: 0 2px 8px rgba(139, 195, 74, 0.3) !important;
+}
+
+.badge-rejected {
+    background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%) !important;
+    color: white !important;
+    padding: 6px 12px !important;
+    border-radius: 20px !important;
+    font-weight: 600 !important;
+    font-size: 11px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    box-shadow: 0 2px 8px rgba(244, 67, 54, 0.3) !important;
+}
+
+.badge-withdrawn {
+    background: linear-gradient(135deg, #607d8b 0%, #455a64 100%) !important;
+    color: white !important;
+    padding: 6px 12px !important;
+    border-radius: 20px !important;
+    font-weight: 600 !important;
+    font-size: 11px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    box-shadow: 0 2px 8px rgba(96, 125, 139, 0.3) !important;
+}
+
+/* Advanced Loading States */
+.loading-overlay {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    background: rgba(255, 255, 255, 0.9) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    z-index: 9999 !important;
+}
+
+.loading-spinner {
+    width: 50px !important;
+    height: 50px !important;
+    border: 5px solid #f3f3f3 !important;
+    border-top: 5px solid #007bff !important;
+    border-radius: 50% !important;
+    animation: spin 1s linear infinite !important;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.ai-processing {
+    background: linear-gradient(45deg, #667eea, #764ba2, #667eea) !important;
+    background-size: 200% 200% !important;
+    animation: gradient-shift 3s ease infinite !important;
+    color: white !important;
+    padding: 8px 16px !important;
+    border-radius: 20px !important;
+    font-weight: 600 !important;
+}
+
+@keyframes gradient-shift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* Location Map Styles */
+.location-map {
+    border-radius: 12px !important;
+    overflow: hidden !important;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1) !important;
+    min-height: 400px !important;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+/* Responsive Enhancements */
+@media (max-width: 768px) {
+    .footage-card {
+        margin-bottom: 1rem !important;
+    }
+    
+    .admin-table {
+        font-size: 14px !important;
+    }
+    
+    .btn-ai, .btn-surveillance {
+        padding: 8px 16px !important;
+        font-size: 14px !important;
+    }
+    
+    .admin-action-card {
+        margin-bottom: 1rem !important;
+    }
+    
+    .btn-group {
+        flex-direction: column !important;
+    }
+    
+    .btn-group .btn {
+        margin-bottom: 0.5rem !important;
+    }
+    
+    .table-responsive {
+        font-size: 14px !important;
+    }
+    
+    .modal-dialog {
+        margin: 1rem !important;
+    }
+}
+
+@media (max-width: 576px) {
+    .container-fluid {
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+    }
+    
+    .card-body {
+        padding: 1rem !important;
+    }
+    
+    .btn {
+        font-size: 14px !important;
+        padding: 8px 12px !important;
+    }
+}
+
+/* Performance Optimizations */
+.card,
+.btn,
+.form-control {
+    will-change: transform !important;
+}
+
+/* Smooth Scrolling */
+html {
+    scroll-behavior: smooth !important;
+}
+
+/* Print Styles */
+@media print {
+    .btn,
+    .navbar,
+    .sidebar {
+        display: none !important;
+    }
+    
+    .card {
+        border: 1px solid #000 !important;
+        box-shadow: none !important;
+    }
+    
+    .table {
+        border-collapse: collapse !important;
+    }
+    
+    .table th,
+    .table td {
+        border: 1px solid #000 !important;
+    }
+}

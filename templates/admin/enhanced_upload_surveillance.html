@@ -1,0 +1,466 @@
+{% extends "base.html" %}
+
+{% block title %}Upload CCTV Footage{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <!-- Header -->
+            <div class="text-center mb-4">
+                <h2 class="text-primary mb-2">
+                    <i class="fas fa-video me-2"></i>Upload CCTV Surveillance Footage
+                </h2>
+                <p class="text-muted">Upload large CCTV footage files with AI-powered location matching</p>
+            </div>
+
+            <!-- Upload Form -->
+            <div class="card shadow">
+                <div class="card-body p-4">
+                    <form method="POST" enctype="multipart/form-data" id="enhancedUploadForm">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        
+                        <!-- Essential Information -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-primary mb-3">
+                                    <i class="fas fa-info-circle me-2"></i>Essential Information
+                                </h5>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="title" class="form-label">Footage Title *</label>
+                                <input type="text" class="form-control" id="title" name="title" required 
+                                       placeholder="e.g., Main Street CCTV - Camera 1">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="camera_type" class="form-label">Camera Type *</label>
+                                <select class="form-select" id="camera_type" name="camera_type" required>
+                                    <option value="">Select Camera Type</option>
+                                    <option value="CCTV">CCTV Camera</option>
+                                    <option value="Security">Security Camera</option>
+                                    <option value="Traffic">Traffic Camera</option>
+                                    <option value="Surveillance">Surveillance Camera</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Location Information (AI Enhanced) -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-primary mb-3">
+                                    <i class="fas fa-map-marker-alt me-2"></i>Location Information (AI Enhanced)
+                                </h5>
+                                <div class="alert alert-info">
+                                    <i class="fas fa-robot me-2"></i>
+                                    AI will analyze this location to automatically match with missing person cases
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="location_name" class="form-label">Location Name *</label>
+                                <input type="text" class="form-control" id="location_name" name="location_name" required
+                                       placeholder="e.g., Main Street Junction, Shopping Mall">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="location_address" class="form-label">Full Address *</label>
+                                <input type="text" class="form-control" id="location_address" name="location_address" required
+                                       placeholder="Complete address with area">
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label for="city" class="form-label">City *</label>
+                                <input type="text" class="form-control" id="city" name="city" required
+                                       placeholder="City name">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="state" class="form-label">State *</label>
+                                <input type="text" class="form-control" id="state" name="state" required
+                                       placeholder="State name">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="pincode" class="form-label">PIN Code *</label>
+                                <input type="text" class="form-control" id="pincode" name="pincode" required
+                                       placeholder="6-digit PIN code" pattern="[0-9]{6}">
+                            </div>
+                            
+                            <!-- Optional Fields -->
+                            <div class="col-12 mb-3">
+                                <label for="description" class="form-label">Description <span class="text-muted">(Optional)</span></label>
+                                <textarea class="form-control" id="description" name="description" rows="2"
+                                          placeholder="Brief description of the footage content and context"></textarea>
+                            </div>
+                            
+                            <div class="col-12 mb-3">
+                                <label for="landmarks" class="form-label">Landmarks/Additional Details <span class="text-muted">(Optional)</span></label>
+                                <textarea class="form-control" id="landmarks" name="landmarks" rows="2"
+                                          placeholder="Nearby landmarks, shops, metro stations, or any other location details"></textarea>
+                                <small class="text-info"><i class="fas fa-info-circle"></i> More details help AI match with cases better</small>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="latitude" class="form-label">Latitude <span class="text-muted">(Optional)</span></label>
+                                <input type="number" step="any" class="form-control" id="latitude" name="latitude"
+                                       placeholder="e.g., 28.6139">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="longitude" class="form-label">Longitude <span class="text-muted">(Optional)</span></label>
+                                <input type="number" step="any" class="form-control" id="longitude" name="longitude"
+                                       placeholder="e.g., 77.2090">
+                            </div>
+                        </div>
+
+                        <!-- Video Upload (Enhanced) -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-primary mb-3">
+                                    <i class="fas fa-upload me-2"></i>Video Upload (Large Files Supported)
+                                </h5>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="date_recorded" class="form-label">Date & Time Recorded</label>
+                                <input type="datetime-local" class="form-control" id="date_recorded" name="date_recorded">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="quality" class="form-label">Video Quality</label>
+                                <select class="form-select" id="quality" name="quality">
+                                    <option value="SD">SD (480p)</option>
+                                    <option value="HD" selected>HD (720p)</option>
+                                    <option value="FHD">Full HD (1080p)</option>
+                                    <option value="4K">4K (2160p)</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-12 mb-3">
+                                <label for="video_files" class="form-label">Video Files *</label>
+                                <input type="file" class="form-control" id="video_files" name="video_files" 
+                                       accept="video/*" required multiple onchange="handleMultipleFileSelect(this)">
+                                <div class="form-text">
+                                    <strong>Enhanced Support:</strong> Multiple files, up to 10GB per file, 1-day footage supported<br>
+                                    <strong>Formats:</strong> MP4, AVI, MOV, MKV, WMV, FLV, WebM
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- File Preview -->
+                        <div id="multiFilePreview" class="mb-4" style="display: none;">
+                            <h5 class="text-primary mb-3">
+                                <i class="fas fa-eye me-2"></i>Selected Files
+                            </h5>
+                            <div id="filesList" class="row"></div>
+                            <div class="mt-3">
+                                <div class="alert alert-success">
+                                    <i class="fas fa-check-circle me-2"></i>
+                                    <span id="totalFilesInfo"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Submit Buttons -->
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="d-flex justify-content-between">
+                                    <a href="{{ url_for('admin.surveillance_footage') }}" class="btn btn-outline-secondary">
+                                        <i class="fas fa-arrow-left me-2"></i>Back to Footage
+                                    </a>
+                                    <div>
+                                        <button type="reset" class="btn btn-outline-warning me-2" onclick="resetForm()">
+                                            <i class="fas fa-undo me-2"></i>Reset Form
+                                        </button>
+                                        <button type="submit" class="btn btn-primary" id="enhancedSubmitBtn">
+                                            <i class="fas fa-upload me-2"></i>Upload Footage
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Enhanced Upload Progress -->
+            <div id="enhancedUploadProgress" class="card mt-4" style="display: none;">
+                <div class="card-body">
+                    <h6 class="mb-3">
+                        <i class="fas fa-cog fa-spin me-2"></i>Processing Upload
+                    </h6>
+                    <div class="progress mb-3" style="height: 25px;">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                             role="progressbar" style="width: 0%">
+                            <span class="progress-text">0%</span>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <small class="text-muted" id="progressMessage">Starting upload...</small>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <small class="text-muted">
+                                Files: <span id="filesProgress">0/0</span> | 
+                                Time: <span id="timeEstimate">Calculating...</span>
+                            </small>
+                        </div>
+                    </div>
+                    
+                    <!-- AI Analysis Progress -->
+                    <div class="mt-3" id="aiAnalysisSection" style="display: none;">
+                        <div class="alert alert-info">
+                            <i class="fas fa-robot me-2"></i>
+                            <strong>AI Analysis:</strong> <span id="aiAnalysisStatus">Analyzing location...</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Matching Cases -->
+                    <div class="mt-3" id="matchingCasesSection" style="display: none;">
+                        <div class="alert alert-success">
+                            <i class="fas fa-search me-2"></i>
+                            <strong>Found Matching Cases:</strong> <span id="matchingCasesCount">0</span>
+                        </div>
+                        <div id="matchingCasesList"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let selectedFiles = [];
+let uploadId = null;
+
+function handleMultipleFileSelect(input) {
+    selectedFiles = Array.from(input.files);
+    const preview = document.getElementById('multiFilePreview');
+    const filesList = document.getElementById('filesList');
+    const totalInfo = document.getElementById('totalFilesInfo');
+    
+    if (selectedFiles.length === 0) {
+        preview.style.display = 'none';
+        return;
+    }
+    
+    filesList.innerHTML = '';
+    let totalSize = 0;
+    let totalDuration = 0;
+    
+    selectedFiles.forEach((file, index) => {
+        const fileSize = (file.size / (1024 * 1024 * 1024)).toFixed(2);
+        totalSize += file.size;
+        
+        const fileCard = document.createElement('div');
+        fileCard.className = 'col-md-6 mb-3';
+        fileCard.innerHTML = `
+            <div class="card border-primary">
+                <div class="card-body p-3">
+                    <h6 class="card-title text-truncate">${file.name}</h6>
+                    <div class="row text-sm">
+                        <div class="col-6">
+                            <small class="text-muted">Size: ${fileSize} GB</small>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted">Type: ${file.type}</small>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <span class="badge bg-primary">File ${index + 1}</span>
+                        ${file.size > 10 * 1024 * 1024 * 1024 ? 
+                          '<span class="badge bg-warning">Large File</span>' : 
+                          '<span class="badge bg-success">OK</span>'}
+                    </div>
+                </div>
+            </div>
+        `;
+        filesList.appendChild(fileCard);
+    });
+    
+    const totalSizeGB = (totalSize / (1024 * 1024 * 1024)).toFixed(2);
+    totalInfo.innerHTML = `${selectedFiles.length} files selected, Total size: ${totalSizeGB} GB`;
+    
+    preview.style.display = 'block';
+    
+    // Validate total size
+    if (totalSize > 50 * 1024 * 1024 * 1024) { // 50GB limit
+        alert('Total file size exceeds 50GB limit. Please select fewer or smaller files.');
+        input.value = '';
+        preview.style.display = 'none';
+        selectedFiles = [];
+    }
+}
+
+function resetForm() {
+    document.getElementById('enhancedUploadForm').reset();
+    document.getElementById('multiFilePreview').style.display = 'none';
+    document.getElementById('enhancedUploadProgress').style.display = 'none';
+    selectedFiles = [];
+}
+
+// Enhanced form submission with real-time progress
+document.getElementById('enhancedUploadForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    if (selectedFiles.length === 0) {
+        alert('Please select at least one video file.');
+        return;
+    }
+    
+    const submitBtn = document.getElementById('enhancedSubmitBtn');
+    const progressDiv = document.getElementById('enhancedUploadProgress');
+    
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
+    progressDiv.style.display = 'block';
+    
+    // Generate unique upload ID
+    uploadId = 'upload_' + Date.now();
+    
+    // Start upload with progress tracking
+    startEnhancedUpload();
+});
+
+function startEnhancedUpload() {
+    const formData = new FormData(document.getElementById('enhancedUploadForm'));
+    
+    // Add all selected files
+    selectedFiles.forEach((file, index) => {
+        formData.append('video_files', file);
+    });
+    
+    formData.append('upload_id', uploadId);
+    
+    // Start progress polling
+    const progressInterval = setInterval(() => {
+        checkUploadProgress();
+    }, 1000);
+    
+    // Submit form
+    fetch('/admin/enhanced-surveillance-upload', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        clearInterval(progressInterval);
+        handleUploadComplete(data);
+    })
+    .catch(error => {
+        clearInterval(progressInterval);
+        handleUploadError(error);
+    });
+}
+
+function checkUploadProgress() {
+    if (!uploadId) return;
+    
+    fetch(`/admin/upload-progress/${uploadId}`)
+    .then(response => response.json())
+    .then(data => {
+        updateProgressDisplay(data);
+    })
+    .catch(error => {
+        console.error('Progress check error:', error);
+    });
+}
+
+function updateProgressDisplay(data) {
+    const progressBar = document.querySelector('.progress-bar');
+    const progressText = document.querySelector('.progress-text');
+    const progressMessage = document.getElementById('progressMessage');
+    const filesProgress = document.getElementById('filesProgress');
+    const timeEstimate = document.getElementById('timeEstimate');
+    
+    progressBar.style.width = data.progress + '%';
+    progressText.textContent = data.progress + '%';
+    progressMessage.textContent = data.message || 'Processing...';
+    filesProgress.textContent = `${data.files_processed || 0}/${data.total_files || 0}`;
+    
+    if (data.estimated_time) {
+        timeEstimate.textContent = `${data.estimated_time}s remaining`;
+    }
+    
+    // Show AI analysis section
+    if (data.progress >= 60) {
+        const aiSection = document.getElementById('aiAnalysisSection');
+        const aiStatus = document.getElementById('aiAnalysisStatus');
+        aiSection.style.display = 'block';
+        aiStatus.textContent = 'Analyzing location and matching cases...';
+    }
+    
+    // Show matching cases
+    if (data.matching_cases && data.matching_cases.length > 0) {
+        showMatchingCases(data.matching_cases);
+    }
+}
+
+function showMatchingCases(cases) {
+    const section = document.getElementById('matchingCasesSection');
+    const count = document.getElementById('matchingCasesCount');
+    const list = document.getElementById('matchingCasesList');
+    
+    count.textContent = cases.length;
+    
+    list.innerHTML = cases.map(caseItem => `
+        <div class="alert alert-light border-start border-primary border-3">
+            <strong>${caseItem.person_name}</strong> - ${caseItem.last_seen_location}
+            <br><small class="text-muted">Match Score: ${caseItem.match_score}% | Status: ${caseItem.status}</small>
+        </div>
+    `).join('');
+    
+    section.style.display = 'block';
+}
+
+function handleUploadComplete(data) {
+    if (data.success) {
+        const progressBar = document.querySelector('.progress-bar');
+        const progressText = document.querySelector('.progress-text');
+        const progressMessage = document.getElementById('progressMessage');
+        
+        progressBar.style.width = '100%';
+        progressBar.className = 'progress-bar bg-success';
+        progressText.textContent = '100%';
+        progressMessage.innerHTML = '<i class="fas fa-check-circle me-2"></i>Upload completed! Starting AI analysis...';
+        
+        // Trigger automatic AI analysis for the uploaded footage
+        if (data.footage_id) {
+            fetch('/api/trigger-auto-analysis', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                }
+            })
+            .then(response => response.json())
+            .then(analysisData => {
+                progressMessage.innerHTML = '<i class="fas fa-check-circle me-2"></i>Upload & AI analysis completed!';
+                // Immediately redirect to show the new footage
+                window.location.href = '/admin/surveillance-footage';
+            })
+            .catch(error => {
+                console.error('Auto-analysis error:', error);
+                // Still redirect even if analysis fails
+                window.location.href = '/admin/surveillance-footage';
+            });
+        } else {
+            // Redirect immediately if no footage_id
+            window.location.href = '/admin/surveillance-footage';
+        }
+    } else {
+        handleUploadError(data.error || 'Upload failed');
+    }
+}
+
+function handleUploadError(error) {
+    const progressBar = document.querySelector('.progress-bar');
+    const progressText = document.querySelector('.progress-text');
+    const progressMessage = document.getElementById('progressMessage');
+    const submitBtn = document.getElementById('enhancedSubmitBtn');
+    
+    progressBar.className = 'progress-bar bg-danger';
+    progressText.textContent = 'Error';
+    progressMessage.innerHTML = `<i class="fas fa-exclamation-triangle me-2"></i>Upload failed: ${error}`;
+    
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = '<i class="fas fa-upload me-2"></i>Upload Footage';
+}
+</script>
+{% endblock %}

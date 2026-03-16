@@ -1,0 +1,344 @@
+{% extends "base.html" %}
+
+{% block title %}Multi-Modal Person Profile - {{ case.person_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="text-primary mb-1">
+                        <i class="fas fa-user-circle me-2"></i>Multi-Modal Person Profile
+                    </h2>
+                    <p class="text-muted mb-0">Advanced recognition profile for {{ case.person_name }} - Case #{{ case.id }}</p>
+                </div>
+                <div class="btn-group">
+                    <a href="{{ url_for('admin.case_review', case_id=case.id) }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Case
+                    </a>
+                    <button class="btn btn-success" onclick="createPersonProfile()">
+                        <i class="fas fa-sync me-2"></i>Update Profile
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h3 class="mb-0">{{ "%.1f"|format(profile.profile_confidence * 100) }}%</h3>
+                            <p class="mb-0">Overall Confidence</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-chart-line fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h3 class="mb-0">{{ "%.1f"|format(profile.face_quality_score * 100) }}%</h3>
+                            <p class="mb-0">Facial Quality</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-face-smile fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h3 class="mb-0">{{ profile.build_type.replace('_', ' ').title() }}</h3>
+                            <p class="mb-0">Build Type</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-user fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h3 class="mb-0">{{ profile.seasonal_category.replace('_', ' ').title() }}</h3>
+                            <p class="mb-0">Clothing Style</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-tshirt fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile Details -->
+    <div class="row">
+        <!-- Facial Recognition Profile -->
+        <div class="col-lg-4 mb-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-face-smile me-2"></i>Facial Recognition Profile
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <strong>Face Quality Score:</strong>
+                        <div class="progress mt-1">
+                            <div class="progress-bar bg-{{ 'success' if profile.face_quality_score > 0.8 else 'warning' if profile.face_quality_score > 0.6 else 'danger' }}" 
+                                 style="width: {{ (profile.face_quality_score * 100)|round }}%">
+                                {{ "%.1f"|format(profile.face_quality_score * 100) }}%
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if profile.age_progression_data %}
+                    <div class="mb-3">
+                        <strong>Age Progression Data:</strong>
+                        <div class="mt-2">
+                            {% set age_data = profile.age_progression_data | from_json %}
+                            {% if age_data %}
+                            <small class="text-muted">
+                                Estimated Age Group: {{ age_data.get('estimated_age_group', 'Unknown').replace('_', ' ').title() }}<br>
+                                Wrinkle Density: {{ "%.3f"|format(age_data.get('wrinkle_density', 0)) }}<br>
+                                Texture Variance: {{ "%.1f"|format(age_data.get('texture_variance', 0)) }}
+                            </small>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mb-3">
+                        <strong>Recognition Threshold:</strong>
+                        <span class="badge bg-info">{{ "%.1f"|format(profile.recognition_threshold * 100) }}%</span>
+                    </div>
+                    
+                    <div class="text-center">
+                        <button class="btn btn-outline-primary btn-sm" onclick="testFacialRecognition()">
+                            <i class="fas fa-search me-1"></i>Test Recognition
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Clothing Analysis Profile -->
+        <div class="col-lg-4 mb-4">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-tshirt me-2"></i>Clothing Analysis Profile
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <strong>Dominant Colors:</strong>
+                        <div class="mt-2">
+                            {% for color in profile.dominant_colors_list[:5] %}
+                            <span class="badge me-1 mb-1" style="background-color: {{ color.get('color_hex', '#666') }}; color: white;">
+                                {{ "%.1f"|format(color.get('percentage', 0) * 100) }}%
+                            </span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <strong>Seasonal Category:</strong>
+                        <span class="badge bg-warning">{{ profile.seasonal_category.replace('_', ' ').title() }}</span>
+                    </div>
+                    
+                    {% if profile.clothing_patterns %}
+                    <div class="mb-3">
+                        <strong>Pattern Analysis:</strong>
+                        <div class="mt-2">
+                            {% set patterns = profile.clothing_patterns | from_json %}
+                            {% if patterns %}
+                            {% for pattern, count in patterns.items() %}
+                            <small class="d-block">{{ pattern.replace('_', ' ').title() }}: {{ count }} occurrences</small>
+                            {% endfor %}
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="text-center">
+                        <button class="btn btn-outline-success btn-sm" onclick="analyzeClothing()">
+                            <i class="fas fa-palette me-1"></i>Analyze Patterns
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Biometric Profile -->
+        <div class="col-lg-4 mb-4">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-ruler me-2"></i>Biometric Profile
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <strong>Build Type:</strong>
+                        <span class="badge bg-info">{{ profile.build_type.replace('_', ' ').title() }}</span>
+                    </div>
+                    
+                    {% if profile.height_estimation %}
+                    <div class="mb-3">
+                        <strong>Estimated Height:</strong>
+                        <span class="text-primary">{{ "%.0f"|format(profile.height_estimation) }} cm</span>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mb-3">
+                        <strong>Biometric Confidence:</strong>
+                        <div class="progress mt-1">
+                            <div class="progress-bar bg-{{ 'success' if profile.biometric_confidence > 0.8 else 'warning' if profile.biometric_confidence > 0.6 else 'danger' }}" 
+                                 style="width: {{ (profile.biometric_confidence * 100)|round }}%">
+                                {{ "%.1f"|format(profile.biometric_confidence * 100) }}%
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if profile.body_measurements_dict %}
+                    <div class="mb-3">
+                        <strong>Body Measurements:</strong>
+                        <div class="mt-2">
+                            {% set measurements = profile.body_measurements_dict %}
+                            {% for key, value in measurements.items() %}
+                            {% if value.get('mean') %}
+                            <small class="d-block">{{ key.replace('_', ' ').title() }}: {{ "%.3f"|format(value.get('mean', 0)) }}</small>
+                            {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="text-center">
+                        <button class="btn btn-outline-info btn-sm" onclick="measureBiometrics()">
+                            <i class="fas fa-calculator me-1"></i>Recalculate
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile Actions -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-cogs me-2"></i>Profile Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-2">
+                            <button class="btn btn-primary w-100" onclick="startMultiModalSearch()">
+                                <i class="fas fa-search me-2"></i>Start Multi-Modal Search
+                            </button>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <button class="btn btn-success w-100" onclick="createPersonProfile()">
+                                <i class="fas fa-sync me-2"></i>Update Profile
+                            </button>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <button class="btn btn-info w-100" onclick="exportProfile()">
+                                <i class="fas fa-download me-2"></i>Export Profile
+                            </button>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <button class="btn btn-warning w-100" onclick="compareProfiles()">
+                                <i class="fas fa-balance-scale me-2"></i>Compare Profiles
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function createPersonProfile() {
+    if (confirm('Create/Update multi-modal person profile? This will analyze all uploaded images.')) {
+        const btn = event.target;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Creating Profile...';
+        
+        fetch(`/admin/cases/{{ case.id }}/create-person-profile`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Multi-modal person profile created successfully!');
+                location.reload();
+            } else {
+                alert('Error: ' + data.error);
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-sync me-2"></i>Update Profile';
+            }
+        })
+        .catch(error => {
+            alert('Error creating profile: ' + error);
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-sync me-2"></i>Update Profile';
+        });
+    }
+}
+
+function startMultiModalSearch() {
+    if (confirm('Start multi-modal search across all surveillance footage?')) {
+        alert('Multi-modal search feature will be implemented in the next update.');
+    }
+}
+
+function testFacialRecognition() {
+    alert('Facial recognition test feature coming soon!');
+}
+
+function analyzeClothing() {
+    alert('Advanced clothing analysis feature coming soon!');
+}
+
+function measureBiometrics() {
+    alert('Biometric measurement feature coming soon!');
+}
+
+function exportProfile() {
+    alert('Profile export feature coming soon!');
+}
+
+function compareProfiles() {
+    alert('Profile comparison feature coming soon!');
+}
+</script>
+{% endblock %}

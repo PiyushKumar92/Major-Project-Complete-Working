@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+
+{% block title %}System Report{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="text-primary mb-1">
+                        <i class="fas fa-chart-bar me-2"></i>System Report
+                    </h2>
+                    <p class="text-muted mb-0">Generated on {{ report.generated_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
+                </div>
+                <div>
+                    <button class="btn btn-outline-primary" onclick="window.print()">
+                        <i class="fas fa-print me-2"></i>Print Report
+                    </button>
+                    <a href="{{ url_for('admin.system_status') }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Status
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h3 class="mb-0">{{ report.total_users }}</h3>
+                            <p class="mb-0">Total Users</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-users fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h3 class="mb-0">{{ report.total_cases }}</h3>
+                            <p class="mb-0">Total Cases</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-folder fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h3 class="mb-0">{{ report.total_footage }}</h3>
+                            <p class="mb-0">CCTV Footage</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-video fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h3 class="mb-0">{{ report.total_detections }}</h3>
+                            <p class="mb-0">AI Detections</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-search fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detailed Statistics -->
+    <div class="row">
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">User Statistics</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <tr>
+                            <td>Total Users</td>
+                            <td><strong>{{ report.total_users }}</strong></td>
+                        </tr>
+                        <tr>
+                            <td>Active Users</td>
+                            <td><strong>{{ report.active_users }}</strong></td>
+                        </tr>
+                        <tr>
+                            <td>Admin Users</td>
+                            <td><strong>{{ report.admin_users }}</strong></td>
+                        </tr>
+                        <tr>
+                            <td>Regular Users</td>
+                            <td><strong>{{ report.total_users - report.admin_users }}</strong></td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Case Statistics</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <tr>
+                            <td>Total Cases</td>
+                            <td><strong>{{ report.total_cases }}</strong></td>
+                        </tr>
+                        <tr>
+                            <td>Pending Approval</td>
+                            <td><strong>{{ report.pending_cases }}</strong></td>
+                        </tr>
+                        <tr>
+                            <td>Completed Cases</td>
+                            <td><strong>{{ report.completed_cases }}</strong></td>
+                        </tr>
+                        <tr>
+                            <td>Success Rate</td>
+                            <td><strong>{{ ((report.completed_cases / report.total_cases) * 100)|round(1) if report.total_cases > 0 else 0 }}%</strong></td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">AI Analysis Statistics</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <tr>
+                            <td>Total Matches</td>
+                            <td><strong>{{ report.total_matches }}</strong></td>
+                        </tr>
+                        <tr>
+                            <td>Successful Matches</td>
+                            <td><strong>{{ report.successful_matches }}</strong></td>
+                        </tr>
+                        <tr>
+                            <td>Total Detections</td>
+                            <td><strong>{{ report.total_detections }}</strong></td>
+                        </tr>
+                        <tr>
+                            <td>Verified Detections</td>
+                            <td><strong>{{ report.verified_detections }}</strong></td>
+                        </tr>
+                        <tr>
+                            <td>AI Accuracy</td>
+                            <td><strong>{{ ((report.verified_detections / report.total_detections) * 100)|round(1) if report.total_detections > 0 else 0 }}%</strong></td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">System Performance</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <tr>
+                            <td>CCTV Footage Files</td>
+                            <td><strong>{{ report.total_footage }}</strong></td>
+                        </tr>
+                        <tr>
+                            <td>Coverage Efficiency</td>
+                            <td><strong>{{ ((report.total_matches / report.total_footage) * 100)|round(1) if report.total_footage > 0 else 0 }}%</strong></td>
+                        </tr>
+                        <tr>
+                            <td>Detection Rate</td>
+                            <td><strong>{{ ((report.total_detections / report.total_matches) * 100)|round(1) if report.total_matches > 0 else 0 }}%</strong></td>
+                        </tr>
+                        <tr>
+                            <td>System Health</td>
+                            <td><strong class="text-success">Operational</strong></td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

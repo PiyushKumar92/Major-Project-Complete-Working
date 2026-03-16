@@ -1,0 +1,462 @@
+{% extends "base.html" %}
+
+{% block title %}Location Intelligence Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="text-primary mb-1">
+                        <i class="fas fa-map-marked-alt me-2"></i>Location Intelligence Dashboard
+                    </h2>
+                    <p class="text-muted mb-0">Strategic insights for CCTV deployment and coverage optimization</p>
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-outline-primary" onclick="exportLocationData()">
+                        <i class="fas fa-download me-2"></i>Export Data
+                    </button>
+                    <button class="btn btn-primary" onclick="generateReport()">
+                        <i class="fas fa-chart-line me-2"></i>Generate Report
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Key Metrics -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-primary text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h3 class="mb-0">{{ location_stats|length }}</h3>
+                            <p class="mb-0">Active Locations</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-map-marker-alt fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-success text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h3 class="mb-0">{{ cctv_locations|length }}</h3>
+                            <p class="mb-0">CCTV Locations</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-video fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-warning text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h3 class="mb-0">{{ coverage_gaps|length }}</h3>
+                            <p class="mb-0">Coverage Gaps</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-exclamation-triangle fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-info text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h3 class="mb-0">{{ ((cctv_locations|length / location_stats|length) * 100)|round(1) if location_stats|length > 0 else 0 }}%</h3>
+                            <p class="mb-0">Coverage Rate</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-chart-pie fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="row">
+        <!-- Missing Person Hotspots -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-fire me-2 text-danger"></i>Missing Person Hotspots
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if location_stats %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Location</th>
+                                    <th>Cases</th>
+                                    <th>Priority</th>
+                                    <th>Coverage</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for location, case_count in location_stats[:10] %}
+                                <tr>
+                                    <td>
+                                        <div class="fw-bold">{{ location }}</div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ 'danger' if case_count > 5 else 'warning' if case_count > 2 else 'primary' }}">
+                                            {{ case_count }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ 'danger' if case_count > 5 else 'warning' if case_count > 2 else 'success' }}">
+                                            {{ 'High' if case_count > 5 else 'Medium' if case_count > 2 else 'Low' }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% set has_coverage = location.lower() in cctv_locations|map(attribute='0')|map('lower')|list %}
+                                        <span class="badge bg-{{ 'success' if has_coverage else 'danger' }}">
+                                            {{ 'Covered' if has_coverage else 'Gap' }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-map-marker-alt fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">No location data available</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- CCTV Coverage Map -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-video me-2 text-success"></i>CCTV Coverage Analysis
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if cctv_locations %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Location</th>
+                                    <th>Cameras</th>
+                                    <th>Cases</th>
+                                    <th>Efficiency</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for location, camera_count in cctv_locations %}
+                                {% set case_count = location_stats|selectattr('0', 'equalto', location)|map(attribute='1')|first or 0 %}
+                                <tr>
+                                    <td>
+                                        <div class="fw-bold">{{ location }}</div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">{{ camera_count }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ 'danger' if case_count > 3 else 'warning' if case_count > 1 else 'success' }}">
+                                            {{ case_count }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% set efficiency = (case_count / camera_count * 100) if camera_count > 0 else 0 %}
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar bg-{{ 'success' if efficiency > 50 else 'warning' if efficiency > 20 else 'danger' }}" 
+                                                 style="width: {{ [efficiency, 100]|min }}%">
+                                                {{ efficiency|round }}%
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-video fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">No CCTV data available</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Coverage Gaps & Recommendations -->
+    <div class="row">
+        <div class="col-lg-8 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-exclamation-triangle me-2 text-warning"></i>Coverage Gaps & Recommendations
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if coverage_gaps %}
+                    <div class="alert alert-warning">
+                        <h6 class="alert-heading">
+                            <i class="fas fa-exclamation-triangle me-2"></i>Critical Coverage Gaps Identified
+                        </h6>
+                        <p class="mb-0">The following high-priority locations lack CCTV coverage and should be considered for camera deployment:</p>
+                    </div>
+                    
+                    <div class="row">
+                        {% for gap_location in coverage_gaps %}
+                        {% set case_count = location_stats|selectattr('0', 'equalto', gap_location)|map(attribute='1')|first or 0 %}
+                        <div class="col-md-6 mb-3">
+                            <div class="card border-warning">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-1">{{ gap_location.title() }}</h6>
+                                            <p class="text-muted mb-0">{{ case_count }} missing person cases</p>
+                                        </div>
+                                        <div>
+                                            <span class="badge bg-{{ 'danger' if case_count > 3 else 'warning' if case_count > 1 else 'primary' }} fs-6">
+                                                Priority: {{ 'High' if case_count > 3 else 'Medium' if case_count > 1 else 'Low' }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="mt-2">
+                                        <small class="text-muted">
+                                            <i class="fas fa-lightbulb me-1"></i>
+                                            Recommended: {{ case_count // 2 + 1 }} camera{{ 's' if (case_count // 2 + 1) > 1 else '' }}
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="alert alert-success">
+                        <h6 class="alert-heading">
+                            <i class="fas fa-check-circle me-2"></i>Excellent Coverage!
+                        </h6>
+                        <p class="mb-0">All high-priority locations have CCTV coverage. No immediate deployment recommendations.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="col-lg-4 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-tools me-2"></i>Quick Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-primary" onclick="optimizeCoverage()">
+                            <i class="fas fa-magic me-2"></i>Optimize Coverage
+                        </button>
+                        <button class="btn btn-success" onclick="planDeployment()">
+                            <i class="fas fa-map-marked-alt me-2"></i>Plan Deployment
+                        </button>
+                        <button class="btn btn-info" onclick="analyzeEfficiency()">
+                            <i class="fas fa-chart-line me-2"></i>Analyze Efficiency
+                        </button>
+                        <button class="btn btn-warning" onclick="identifyHotspots()">
+                            <i class="fas fa-fire me-2"></i>Identify Hotspots
+                        </button>
+                    </div>
+                    
+                    <hr>
+                    
+                    <h6 class="text-muted mb-3">Coverage Statistics</h6>
+                    <div class="row text-center">
+                        <div class="col-6 mb-2">
+                            <div class="text-primary fw-bold">{{ ((cctv_locations|length / location_stats|length) * 100)|round(1) if location_stats|length > 0 else 0 }}%</div>
+                            <small class="text-muted">Coverage Rate</small>
+                        </div>
+                        <div class="col-6 mb-2">
+                            <div class="text-success fw-bold">{{ cctv_locations|sum(attribute='1') if cctv_locations else 0 }}</div>
+                            <small class="text-muted">Total Cameras</small>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-warning fw-bold">{{ coverage_gaps|length }}</div>
+                            <small class="text-muted">Gaps</small>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-info fw-bold">{{ location_stats|sum(attribute='1') if location_stats else 0 }}</div>
+                            <small class="text-muted">Total Cases</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function exportLocationData() {
+    // Generate CSV export of location data
+    const csvData = [];
+    csvData.push(['Location', 'Cases', 'CCTV Coverage', 'Priority']);
+    
+    // Add location data (this would be populated from template data)
+    {% for location, case_count in location_stats %}
+    csvData.push(['{{ location }}', '{{ case_count }}', '{{ "Yes" if location.lower() in cctv_locations|map(attribute="0")|map("lower")|list else "No" }}', '{{ "High" if case_count > 5 else "Medium" if case_count > 2 else "Low" }}']);
+    {% endfor %}
+    
+    // Create and download CSV
+    const csvContent = csvData.map(row => row.join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'location_intelligence_' + new Date().toISOString().slice(0,10) + '.csv';
+    a.click();
+    window.URL.revokeObjectURL(url);
+}
+
+function generateReport() {
+    fetch('/admin/generate-system-report', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Display report in modal or new window
+            const reportWindow = window.open('', '_blank');
+            reportWindow.document.write(`
+                <html>
+                <head><title>Location Intelligence Report</title></head>
+                <body>
+                    <h1>Location Intelligence Report</h1>
+                    <p>Generated: ${data.report.generated_at}</p>
+                    <h2>System Statistics</h2>
+                    <ul>
+                        <li>Total Cases: ${data.report.system_stats.total_cases}</li>
+                        <li>Real Footage: ${data.report.system_stats.real_footage}</li>
+                        <li>Location Matches: ${data.report.system_stats.location_matches}</li>
+                        <li>Success Rate: ${data.report.performance_metrics.success_rate}%</li>
+                    </ul>
+                </body>
+                </html>
+            `);
+        } else {
+            alert('Error generating report: ' + data.error);
+        }
+    });
+}
+
+function optimizeCoverage() {
+    // Analyze current coverage and suggest optimizations
+    const gaps = {{ coverage_gaps|length }};
+    const covered = {{ cctv_locations|length }};
+    const total = {{ location_stats|length }};
+    
+    if (gaps === 0) {
+        alert('✅ Coverage is already optimized! All high-priority locations have CCTV coverage.');
+    } else {
+        const coverage_rate = ((covered / total) * 100).toFixed(1);
+        alert(`📊 Coverage Analysis:\n\n` +
+              `Current Coverage: ${coverage_rate}%\n` +
+              `Coverage Gaps: ${gaps} locations\n` +
+              `Recommendation: Deploy cameras at ${gaps} priority locations\n\n` +
+              `This would improve coverage to ${(((covered + gaps) / total) * 100).toFixed(1)}%`);
+    }
+}
+
+function planDeployment() {
+    // Open deployment planning interface
+    const gaps = {{ coverage_gaps|length }};
+    if (gaps === 0) {
+        alert('🎯 No deployment needed! All locations are covered.');
+    } else {
+        const deployment_plan = `📋 Deployment Plan:\n\n`;
+        let plan_details = '';
+        
+        {% for gap_location in coverage_gaps %}
+        {% set case_count = location_stats|selectattr('0', 'equalto', gap_location)|map(attribute='1')|first or 0 %}
+        plan_details += `• {{ gap_location.title() }}: {{ case_count // 2 + 1 }} camera{{ 's' if (case_count // 2 + 1) > 1 else '' }} ({{ case_count }} cases)\n`;
+        {% endfor %}
+        
+        alert(deployment_plan + plan_details + '\n💡 Prioritize locations with highest case counts.');
+    }
+}
+
+function analyzeEfficiency() {
+    // Calculate and display efficiency metrics
+    const total_cameras = {{ cctv_locations|sum(attribute='1') if cctv_locations else 0 }};
+    const total_cases = {{ location_stats|sum(attribute='1') if location_stats else 0 }};
+    const coverage_rate = {{ ((cctv_locations|length / location_stats|length) * 100)|round(1) if location_stats|length > 0 else 0 }};
+    
+    let efficiency_report = `📈 Efficiency Analysis:\n\n`;
+    efficiency_report += `Total Cameras: ${total_cameras}\n`;
+    efficiency_report += `Total Cases: ${total_cases}\n`;
+    efficiency_report += `Coverage Rate: ${coverage_rate}%\n`;
+    
+    if (total_cameras > 0) {
+        const cases_per_camera = (total_cases / total_cameras).toFixed(2);
+        efficiency_report += `Cases per Camera: ${cases_per_camera}\n\n`;
+        
+        if (cases_per_camera > 3) {
+            efficiency_report += '⚠️ High case density - consider additional cameras';
+        } else if (cases_per_camera < 1) {
+            efficiency_report += '✅ Good coverage - cameras are well distributed';
+        } else {
+            efficiency_report += '📊 Moderate efficiency - monitor for improvements';
+        }
+    }
+    
+    alert(efficiency_report);
+}
+
+function identifyHotspots() {
+    // Identify and highlight hotspot locations
+    const hotspots = [];
+    {% for location, case_count in location_stats[:5] %}
+    if ({{ case_count }} > 2) {
+        hotspots.push('{{ location }} ({{ case_count }} cases)');
+    }
+    {% endfor %}
+    
+    if (hotspots.length === 0) {
+        alert('✅ No critical hotspots identified. Case distribution is well balanced.');
+    } else {
+        let hotspot_report = `🔥 Hotspot Analysis:\n\n`;
+        hotspot_report += `Critical Locations (>2 cases):\n`;
+        hotspots.forEach(hotspot => {
+            hotspot_report += `• ${hotspot}\n`;
+        });
+        hotspot_report += `\n💡 These locations require priority attention and enhanced coverage.`;
+        alert(hotspot_report);
+    }
+}
+</script>
+{% endblock %}

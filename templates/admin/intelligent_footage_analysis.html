@@ -1,0 +1,540 @@
+{% extends "base.html" %}
+
+{% block title %}Intelligent Footage Analysis - {{ case.person_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="text-primary mb-1">
+                        <i class="fas fa-brain me-2"></i>Intelligent Footage Analysis
+                    </h2>
+                    <p class="text-muted mb-0">Advanced AI analysis for {{ case.person_name }} - Case #{{ case.id }}</p>
+                </div>
+                <div class="btn-group">
+                    <a href="{{ url_for('admin.case_review', case_id=case.id) }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Case
+                    </a>
+                    <button class="btn btn-primary" onclick="startIntelligentAnalysis()">
+                        <i class="fas fa-play me-2"></i>Start Analysis
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Analysis Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h3 class="mb-0">{{ analyses|length }}</h3>
+                            <p class="mb-0">Total Analyses</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-video fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            {% set completed_analyses = analyses | selectattr('status', 'equalto', 'completed') | list %}
+                            <h3 class="mb-0">{{ completed_analyses|length }}</h3>
+                            <p class="mb-0">Completed</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-check-circle fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            {% set total_persons = completed_analyses | sum(attribute='persons_tracked') %}
+                            <h3 class="mb-0">{{ total_persons }}</h3>
+                            <p class="mb-0">Persons Tracked</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-users fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            {% set behavioral_events = completed_analyses | sum(attribute='unusual_behaviors_count') %}
+                            <h3 class="mb-0">{{ behavioral_events }}</h3>
+                            <p class="mb-0">Behavioral Events</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-exclamation-triangle fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Analysis Results -->
+    {% for analysis in analyses %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="mb-0">
+                                <i class="fas fa-video me-2"></i>{{ analysis.footage.title }}
+                            </h5>
+                            <small class="text-muted">{{ analysis.footage.location_name }} • {{ analysis.footage.formatted_duration }}</small>
+                        </div>
+                        <div>
+                            <span class="badge bg-{{ 'success' if analysis.status == 'completed' else 'warning' if analysis.status == 'processing' else 'secondary' }} me-2">
+                                {{ analysis.status.title() }}
+                            </span>
+                            {% if analysis.analysis_confidence %}
+                            <span class="badge bg-info">
+                                Confidence: {{ "%.1f"|format(analysis.analysis_confidence * 100) }}%
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if analysis.status == 'completed' %}
+                    <!-- Analysis Results Tabs -->
+                    <ul class="nav nav-tabs" id="analysisTab{{ analysis.id }}" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="tracking-tab{{ analysis.id }}" data-bs-toggle="tab" 
+                                    data-bs-target="#tracking{{ analysis.id }}" type="button" role="tab">
+                                <i class="fas fa-route me-2"></i>Multi-Person Tracking
+                                <span class="badge bg-primary ms-1">{{ analysis.persons_tracked }}</span>
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="temporal-tab{{ analysis.id }}" data-bs-toggle="tab" 
+                                    data-bs-target="#temporal{{ analysis.id }}" type="button" role="tab">
+                                <i class="fas fa-clock me-2"></i>Temporal Analysis
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="behavioral-tab{{ analysis.id }}" data-bs-toggle="tab" 
+                                    data-bs-target="#behavioral{{ analysis.id }}" type="button" role="tab">
+                                <i class="fas fa-user-check me-2"></i>Behavioral Analysis
+                                <span class="badge bg-warning ms-1">{{ analysis.unusual_behaviors_count }}</span>
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="appearance-tab{{ analysis.id }}" data-bs-toggle="tab" 
+                                    data-bs-target="#appearance{{ analysis.id }}" type="button" role="tab">
+                                <i class="fas fa-tshirt me-2"></i>Appearance Changes
+                                <span class="badge bg-info ms-1">{{ analysis.appearance_changes_detected }}</span>
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="crowd-tab{{ analysis.id }}" data-bs-toggle="tab" 
+                                    data-bs-target="#crowd{{ analysis.id }}" type="button" role="tab">
+                                <i class="fas fa-users me-2"></i>Crowd Analysis
+                                <span class="badge bg-secondary ms-1">{{ analysis.crowd_scenes_detected }}</span>
+                            </button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content mt-3" id="analysisTabContent{{ analysis.id }}">
+                        <!-- Multi-Person Tracking Tab -->
+                        <div class="tab-pane fade show active" id="tracking{{ analysis.id }}" role="tabpanel">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="card bg-light">
+                                        <div class="card-body">
+                                            <h6 class="text-primary mb-3">Tracking Summary</h6>
+                                            <table class="table table-sm table-borderless">
+                                                <tr>
+                                                    <td><strong>Persons Tracked:</strong></td>
+                                                    <td>{{ analysis.persons_tracked }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td><strong>Duration:</strong></td>
+                                                    <td>{{ "%.1f"|format(analysis.tracking_duration or 0) }}s</td>
+                                                </tr>
+                                                <tr>
+                                                    <td><strong>Target Found:</strong></td>
+                                                    <td>
+                                                        {% if analysis.target_person_found %}
+                                                        <span class="badge bg-success">Yes</span>
+                                                        {% else %}
+                                                        <span class="badge bg-danger">No</span>
+                                                        {% endif %}
+                                                    </td>
+                                                </tr>
+                                                {% if analysis.target_tracking_confidence %}
+                                                <tr>
+                                                    <td><strong>Target Confidence:</strong></td>
+                                                    <td>{{ "%.1f"|format(analysis.target_tracking_confidence * 100) }}%</td>
+                                                </tr>
+                                                {% endif %}
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-8">
+                                    <h6 class="text-primary mb-3">Tracked Persons</h6>
+                                    {% if analysis.tracking_results %}
+                                    <div class="table-responsive">
+                                        <table class="table table-sm">
+                                            <thead>
+                                                <tr>
+                                                    <th>Person ID</th>
+                                                    <th>Duration</th>
+                                                    <th>Confidence</th>
+                                                    <th>Target Match</th>
+                                                    <th>Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for tracking in analysis.tracking_results %}
+                                                <tr>
+                                                    <td>{{ tracking.person_id }}</td>
+                                                    <td>{{ "%.1f"|format(tracking.total_duration or 0) }}s</td>
+                                                    <td>
+                                                        <div class="progress" style="height: 20px;">
+                                                            <div class="progress-bar bg-{{ 'success' if tracking.tracking_confidence > 0.8 else 'warning' if tracking.tracking_confidence > 0.6 else 'danger' }}" 
+                                                                 style="width: {{ (tracking.tracking_confidence * 100)|round }}%">
+                                                                {{ "%.1f"|format(tracking.tracking_confidence * 100) }}%
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        {% if tracking.is_target_person %}
+                                                        <span class="badge bg-success">
+                                                            <i class="fas fa-check me-1"></i>{{ "%.1f"|format(tracking.target_match_confidence * 100) }}%
+                                                        </span>
+                                                        {% else %}
+                                                        <span class="badge bg-secondary">No Match</span>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>
+                                                        <button class="btn btn-sm btn-outline-primary" onclick="viewTrajectory({{ tracking.id }})">
+                                                            <i class="fas fa-route me-1"></i>Trajectory
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    {% else %}
+                                    <div class="text-center py-3">
+                                        <i class="fas fa-users fa-2x text-muted mb-2"></i>
+                                        <p class="text-muted">No tracking results available</p>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Temporal Analysis Tab -->
+                        <div class="tab-pane fade" id="temporal{{ analysis.id }}" role="tabpanel">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6 class="text-primary mb-3">Movement Patterns</h6>
+                                    {% if analysis.movement_patterns_detected %}
+                                    <div class="list-group">
+                                        <!-- Movement patterns would be displayed here -->
+                                        <div class="list-group-item">
+                                            <i class="fas fa-info-circle text-info me-2"></i>
+                                            Movement patterns detected and analyzed
+                                        </div>
+                                    </div>
+                                    {% else %}
+                                    <p class="text-muted">No movement patterns detected</p>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    <h6 class="text-primary mb-3">Behavioral Indicators</h6>
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <div class="card text-center">
+                                                <div class="card-body">
+                                                    <h5 class="card-title text-{{ 'danger' if analysis.loitering_detected else 'success' }}">
+                                                        {% if analysis.loitering_detected %}
+                                                        <i class="fas fa-exclamation-triangle"></i>
+                                                        {% else %}
+                                                        <i class="fas fa-check-circle"></i>
+                                                        {% endif %}
+                                                    </h5>
+                                                    <p class="card-text small">Loitering</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="card text-center">
+                                                <div class="card-body">
+                                                    <h5 class="card-title text-{{ 'danger' if analysis.erratic_movement_detected else 'success' }}">
+                                                        {% if analysis.erratic_movement_detected %}
+                                                        <i class="fas fa-exclamation-triangle"></i>
+                                                        {% else %}
+                                                        <i class="fas fa-check-circle"></i>
+                                                        {% endif %}
+                                                    </h5>
+                                                    <p class="card-text small">Erratic Movement</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Behavioral Analysis Tab -->
+                        <div class="tab-pane fade" id="behavioral{{ analysis.id }}" role="tabpanel">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <h6 class="text-primary mb-3">Behavioral Events</h6>
+                                    {% if analysis.behavioral_events %}
+                                    <div class="table-responsive">
+                                        <table class="table table-sm">
+                                            <thead>
+                                                <tr>
+                                                    <th>Event Type</th>
+                                                    <th>Timestamp</th>
+                                                    <th>Confidence</th>
+                                                    <th>Severity</th>
+                                                    <th>Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for event in analysis.behavioral_events %}
+                                                <tr>
+                                                    <td>{{ event.event_type.replace('_', ' ').title() }}</td>
+                                                    <td>{{ event.formatted_timestamp }}</td>
+                                                    <td>{{ "%.1f"|format(event.confidence_score * 100) }}%</td>
+                                                    <td>
+                                                        <span class="badge bg-{{ 'danger' if event.severity_level == 'high' else 'warning' if event.severity_level == 'medium' else 'info' }}">
+                                                            {{ event.severity_level.title() }}
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        {% if event.verified %}
+                                                        <span class="badge bg-success">Verified</span>
+                                                        {% else %}
+                                                        <button class="btn btn-sm btn-outline-success" onclick="verifyEvent({{ event.id }})">
+                                                            Verify
+                                                        </button>
+                                                        {% endif %}
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    {% else %}
+                                    <p class="text-muted">No behavioral events detected</p>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-4">
+                                    <h6 class="text-primary mb-3">Analysis Summary</h6>
+                                    <div class="card bg-light">
+                                        <div class="card-body">
+                                            <p><strong>Total Events:</strong> {{ analysis.unusual_behaviors_count }}</p>
+                                            <p><strong>Interactions:</strong> {{ analysis.interaction_events }}</p>
+                                            {% if analysis.activity_classification %}
+                                            <p><strong>Activities:</strong> Detected</p>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Appearance Changes Tab -->
+                        <div class="tab-pane fade" id="appearance{{ analysis.id }}" role="tabpanel">
+                            <h6 class="text-primary mb-3">Clothing/Appearance Changes</h6>
+                            {% if analysis.appearance_changes_detected > 0 %}
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                {{ analysis.appearance_changes_detected }} appearance changes detected during tracking
+                            </div>
+                            {% if analysis.appearance_changes %}
+                            <div class="row">
+                                {% for change in analysis.appearance_changes %}
+                                <div class="col-md-6 mb-3">
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <h6 class="card-title">{{ change.change_type.replace('_', ' ').title() }}</h6>
+                                            <p class="card-text">{{ change.change_description or 'Change detected at ' + change.formatted_timestamp }}</p>
+                                            <div class="d-flex justify-content-between">
+                                                <small class="text-muted">{{ change.formatted_timestamp }}</small>
+                                                <span class="badge bg-info">{{ "%.1f"|format(change.confidence_score * 100) }}%</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            {% else %}
+                            <div class="text-center py-4">
+                                <i class="fas fa-tshirt fa-3x text-muted mb-3"></i>
+                                <p class="text-muted">No appearance changes detected</p>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Crowd Analysis Tab -->
+                        <div class="tab-pane fade" id="crowd{{ analysis.id }}" role="tabpanel">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6 class="text-primary mb-3">Crowd Metrics</h6>
+                                    <div class="card bg-light">
+                                        <div class="card-body">
+                                            <p><strong>Crowd Scenes:</strong> {{ analysis.crowd_scenes_detected }}</p>
+                                            <p><strong>Max Density:</strong> {{ "%.2f"|format(analysis.max_crowd_density or 0) }} persons/area</p>
+                                            <p><strong>Extraction Quality:</strong> 
+                                                {% if analysis.person_extraction_quality %}
+                                                {{ "%.1f"|format(analysis.person_extraction_quality * 100) }}%
+                                                {% else %}
+                                                N/A
+                                                {% endif %}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6 class="text-primary mb-3">Congestion Areas</h6>
+                                    {% if analysis.congestion_areas %}
+                                    <div class="alert alert-warning">
+                                        <i class="fas fa-users me-2"></i>
+                                        Congestion areas detected - may affect person extraction quality
+                                    </div>
+                                    {% else %}
+                                    <p class="text-muted">No significant congestion detected</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% elif analysis.status == 'processing' %}
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary mb-3" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <h5>Analysis in Progress</h5>
+                        <p class="text-muted">Advanced AI is analyzing the footage. This may take several minutes.</p>
+                        <div class="progress">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 60%"></div>
+                        </div>
+                    </div>
+                    {% elif analysis.status == 'failed' %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-exclamation-triangle fa-3x text-danger mb-3"></i>
+                        <h5 class="text-danger">Analysis Failed</h5>
+                        <p class="text-muted">{{ analysis.error_message or 'An error occurred during analysis' }}</p>
+                        <button class="btn btn-primary" onclick="retryAnalysis({{ analysis.id }})">
+                            <i class="fas fa-redo me-2"></i>Retry Analysis
+                        </button>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-clock fa-3x text-muted mb-3"></i>
+                        <h5>Analysis Pending</h5>
+                        <p class="text-muted">Click "Start Analysis" to begin intelligent footage analysis</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
+    {% if not analyses %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-brain fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No Intelligent Analysis Available</h5>
+                    <p class="text-muted">Upload surveillance footage and start intelligent analysis to see advanced AI insights</p>
+                    <a href="{{ url_for('admin.upload_surveillance_footage') }}" class="btn btn-primary">
+                        <i class="fas fa-upload me-2"></i>Upload Footage
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function startIntelligentAnalysis() {
+    if (confirm('Start intelligent footage analysis? This process may take several minutes.')) {
+        fetch(`/admin/cases/{{ case.id }}/start-intelligent-analysis`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Intelligent analysis started successfully!');
+                location.reload();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        });
+    }
+}
+
+function retryAnalysis(analysisId) {
+    if (confirm('Retry the failed analysis?')) {
+        fetch(`/admin/intelligent-analysis/${analysisId}/retry`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        }).then(() => {
+            alert('Analysis restarted. Please check back in a few minutes.');
+            location.reload();
+        });
+    }
+}
+
+function verifyEvent(eventId) {
+    if (confirm('Verify this behavioral event?')) {
+        fetch(`/admin/behavioral-event/${eventId}/verify`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        }).then(() => {
+            location.reload();
+        });
+    }
+}
+
+function viewTrajectory(trackingId) {
+    // Open trajectory visualization modal
+    alert('Trajectory visualization feature coming soon!');
+}
+</script>
+{% endblock %}

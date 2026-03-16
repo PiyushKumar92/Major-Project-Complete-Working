@@ -1,0 +1,458 @@
+{% extends "admin/base.html" %}
+
+{% block page_title %}Case Quality Dashboard{% endblock %}
+{% block page_subtitle %}Case quality assessment and improvement recommendations{% endblock %}
+
+{% block title %}Case Quality Dashboard{% endblock %}
+
+{% block admin_content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">
+                <i class="fas fa-chart-line me-2"></i>Case Quality Dashboard
+            </h1>
+            <p class="text-muted">ML-based case quality assessment and analytics</p>
+        </div>
+        <div>
+            <button class="btn btn-primary" onclick="refreshDashboard()">
+                <i class="fas fa-sync-alt me-2"></i>Refresh
+            </button>
+        </div>
+    </div>
+
+    <!-- Quality Overview Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                High Quality Cases (A/A+)
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ quality_stats.high_quality_count }}</div>
+                            <div class="text-xs text-muted">{{ quality_stats.high_quality_percentage }}% of total</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-star fa-2x text-success"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Medium Quality Cases (B/C)
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ quality_stats.medium_quality_count }}</div>
+                            <div class="text-xs text-muted">{{ quality_stats.medium_quality_percentage }}% of total</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-exclamation-triangle fa-2x text-warning"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-danger shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                                Low Quality Cases (D/F)
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ quality_stats.low_quality_count }}</div>
+                            <div class="text-xs text-muted">{{ quality_stats.low_quality_percentage }}% of total</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-times-circle fa-2x text-danger"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Average Success Rate
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ quality_stats.avg_success_rate }}%</div>
+                            <div class="text-xs text-muted">Estimated by AI</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-percentage fa-2x text-info"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quality Distribution Chart -->
+    <div class="row mb-4">
+        <div class="col-xl-8 col-lg-7">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Quality Grade Distribution</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="qualityChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-4 col-lg-5">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Priority Distribution</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="priorityChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Quality Assessments -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">Recent Quality Assessments</h6>
+            <div>
+                <select class="form-select form-select-sm" id="gradeFilter" onchange="filterByGrade()">
+                    <option value="">All Grades</option>
+                    <option value="A+">A+ Grade</option>
+                    <option value="A">A Grade</option>
+                    <option value="B">B Grade</option>
+                    <option value="C">C Grade</option>
+                    <option value="D">D Grade</option>
+                    <option value="F">F Grade</option>
+                </select>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="qualityTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Case ID</th>
+                            <th>Person Name</th>
+                            <th>Quality Grade</th>
+                            <th>Overall Score</th>
+                            <th>Photo Quality</th>
+                            <th>Info Completeness</th>
+                            <th>Urgency Level</th>
+                            <th>Success Rate</th>
+                            <th>Priority</th>
+                            <th>Assessed</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for assessment in recent_assessments %}
+                        <tr data-grade="{{ assessment.quality_grade }}">
+                            <td>
+                                <a href="{{ url_for('admin.case_detail', case_id=assessment.case_id) }}" class="text-decoration-none">
+                                    #{{ assessment.case_id }}
+                                </a>
+                            </td>
+                            <td>{{ assessment.case.person_name }}</td>
+                            <td>
+                                <span class="badge bg-{{ 'success' if assessment.quality_grade in ['A+', 'A'] else 'warning' if assessment.quality_grade in ['B', 'C'] else 'danger' }}">
+                                    {{ assessment.quality_grade }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="progress" style="height: 20px;">
+                                    <div class="progress-bar bg-{{ 'success' if assessment.overall_score >= 0.8 else 'warning' if assessment.overall_score >= 0.6 else 'danger' }}" 
+                                         role="progressbar" 
+                                         style="width: {{ assessment.overall_score * 100 }}%">
+                                        {{ "%.1f"|format(assessment.overall_score * 100) }}%
+                                    </div>
+                                </div>
+                            </td>
+                            <td>{{ "%.1f"|format(assessment.photo_quality_score * 100) }}%</td>
+                            <td>{{ "%.1f"|format(assessment.information_completeness_score * 100) }}%</td>
+                            <td>
+                                <span class="badge bg-{{ 'danger' if assessment.urgency_level == 'Critical' else 'warning' if assessment.urgency_level == 'High' else 'info' if assessment.urgency_level == 'Medium' else 'secondary' }}">
+                                    {{ assessment.urgency_level }}
+                                </span>
+                            </td>
+                            <td>{{ "%.0f"|format(assessment.estimated_success_rate * 100) }}%</td>
+                            <td>
+                                <span class="badge bg-{{ 'danger' if assessment.processing_priority == 'Critical' else 'warning' if assessment.processing_priority == 'High' else 'info' if assessment.processing_priority == 'Medium' else 'secondary' }}">
+                                    {{ assessment.processing_priority }}
+                                </span>
+                            </td>
+                            <td>{{ assessment.assessed_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary" onclick="viewDetails({{ assessment.id }})">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                {% if assessment.duplicate_risk_level == 'High' %}
+                                <button class="btn btn-sm btn-outline-warning" onclick="viewSimilarCases({{ assessment.id }})">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quality Trends -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Quality Trends (Last 30 Days)</h6>
+        </div>
+        <div class="card-body">
+            <canvas id="trendsChart" width="400" height="100"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Quality Details Modal -->
+<div class="modal fade" id="qualityDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Quality Assessment Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="qualityDetailsContent">
+                <!-- Content loaded via AJAX -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Similar Cases Modal -->
+<div class="modal fade" id="similarCasesModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Similar Cases Detected</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="similarCasesContent">
+                <!-- Content loaded via AJAX -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Quality Grade Distribution Chart
+const qualityCtx = document.getElementById('qualityChart').getContext('2d');
+const qualityChart = new Chart(qualityCtx, {
+    type: 'doughnut',
+    data: {
+        labels: {{ quality_distribution.labels | tojsonfilter }},
+        datasets: [{
+            data: {{ quality_distribution.data | tojsonfilter }},
+            backgroundColor: [
+                '#28a745', '#20c997', '#ffc107', '#fd7e14', '#dc3545', '#6c757d'
+            ]
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+
+// Priority Distribution Chart
+const priorityCtx = document.getElementById('priorityChart').getContext('2d');
+const priorityChart = new Chart(priorityCtx, {
+    type: 'pie',
+    data: {
+        labels: {{ priority_distribution.labels | tojsonfilter }},
+        datasets: [{
+            data: {{ priority_distribution.data | tojsonfilter }},
+            backgroundColor: ['#dc3545', '#ffc107', '#17a2b8', '#6c757d']
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+
+// Quality Trends Chart
+const trendsCtx = document.getElementById('trendsChart').getContext('2d');
+const trendsChart = new Chart(trendsCtx, {
+    type: 'line',
+    data: {
+        labels: {{ trends_data.labels | tojsonfilter }},
+        datasets: [{
+            label: 'Average Quality Score',
+            data: {{ trends_data.quality_scores | tojsonfilter }},
+            borderColor: '#007bff',
+            backgroundColor: 'rgba(0, 123, 255, 0.1)',
+            tension: 0.4
+        }, {
+            label: 'Average Success Rate',
+            data: {{ trends_data.success_rates | tojsonfilter }},
+            borderColor: '#28a745',
+            backgroundColor: 'rgba(40, 167, 69, 0.1)',
+            tension: 0.4
+        }]
+    },
+    options: {
+        responsive: true,
+        scales: {
+            y: {
+                beginAtZero: true,
+                max: 100
+            }
+        }
+    }
+});
+
+// Filter functions
+function filterByGrade() {
+    const filter = document.getElementById('gradeFilter').value;
+    const rows = document.querySelectorAll('#qualityTable tbody tr');
+    
+    rows.forEach(row => {
+        if (!filter || row.dataset.grade === filter) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+function viewDetails(assessmentId) {
+    fetch(`/admin/api/quality-assessment/${assessmentId}`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('qualityDetailsContent').innerHTML = generateDetailsHTML(data);
+            new bootstrap.Modal(document.getElementById('qualityDetailsModal')).show();
+        })
+        .catch(error => {
+            console.error('Error loading details:', error);
+            alert('Error loading assessment details');
+        });
+}
+
+function viewSimilarCases(assessmentId) {
+    fetch(`/admin/api/similar-cases/${assessmentId}`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('similarCasesContent').innerHTML = generateSimilarCasesHTML(data);
+            new bootstrap.Modal(document.getElementById('similarCasesModal')).show();
+        })
+        .catch(error => {
+            console.error('Error loading similar cases:', error);
+            alert('Error loading similar cases');
+        });
+}
+
+function generateDetailsHTML(data) {
+    return `
+        <div class="row">
+            <div class="col-md-6">
+                <h6>Photo Quality Analysis</h6>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>Overall Score:</span>
+                        <strong>${(data.photo_quality_score * 100).toFixed(1)}%</strong>
+                    </li>
+                    <li class="list-group-item">
+                        <strong>Issues:</strong>
+                        <ul class="mt-2">
+                            ${data.photo_issues.map(issue => `<li>${issue}</li>`).join('')}
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <h6>Information Completeness</h6>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>Overall Score:</span>
+                        <strong>${(data.information_completeness_score * 100).toFixed(1)}%</strong>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="mt-3">
+            <h6>AI Recommendations</h6>
+            <ul class="list-group">
+                ${data.recommendations.map(rec => `<li class="list-group-item">${rec}</li>`).join('')}
+            </ul>
+        </div>
+    `;
+}
+
+function generateSimilarCasesHTML(data) {
+    return `
+        <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <strong>Duplicate Risk Level: ${data.risk_level}</strong>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Case ID</th>
+                        <th>Person Name</th>
+                        <th>Similarity</th>
+                        <th>Created</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${data.similar_cases.map(case => `
+                        <tr>
+                            <td>#${case.case_id}</td>
+                            <td>${case.person_name}</td>
+                            <td>
+                                <div class="progress" style="height: 20px;">
+                                    <div class="progress-bar bg-warning" style="width: ${case.similarity_score * 100}%">
+                                        ${(case.similarity_score * 100).toFixed(1)}%
+                                    </div>
+                                </div>
+                            </td>
+                            <td>${new Date(case.created_at).toLocaleDateString()}</td>
+                            <td>
+                                <a href="/admin/cases/${case.case_id}" class="btn btn-sm btn-outline-primary">View</a>
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
+}
+
+function refreshDashboard() {
+    location.reload();
+}
+</script>
+{% endblock %}

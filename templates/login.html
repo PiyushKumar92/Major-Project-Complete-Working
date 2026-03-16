@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+
+{% block title %}Sign In - Missing Person Finder{% endblock %}
+
+{% block content %}
+<div class="content-container">
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <i class="fas fa-search fa-3x mb-3"></i>
+                <h2 class="mb-2">Welcome Back</h2>
+                <p class="mb-0">Sign in to access your missing person cases</p>
+            </div>
+            
+            <div class="auth-body">
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-3">
+                        {{ form.username.label(class="form-label") }}
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-user"></i></span>
+                            {{ form.username(class="form-control", placeholder="Enter your username", id="username", autocomplete="username") }}
+                            <div class="dropdown" id="usernameDropdown" style="display: none; position: absolute; top: 100%; left: 0; right: 0; z-index: 1000; background: white; border: 1px solid #ddd; border-radius: 4px; max-height: 200px; overflow-y: auto;"></div>
+                        </div>
+                        {% for error in form.username.errors %}
+                            <div class="text-danger small mt-1">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.password.label(class="form-label") }}
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                            {{ form.password(class="form-control", placeholder="Enter your password", id="password", autocomplete="current-password") }}
+                        </div>
+                        {% for error in form.password.errors %}
+                            <div class="text-danger small mt-1">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="mb-4">
+                        <div class="form-check">
+                            {{ form.remember_me(class="form-check-input") }}
+                            {{ form.remember_me.label(class="form-check-label") }}
+                        </div>
+                    </div>
+                    
+                    {{ form.submit(class="btn btn-primary w-100 btn-lg", id="loginBtn") }}
+                </form>
+            </div>
+            
+            <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const usernameInput = document.getElementById('username');
+                const passwordInput = document.getElementById('password');
+                const rememberCheckbox = document.getElementById('remember_me');
+                const loginForm = document.querySelector('form');
+                const dropdown = document.getElementById('usernameDropdown');
+                
+                // Load saved users from localStorage
+                function getSavedUsers() {
+                    const saved = localStorage.getItem('rememberedUsers');
+                    return saved ? JSON.parse(saved) : {};
+                }
+                
+                // Save user credentials with user type detection
+                function saveUser(username, password) {
+                    const users = getSavedUsers();
+                    users[username] = {
+                        password: btoa(password),
+                        timestamp: Date.now(),
+                        userType: username.toLowerCase().includes('admin') ? 'admin' : 'user'
+                    };
+                    localStorage.setItem('rememberedUsers', JSON.stringify(users));
+                }
+                
+                // Show dropdown with saved usernames
+                function showUserDropdown() {
+                    const users = getSavedUsers();
+                    const usernames = Object.keys(users);
+                    
+                    if (usernames.length === 0) {
+                        dropdown.style.display = 'none';
+                        return;
+                    }
+                    
+                    dropdown.innerHTML = '';
+                    usernames.forEach(username => {
+                        const item = document.createElement('div');
+                        item.style.cssText = 'padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;';
+                        
+                        const userInfo = users[username];
+                        const userType = typeof userInfo === 'object' ? userInfo.userType : 'user';
+                        const password = typeof userInfo === 'object' ? userInfo.password : userInfo;
+                        
+                        item.innerHTML = `<span>${username}</span><small style="color: #666;">${userType}</small>`;
+                        item.addEventListener('click', function() {
+                            usernameInput.value = username;
+                            passwordInput.value = atob(password);
+                            rememberCheckbox.checked = true;
+                            dropdown.style.display = 'none';
+                        });
+                        item.addEventListener('mouseover', function() {
+                            this.style.backgroundColor = '#f8f9fa';
+                        });
+                        item.addEventListener('mouseout', function() {
+                            this.style.backgroundColor = 'white';
+                        });
+                        dropdown.appendChild(item);
+                    });
+                    
+                    dropdown.style.display = 'block';
+                }
+                
+                // Hide dropdown when clicking outside
+                document.addEventListener('click', function(e) {
+                    if (!usernameInput.contains(e.target) && !dropdown.contains(e.target)) {
+                        dropdown.style.display = 'none';
+                    }
+                });
+                
+                // Show dropdown on username focus
+                usernameInput.addEventListener('focus', showUserDropdown);
+                usernameInput.addEventListener('input', function() {
+                    const users = getSavedUsers();
+                    const value = this.value.toLowerCase();
+                    const matchedUsers = Object.keys(users).filter(u => u.toLowerCase().includes(value));
+                    
+                    if (matchedUsers.length > 0) {
+                        dropdown.innerHTML = '';
+                        matchedUsers.forEach(username => {
+                            const item = document.createElement('div');
+                            item.style.cssText = 'padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;';
+                            
+                            const userInfo = users[username];
+                            const userType = typeof userInfo === 'object' ? userInfo.userType : 'user';
+                            const password = typeof userInfo === 'object' ? userInfo.password : userInfo;
+                            
+                            item.innerHTML = `<span>${username}</span><small style="color: #666;">${userType}</small>`;
+                            item.addEventListener('click', function() {
+                                usernameInput.value = username;
+                                passwordInput.value = atob(password);
+                                rememberCheckbox.checked = true;
+                                dropdown.style.display = 'none';
+                            });
+                            dropdown.appendChild(item);
+                        });
+                        dropdown.style.display = 'block';
+                    } else {
+                        dropdown.style.display = 'none';
+                    }
+                });
+                
+                // Save credentials on successful login
+                loginForm.addEventListener('submit', function(e) {
+                    if (rememberCheckbox.checked && usernameInput.value && passwordInput.value) {
+                        // Add small delay to ensure form submission completes
+                        setTimeout(() => {
+                            saveUser(usernameInput.value, passwordInput.value);
+                        }, 100);
+                    }
+                });
+                
+                // Load saved credentials on page load
+                const users = getSavedUsers();
+                const usernames = Object.keys(users);
+                if (usernames.length === 1) {
+                    const username = usernames[0];
+                    const userInfo = users[username];
+                    const password = typeof userInfo === 'object' ? userInfo.password : userInfo;
+                    
+                    usernameInput.value = username;
+                    passwordInput.value = atob(password);
+                    rememberCheckbox.checked = true;
+                }
+            });
+            </script>
+            
+            <div class="auth-footer">
+                <p class="mb-0">Don't have an account? <a href="{{ url_for('main.register') }}" class="text-primary fw-semibold">Create one here</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

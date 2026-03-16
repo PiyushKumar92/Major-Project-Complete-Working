@@ -1,0 +1,415 @@
+{% extends "base.html" %}
+
+{% block title %}Match Confidence Analysis - {{ match.case.person_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="text-primary mb-1">
+                        <i class="fas fa-chart-pie me-2"></i>Match Confidence Analysis
+                    </h2>
+                    <p class="text-muted mb-0">{{ match.case.person_name }} at {{ match.footage.location_name }}</p>
+                </div>
+                <div class="btn-group">
+                    <a href="{{ url_for('admin.ai_analysis_detail', match_id=match.id) }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Match
+                    </a>
+                    <a href="{{ url_for('admin.confidence_analysis', match_id=match.id) }}" class="btn btn-success">
+                        <i class="fas fa-chart-bar me-2"></i>Full Analysis
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Match Overview -->
+    <div class="row mb-4">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Match Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-primary">Case Details</h6>
+                            <div class="d-flex align-items-center mb-3">
+                                {% if match.case.target_images %}
+                                <img src="/static/{{ match.case.target_images[0].image_path }}" 
+                                     class="rounded me-3" width="80" height="80" style="object-fit: cover;"
+                                     onerror="this.src='/static/images/default-avatar.png'">
+                                {% endif %}
+                                <div>
+                                    <h6 class="mb-1">{{ match.case.person_name }}</h6>
+                                    <p class="text-muted mb-1">Age: {{ match.case.age or 'Unknown' }}</p>
+                                    <p class="text-muted mb-0">Case #{{ match.case.id }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-primary">Location Details</h6>
+                            <div class="mb-3">
+                                <h6 class="mb-1">{{ match.footage.location_name }}</h6>
+                                <p class="text-muted mb-1">{{ match.footage.location_address or 'Address not specified' }}</p>
+                                <p class="text-muted mb-0">Duration: {{ match.footage.formatted_duration }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Quick Stats</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6 mb-3">
+                            <div class="h4 text-primary">{{ analysis.total_detections }}</div>
+                            <small class="text-muted">Total Detections</small>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="h4 text-success">{{ "%.1f"|format(analysis.statistics.mean * 100) }}%</div>
+                            <small class="text-muted">Avg Confidence</small>
+                        </div>
+                        <div class="col-6">
+                            <div class="h4 text-info">{{ analysis.statistics.reliability_score }}</div>
+                            <small class="text-muted">Reliability</small>
+                        </div>
+                        <div class="col-6">
+                            <div class="h4 text-warning">{{ analysis.statistics.quality_breakdown.high_quality.count }}</div>
+                            <small class="text-muted">High Quality</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confidence Distribution -->
+    <div class="row mb-4">
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Confidence Distribution</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="confidenceChart" width="400" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-list me-2"></i>Distribution Breakdown</h5>
+                </div>
+                <div class="card-body">
+                    {% for range_name, data in analysis.distribution.items() %}
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="fw-bold">{{ data.label }}</span>
+                            <span class="badge" style="background-color: {{ data.color }}">{{ data.count }}</span>
+                        </div>
+                        <div class="progress" style="height: 15px;">
+                            <div class="progress-bar" 
+                                 style="width: {{ data.percentage }}%; background-color: {{ data.color }};">
+                                {{ data.percentage }}%
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detailed Detection Analysis -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-search me-2"></i>Detection Confidence Breakdown
+                        <span class="badge bg-secondary ms-2">{{ detections|length }} detections</span>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if detections %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Frame</th>
+                                    <th>Timestamp</th>
+                                    <th>Overall Confidence</th>
+                                    <th>Face Match</th>
+                                    <th>Clothing Match</th>
+                                    <th>Method</th>
+                                    <th>Quality</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for detection in detections %}
+                                <tr>
+                                    <td>
+                                        {% if detection.frame_path %}
+                                        <img src="{{ url_for('static', filename=detection.frame_path) }}" 
+                                             class="rounded" width="60" height="45" style="object-fit: cover;">
+                                        {% else %}
+                                        <div class="bg-light rounded d-flex align-items-center justify-content-center" 
+                                             style="width: 60px; height: 45px;">
+                                            <i class="fas fa-image text-muted"></i>
+                                        </div>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="fw-bold">{{ detection.formatted_timestamp }}</div>
+                                        <small class="text-muted">{{ "%.1f"|format(detection.timestamp) }}s</small>
+                                    </td>
+                                    <td>
+                                        <div class="progress mb-1" style="height: 15px;">
+                                            <div class="progress-bar bg-{{ 'success' if detection.confidence_score > 0.8 else 'warning' if detection.confidence_score > 0.6 else 'danger' }}" 
+                                                 style="width: {{ (detection.confidence_score * 100)|round }}%">
+                                                {{ "%.1f"|format(detection.confidence_score * 100) }}%
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if detection.face_match_score %}
+                                        <div class="progress mb-1" style="height: 12px;">
+                                            <div class="progress-bar bg-info" 
+                                                 style="width: {{ (detection.face_match_score * 100)|round }}%">
+                                            </div>
+                                        </div>
+                                        <small class="text-muted">{{ "%.1f"|format(detection.face_match_score * 100) }}%</small>
+                                        {% else %}
+                                        <span class="text-muted">N/A</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if detection.clothing_match_score %}
+                                        <div class="progress mb-1" style="height: 12px;">
+                                            <div class="progress-bar bg-secondary" 
+                                                 style="width: {{ (detection.clothing_match_score * 100)|round }}%">
+                                            </div>
+                                        </div>
+                                        <small class="text-muted">{{ "%.1f"|format(detection.clothing_match_score * 100) }}%</small>
+                                        {% else %}
+                                        <span class="text-muted">N/A</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">{{ detection.analysis_method or 'Unknown' }}</span>
+                                    </td>
+                                    <td>
+                                        {% if detection.confidence_score >= 0.8 %}
+                                        <span class="badge bg-success">High</span>
+                                        {% elif detection.confidence_score >= 0.6 %}
+                                        <span class="badge bg-warning">Medium</span>
+                                        {% else %}
+                                        <span class="badge bg-danger">Low</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No detections found</h5>
+                        <p class="text-muted">No confidence data available for analysis.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistical Analysis -->
+    <div class="row mb-4">
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-calculator me-2"></i>Statistical Metrics</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <tr>
+                            <td class="fw-bold">Mean Confidence:</td>
+                            <td>{{ "%.3f"|format(analysis.statistics.mean) }} ({{ "%.1f"|format(analysis.statistics.mean * 100) }}%)</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold">Median:</td>
+                            <td>{{ "%.3f"|format(analysis.statistics.median) }}</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold">Standard Deviation:</td>
+                            <td>{{ "%.3f"|format(analysis.statistics.std_deviation) }}</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold">Min - Max:</td>
+                            <td>{{ "%.3f"|format(analysis.statistics.min) }} - {{ "%.3f"|format(analysis.statistics.max) }}</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold">75th Percentile:</td>
+                            <td>{{ "%.3f"|format(analysis.statistics.percentiles['75th']) }}</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold">Reliability Score:</td>
+                            <td><span class="badge bg-primary">{{ analysis.statistics.reliability_score }}/100</span></td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-lightbulb me-2"></i>AI Insights</h5>
+                </div>
+                <div class="card-body">
+                    {% for insight in analysis.insights %}
+                    <div class="alert alert-{{ insight.type }} d-flex align-items-start mb-3">
+                        <i class="{{ insight.icon }} me-2 mt-1"></i>
+                        <div>
+                            <h6 class="alert-heading mb-1">{{ insight.title }}</h6>
+                            <p class="mb-0 small">{{ insight.message }}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Time Analysis (if available) -->
+    {% if analysis.time_analysis.timeline %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-clock me-2"></i>Confidence Over Time</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="timeChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Confidence Distribution Chart
+const ctx = document.getElementById('confidenceChart').getContext('2d');
+const chartData = {
+    labels: [
+        {% for range_name, data in analysis.distribution.items() %}
+        '{{ data.label }}'{{ ',' if not loop.last }}
+        {% endfor %}
+    ],
+    datasets: [{
+        data: [
+            {% for range_name, data in analysis.distribution.items() %}
+            {{ data.count }}{{ ',' if not loop.last }}
+            {% endfor %}
+        ],
+        backgroundColor: [
+            {% for range_name, data in analysis.distribution.items() %}
+            '{{ data.color }}'{{ ',' if not loop.last }}
+            {% endfor %}
+        ],
+        borderWidth: 2,
+        borderColor: '#fff'
+    }]
+};
+
+new Chart(ctx, {
+    type: 'doughnut',
+    data: chartData,
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: {
+                    padding: 15,
+                    usePointStyle: true
+                }
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                        const percentage = ((context.parsed / total) * 100).toFixed(1);
+                        return context.label + ': ' + context.parsed + ' (' + percentage + '%)';
+                    }
+                }
+            }
+        }
+    }
+});
+
+{% if analysis.time_analysis.timeline %}
+// Time Analysis Chart
+const timeCtx = document.getElementById('timeChart').getContext('2d');
+const timeData = {
+    labels: [
+        {% for point in analysis.time_analysis.timeline %}
+        '{{ point.time_label }}'{{ ',' if not loop.last }}
+        {% endfor %}
+    ],
+    datasets: [{
+        label: 'Average Confidence',
+        data: [
+            {% for point in analysis.time_analysis.timeline %}
+            {{ point.avg_confidence }}{{ ',' if not loop.last }}
+            {% endfor %}
+        ],
+        borderColor: '#007bff',
+        backgroundColor: 'rgba(0, 123, 255, 0.1)',
+        fill: true,
+        tension: 0.4
+    }]
+};
+
+new Chart(timeCtx, {
+    type: 'line',
+    data: timeData,
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true,
+                max: 1,
+                ticks: {
+                    callback: function(value) {
+                        return (value * 100).toFixed(0) + '%';
+                    }
+                }
+            }
+        },
+        plugins: {
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        return 'Confidence: ' + (context.parsed.y * 100).toFixed(1) + '%';
+                    }
+                }
+            }
+        }
+    }
+});
+{% endif %}
+</script>
+{% endblock %}

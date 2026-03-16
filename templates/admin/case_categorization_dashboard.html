@@ -1,0 +1,685 @@
+{% extends "admin/base.html" %}
+
+{% block page_title %}Case Categorization Dashboard{% endblock %}
+{% block page_subtitle %}AI-powered case categorization and management{% endblock %}
+
+{% block title %}Case Categorization Dashboard{% endblock %}
+
+{% block admin_content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">
+                <i class="fas fa-brain me-2"></i>Intelligent Case Categorization Dashboard
+            </h1>
+            <p class="text-muted">NLP + ML case classification, risk assessment, and priority scoring analytics</p>
+        </div>
+        <div>
+            <button class="btn btn-primary" onclick="refreshDashboard()">
+                <i class="fas fa-sync-alt me-2"></i>Refresh
+            </button>
+            <button class="btn btn-info" onclick="exportAnalytics()">
+                <i class="fas fa-download me-2"></i>Export
+            </button>
+        </div>
+    </div>
+
+    <!-- Categorization Overview Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Categorized Cases
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ categorization_stats.total_cases }}</div>
+                            <div class="text-xs text-muted">{{ categorization_stats.ml_classified_percentage }}% ML classified</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-brain fa-2x text-primary"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                High Confidence Classifications
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ categorization_stats.high_confidence_count }}</div>
+                            <div class="text-xs text-muted">{{ categorization_stats.high_confidence_percentage }}% of total</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-check-circle fa-2x text-success"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Critical Risk Cases
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ categorization_stats.critical_risk_count }}</div>
+                            <div class="text-xs text-muted">{{ categorization_stats.critical_risk_percentage }}% of total</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-exclamation-triangle fa-2x text-warning"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Average Priority Score
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ categorization_stats.avg_priority_score }}/100</div>
+                            <div class="text-xs text-muted">ML-calculated priority</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-chart-line fa-2x text-info"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row mb-4">
+        <!-- Case Type Distribution -->
+        <div class="col-xl-4 col-lg-5">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">AI-Detected Case Types</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="caseTypeChart" width="400" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Risk Level Distribution -->
+        <div class="col-xl-4 col-lg-5">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Risk Level Distribution</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="riskLevelChart" width="400" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Priority Score Distribution -->
+        <div class="col-xl-4 col-lg-5">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Priority Score Distribution</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="priorityScoreChart" width="400" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Classification Accuracy and Confidence -->
+    <div class="row mb-4">
+        <div class="col-xl-8 col-lg-7">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Classification Confidence Trends</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="confidenceTrendsChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-4 col-lg-5">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Classification Methods</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="methodsChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Categorizations Table -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">Recent Case Categorizations</h6>
+            <div>
+                <select class="form-select form-select-sm me-2" id="typeFilter" onchange="filterByType()">
+                    <option value="">All Types</option>
+                    {% for case_type in case_types %}
+                    <option value="{{ case_type }}">{{ case_type.replace('_', ' ').title() }}</option>
+                    {% endfor %}
+                </select>
+                <select class="form-select form-select-sm" id="riskFilter" onchange="filterByRisk()">
+                    <option value="">All Risk Levels</option>
+                    <option value="critical">Critical</option>
+                    <option value="high">High</option>
+                    <option value="medium">Medium</option>
+                    <option value="low">Low</option>
+                </select>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="categorizationTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Case ID</th>
+                            <th>Person Name</th>
+                            <th>AI-Detected Type</th>
+                            <th>Confidence</th>
+                            <th>Risk Level</th>
+                            <th>Priority Score</th>
+                            <th>Tags</th>
+                            <th>Method</th>
+                            <th>Categorized</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for categorization in recent_categorizations %}
+                        <tr data-type="{{ categorization.detected_case_type }}" data-risk="{{ categorization.risk_level }}">
+                            <td>
+                                <a href="{{ url_for('admin.case_detail', case_id=categorization.case_id) }}" class="text-decoration-none">
+                                    #{{ categorization.case_id }}
+                                </a>
+                            </td>
+                            <td>{{ categorization.case.person_name }}</td>
+                            <td>
+                                <span class="badge bg-primary">
+                                    {{ categorization.detected_case_type.replace('_', ' ').title() }}
+                                </span>
+                                {% if categorization.case.case_type != categorization.detected_case_type %}
+                                <small class="text-muted d-block">
+                                    Original: {{ categorization.case.case_type.replace('_', ' ').title() }}
+                                </small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="progress" style="height: 20px;">
+                                    <div class="progress-bar bg-{{ 'success' if categorization.case_type_confidence >= 0.8 else 'warning' if categorization.case_type_confidence >= 0.6 else 'danger' }}" 
+                                         role="progressbar" 
+                                         style="width: {{ categorization.case_type_confidence * 100 }}%">
+                                        {{ "%.0f"|format(categorization.case_type_confidence * 100) }}%
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge bg-{{ 'danger' if categorization.risk_level == 'critical' else 'warning' if categorization.risk_level == 'high' else 'info' if categorization.risk_level == 'medium' else 'secondary' }}">
+                                    {{ categorization.risk_level.title() }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <span class="me-2">{{ "%.0f"|format(categorization.priority_score) }}</span>
+                                    <div class="progress flex-grow-1" style="height: 15px;">
+                                        <div class="progress-bar bg-{{ 'danger' if categorization.priority_score >= 80 else 'warning' if categorization.priority_score >= 60 else 'info' }}" 
+                                             style="width: {{ categorization.priority_score }}%">
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="tag-container">
+                                    {% for tag in categorization.all_tags[:3] %}
+                                    <span class="badge bg-light text-dark me-1">{{ tag }}</span>
+                                    {% endfor %}
+                                    {% if categorization.all_tags|length > 3 %}
+                                    <span class="badge bg-secondary">+{{ categorization.all_tags|length - 3 }}</span>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge bg-{{ 'success' if categorization.detection_method == 'ml_classification' else 'info' if categorization.detection_method == 'rule_based' else 'warning' }}">
+                                    {{ categorization.detection_method.replace('_', ' ').title() }}
+                                </span>
+                            </td>
+                            <td>{{ categorization.categorized_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary" onclick="viewCategorizationDetails({{ categorization.id }})">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-info" onclick="viewTags({{ categorization.id }})">
+                                    <i class="fas fa-tags"></i>
+                                </button>
+                                {% if categorization.alternative_types_list %}
+                                <button class="btn btn-sm btn-outline-warning" onclick="viewAlternatives({{ categorization.id }})">
+                                    <i class="fas fa-list-alt"></i>
+                                </button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tag Cloud -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Popular Auto-Generated Tags</h6>
+        </div>
+        <div class="card-body">
+            <div id="tagCloud" class="text-center">
+                {% for tag, count in popular_tags %}
+                <span class="badge bg-primary me-2 mb-2" style="font-size: {{ 0.8 + (count / max_tag_count) * 0.8 }}rem;">
+                    {{ tag }} ({{ count }})
+                </span>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Categorization Details Modal -->
+<div class="modal fade" id="categorizationDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Case Categorization Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="categorizationDetailsContent">
+                <!-- Content loaded via AJAX -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tags Modal -->
+<div class="modal fade" id="tagsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Auto-Generated Tags</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="tagsContent">
+                <!-- Content loaded via AJAX -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Alternative Types Modal -->
+<div class="modal fade" id="alternativesModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Alternative Case Types</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="alternativesContent">
+                <!-- Content loaded via AJAX -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Case Type Distribution Chart
+const caseTypeCtx = document.getElementById('caseTypeChart').getContext('2d');
+const caseTypeChart = new Chart(caseTypeCtx, {
+    type: 'doughnut',
+    data: {
+        labels: {{ case_type_distribution.labels | tojsonfilter }},
+        datasets: [{
+            data: {{ case_type_distribution.data | tojsonfilter }},
+            backgroundColor: [
+                '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b', 
+                '#858796', '#5a5c69', '#6f42c1', '#e83e8c', '#fd7e14'
+            ]
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+
+// Risk Level Distribution Chart
+const riskLevelCtx = document.getElementById('riskLevelChart').getContext('2d');
+const riskLevelChart = new Chart(riskLevelCtx, {
+    type: 'pie',
+    data: {
+        labels: {{ risk_distribution.labels | tojsonfilter }},
+        datasets: [{
+            data: {{ risk_distribution.data | tojsonfilter }},
+            backgroundColor: ['#dc3545', '#ffc107', '#17a2b8', '#6c757d']
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+
+// Priority Score Distribution Chart
+const priorityScoreCtx = document.getElementById('priorityScoreChart').getContext('2d');
+const priorityScoreChart = new Chart(priorityScoreCtx, {
+    type: 'bar',
+    data: {
+        labels: {{ priority_distribution.labels | tojsonfilter }},
+        datasets: [{
+            label: 'Cases',
+            data: {{ priority_distribution.data | tojsonfilter }},
+            backgroundColor: ['#dc3545', '#ffc107', '#17a2b8', '#6c757d']
+        }]
+    },
+    options: {
+        responsive: true,
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+
+// Confidence Trends Chart
+const confidenceTrendsCtx = document.getElementById('confidenceTrendsChart').getContext('2d');
+const confidenceTrendsChart = new Chart(confidenceTrendsCtx, {
+    type: 'line',
+    data: {
+        labels: {{ confidence_trends.labels | tojsonfilter }},
+        datasets: [{
+            label: 'Case Type Confidence',
+            data: {{ confidence_trends.case_type_confidence | tojsonfilter }},
+            borderColor: '#4e73df',
+            backgroundColor: 'rgba(78, 115, 223, 0.1)',
+            tension: 0.4
+        }, {
+            label: 'Risk Assessment Confidence',
+            data: {{ confidence_trends.risk_confidence | tojsonfilter }},
+            borderColor: '#1cc88a',
+            backgroundColor: 'rgba(28, 200, 138, 0.1)',
+            tension: 0.4
+        }, {
+            label: 'Overall Confidence',
+            data: {{ confidence_trends.overall_confidence | tojsonfilter }},
+            borderColor: '#36b9cc',
+            backgroundColor: 'rgba(54, 185, 204, 0.1)',
+            tension: 0.4
+        }]
+    },
+    options: {
+        responsive: true,
+        scales: {
+            y: {
+                beginAtZero: true,
+                max: 100
+            }
+        }
+    }
+});
+
+// Classification Methods Chart
+const methodsCtx = document.getElementById('methodsChart').getContext('2d');
+const methodsChart = new Chart(methodsCtx, {
+    type: 'doughnut',
+    data: {
+        labels: {{ methods_distribution.labels | tojsonfilter }},
+        datasets: [{
+            data: {{ methods_distribution.data | tojsonfilter }},
+            backgroundColor: ['#28a745', '#17a2b8', '#ffc107']
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+
+// Filter functions
+function filterByType() {
+    const filter = document.getElementById('typeFilter').value;
+    const rows = document.querySelectorAll('#categorizationTable tbody tr');
+    
+    rows.forEach(row => {
+        if (!filter || row.dataset.type === filter) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+function filterByRisk() {
+    const filter = document.getElementById('riskFilter').value;
+    const rows = document.querySelectorAll('#categorizationTable tbody tr');
+    
+    rows.forEach(row => {
+        if (!filter || row.dataset.risk === filter) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+// Modal functions
+function viewCategorizationDetails(categorizationId) {
+    fetch(`/admin/api/categorization/${categorizationId}`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('categorizationDetailsContent').innerHTML = generateDetailsHTML(data);
+            new bootstrap.Modal(document.getElementById('categorizationDetailsModal')).show();
+        })
+        .catch(error => {
+            console.error('Error loading details:', error);
+            alert('Error loading categorization details');
+        });
+}
+
+function viewTags(categorizationId) {
+    fetch(`/admin/api/categorization/${categorizationId}/tags`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('tagsContent').innerHTML = generateTagsHTML(data);
+            new bootstrap.Modal(document.getElementById('tagsModal')).show();
+        })
+        .catch(error => {
+            console.error('Error loading tags:', error);
+            alert('Error loading tags');
+        });
+}
+
+function viewAlternatives(categorizationId) {
+    fetch(`/admin/api/categorization/${categorizationId}/alternatives`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('alternativesContent').innerHTML = generateAlternativesHTML(data);
+            new bootstrap.Modal(document.getElementById('alternativesModal')).show();
+        })
+        .catch(error => {
+            console.error('Error loading alternatives:', error);
+            alert('Error loading alternatives');
+        });
+}
+
+function generateDetailsHTML(data) {
+    return `
+        <div class="row">
+            <div class="col-md-6">
+                <h6>Case Type Detection</h6>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>Detected Type:</span>
+                        <strong>${data.detected_case_type.replace('_', ' ')}</strong>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>Confidence:</span>
+                        <strong>${(data.case_type_confidence * 100).toFixed(1)}%</strong>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>Method:</span>
+                        <strong>${data.detection_method.replace('_', ' ')}</strong>
+                    </li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <h6>Risk Assessment</h6>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>Risk Level:</span>
+                        <strong>${data.risk_level}</strong>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>Confidence:</span>
+                        <strong>${(data.risk_confidence * 100).toFixed(1)}%</strong>
+                    </li>
+                    <li class="list-group-item">
+                        <strong>Risk Factors:</strong>
+                        <ul class="mt-2">
+                            ${data.risk_factors.map(factor => `<li>${factor}</li>`).join('')}
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="mt-3">
+            <h6>Priority Scoring</h6>
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Priority Score:</strong> ${data.priority_score.toFixed(0)}/100</p>
+                    <p><strong>Category:</strong> ${data.priority_category}</p>
+                    <p><strong>Recommended SLA:</strong> ${data.recommended_sla}</p>
+                </div>
+                <div class="col-md-6">
+                    <strong>Scoring Factors:</strong>
+                    <ul class="mt-2">
+                        ${data.scoring_factors.map(factor => `<li>${factor}</li>`).join('')}
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="mt-3">
+            <h6>AI Recommendations</h6>
+            <ul class="list-group">
+                ${data.recommendations.map(rec => `<li class="list-group-item">${rec}</li>`).join('')}
+            </ul>
+        </div>
+    `;
+}
+
+function generateTagsHTML(data) {
+    const tagCategories = [
+        { name: 'Automatic Tags', key: 'automatic_tags', color: 'primary' },
+        { name: 'Entity Tags', key: 'entity_tags', color: 'success' },
+        { name: 'Location Tags', key: 'location_tags', color: 'info' },
+        { name: 'Temporal Tags', key: 'temporal_tags', color: 'warning' },
+        { name: 'Risk Tags', key: 'risk_tags', color: 'danger' },
+        { name: 'Category Tags', key: 'category_tags', color: 'secondary' }
+    ];
+
+    let html = '';
+    tagCategories.forEach(category => {
+        if (data[category.key] && data[category.key].length > 0) {
+            html += `
+                <div class="mb-3">
+                    <h6>${category.name}</h6>
+                    <div>
+                        ${data[category.key].map(tag => 
+                            `<span class="badge bg-${category.color} me-1 mb-1">${tag}</span>`
+                        ).join('')}
+                    </div>
+                </div>
+            `;
+        }
+    });
+
+    return html || '<p class="text-muted">No tags generated for this case.</p>';
+}
+
+function generateAlternativesHTML(data) {
+    if (!data.alternative_types || data.alternative_types.length === 0) {
+        return '<p class="text-muted">No alternative case types suggested.</p>';
+    }
+
+    return `
+        <div class="table-responsive">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Alternative Type</th>
+                        <th>Probability</th>
+                        <th>Confidence</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${data.alternative_types.map(alt => `
+                        <tr>
+                            <td>${alt.case_type.replace('_', ' ')}</td>
+                            <td>
+                                <div class="progress" style="height: 20px;">
+                                    <div class="progress-bar" style="width: ${alt.probability * 100}%">
+                                        ${(alt.probability * 100).toFixed(1)}%
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge bg-${alt.probability > 0.7 ? 'success' : alt.probability > 0.4 ? 'warning' : 'secondary'}">
+                                    ${alt.probability > 0.7 ? 'High' : alt.probability > 0.4 ? 'Medium' : 'Low'}
+                                </span>
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
+}
+
+function refreshDashboard() {
+    location.reload();
+}
+
+function exportAnalytics() {
+    window.open('/admin/categorization/export', '_blank');
+}
+</script>
+{% endblock %}

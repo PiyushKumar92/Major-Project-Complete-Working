@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Integration Dashboard - Missing Person Investigation</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .integration-card {
+            border-left: 4px solid #007bff;
+            transition: all 0.3s ease;
+        }
+        .integration-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .status-active { color: #28a745; }
+        .status-disabled { color: #dc3545; }
+        .search-form {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 30px;
+        }
+        .result-card {
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+        .confidence-bar {
+            height: 8px;
+            border-radius: 4px;
+            background: #e9ecef;
+            overflow: hidden;
+        }
+        .confidence-fill {
+            height: 100%;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('main.dashboard') }}">
+                <i class="fas fa-search"></i> Missing Person Investigation
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="{{ url_for('main.dashboard') }}">
+                    <i class="fas fa-home"></i> Dashboard
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-12">
+                <h2><i class="fas fa-plug"></i> Integration Dashboard</h2>
+                <p class="text-muted">External system integrations for enhanced investigation capabilities</p>
+            </div>
+        </div>
+
+        <!-- System Status Cards -->
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="card integration-card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h5 class="card-title">
+                                    <i class="fas fa-shield-alt"></i> Police Database
+                                </h5>
+                                <p class="card-text">Missing persons database integration</p>
+                            </div>
+                            <div class="text-end">
+                                <i class="fas fa-circle {{ 'status-active' if integration_status.systems.police_db.enabled else 'status-disabled' }}"></i>
+                                <small class="d-block">{{ 'Active' if integration_status.systems.police_db.enabled else 'Disabled' }}</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card integration-card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h5 class="card-title">
+                                    <i class="fas fa-share-alt"></i> Social Media
+                                </h5>
+                                <p class="card-text">{{ integration_status.systems.social_media.platforms|length }} platforms connected</p>
+                            </div>
+                            <div class="text-end">
+                                <i class="fas fa-circle {{ 'status-active' if integration_status.systems.social_media.enabled else 'status-disabled' }}"></i>
+                                <small class="d-block">{{ 'Active' if integration_status.systems.social_media.enabled else 'Disabled' }}</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card integration-card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h5 class="card-title">
+                                    <i class="fas fa-video"></i> Traffic Cameras
+                                </h5>
+                                <p class="card-text">{{ integration_status.systems.traffic_cameras.camera_count }} cameras available</p>
+                            </div>
+                            <div class="text-end">
+                                <i class="fas fa-circle {{ 'status-active' if integration_status.systems.traffic_cameras.enabled else 'status-disabled' }}"></i>
+                                <small class="d-block">{{ 'Active' if integration_status.systems.traffic_cameras.enabled else 'Disabled' }}</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search Interface -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="search-form">
+                    <h4><i class="fas fa-search"></i> Comprehensive Search</h4>
+                    <p>Search across all integrated systems simultaneously</p>
+                    
+                    <form id="integrationSearchForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Age Range</label>
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <input type="number" class="form-control" id="ageMin" placeholder="Min Age" value="18">
+                                        </div>
+                                        <div class="col-6">
+                                            <input type="number" class="form-control" id="ageMax" placeholder="Max Age" value="65">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Gender</label>
+                                    <select class="form-select" id="gender">
+                                        <option value="unknown">Unknown</option>
+                                        <option value="male">Male</option>
+                                        <option value="female">Female</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Location</label>
+                                    <input type="text" class="form-control" id="location" placeholder="Last known location">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Time Range (Hours)</label>
+                                    <input type="number" class="form-control" id="timeRange" value="24" min="1" max="168">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Description</label>
+                            <textarea class="form-control" id="description" rows="2" placeholder="Physical description or additional details"></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="includePoliceDB" checked>
+                                <label class="form-check-label" for="includePoliceDB">Police Database</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="includeSocialMedia" checked>
+                                <label class="form-check-label" for="includeSocialMedia">Social Media</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="includeTrafficCameras" checked>
+                                <label class="form-check-label" for="includeTrafficCameras">Traffic Cameras</label>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-light btn-lg">
+                            <i class="fas fa-search"></i> Search All Systems
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search Results -->
+        <div id="searchResults" class="row" style="display: none;">
+            <div class="col-12">
+                <h4><i class="fas fa-list"></i> Search Results</h4>
+                <div id="resultsContainer"></div>
+            </div>
+        </div>
+
+        <!-- System Statistics -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-chart-bar"></i> Integration Statistics</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-4">
+                                <h3 class="text-primary">{{ system_info.total_traffic_cameras }}</h3>
+                                <small>Traffic Cameras</small>
+                            </div>
+                            <div class="col-4">
+                                <h3 class="text-success">{{ system_info.social_media_platforms }}</h3>
+                                <small>Social Platforms</small>
+                            </div>
+                            <div class="col-4">
+                                <h3 class="text-info">{{ system_info.cache_size }}</h3>
+                                <small>Cached Searches</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-cog"></i> System Configuration</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-2">
+                            <strong>Police DB:</strong> 
+                            <span class="badge {{ 'bg-success' if system_info.police_db_enabled else 'bg-secondary' }}">
+                                {{ 'Enabled' if system_info.police_db_enabled else 'Disabled' }}
+                            </span>
+                        </div>
+                        <div class="mb-2">
+                            <strong>Social Media:</strong> 
+                            <span class="badge {{ 'bg-success' if system_info.social_media_enabled else 'bg-secondary' }}">
+                                {{ 'Enabled' if system_info.social_media_enabled else 'Disabled' }}
+                            </span>
+                        </div>
+                        <div class="mb-2">
+                            <strong>Traffic Cameras:</strong> 
+                            <span class="badge {{ 'bg-success' if system_info.traffic_cameras_enabled else 'bg-secondary' }}">
+                                {{ 'Enabled' if system_info.traffic_cameras_enabled else 'Disabled' }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.getElementById('integrationSearchForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            performIntegrationSearch();
+        });
+
+        function performIntegrationSearch() {
+            const formData = {
+                age_range: [
+                    parseInt(document.getElementById('ageMin').value),
+                    parseInt(document.getElementById('ageMax').value)
+                ],
+                gender: document.getElementById('gender').value,
+                location: document.getElementById('location').value,
+                description: document.getElementById('description').value,
+                time_range_hours: parseInt(document.getElementById('timeRange').value),
+                include_police_db: document.getElementById('includePoliceDB').checked,
+                include_social_media: document.getElementById('includeSocialMedia').checked,
+                include_traffic_cameras: document.getElementById('includeTrafficCameras').checked
+            };
+
+            // Show loading
+            const resultsContainer = document.getElementById('resultsContainer');
+            resultsContainer.innerHTML = '<div class="text-center"><i class="fas fa-spinner fa-spin fa-2x"></i><p>Searching across all systems...</p></div>';
+            document.getElementById('searchResults').style.display = 'block';
+
+            fetch('/integration/api/search', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    displaySearchResults(data.results);
+                } else {
+                    resultsContainer.innerHTML = `<div class="alert alert-danger">Error: ${data.error}</div>`;
+                }
+            })
+            .catch(error => {
+                resultsContainer.innerHTML = `<div class="alert alert-danger">Network error: ${error.message}</div>`;
+            });
+        }
+
+        function displaySearchResults(results) {
+            const container = document.getElementById('resultsContainer');
+            let html = '';
+
+            // Summary
+            html += `
+                <div class="card mb-3">
+                    <div class="card-header bg-primary text-white">
+                        <h5><i class="fas fa-chart-pie"></i> Search Summary</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-3">
+                                <h4 class="text-primary">${results.summary.total_matches}</h4>
+                                <small>Total Matches</small>
+                            </div>
+                            <div class="col-3">
+                                <h4 class="text-success">${results.summary.police_db_matches}</h4>
+                                <small>Police DB</small>
+                            </div>
+                            <div class="col-3">
+                                <h4 class="text-info">${results.summary.social_media_matches}</h4>
+                                <small>Social Media</small>
+                            </div>
+                            <div class="col-3">
+                                <h4 class="text-warning">${results.summary.traffic_camera_matches}</h4>
+                                <small>Traffic Cameras</small>
+                            </div>
+                        </div>
+                        ${results.summary.highest_confidence > 0 ? `
+                            <div class="mt-3">
+                                <strong>Highest Confidence:</strong> ${(results.summary.highest_confidence * 100).toFixed(1)}% 
+                                (${results.summary.best_match_source})
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+
+            // Results by source
+            const sources = [
+                { key: 'police_db', title: 'Police Database', icon: 'fas fa-shield-alt', color: 'success' },
+                { key: 'social_media', title: 'Social Media', icon: 'fas fa-share-alt', color: 'info' },
+                { key: 'traffic_cameras', title: 'Traffic Cameras', icon: 'fas fa-video', color: 'warning' }
+            ];
+
+            sources.forEach(source => {
+                const sourceResults = results[source.key];
+                if (sourceResults.length > 0) {
+                    html += `
+                        <div class="card mb-3">
+                            <div class="card-header bg-${source.color} text-white">
+                                <h5><i class="${source.icon}"></i> ${source.title} (${sourceResults.length} matches)</h5>
+                            </div>
+                            <div class="card-body">
+                    `;
+
+                    sourceResults.forEach(result => {
+                        html += `
+                            <div class="result-card border p-3 mb-2">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <h6>${result.data.name || result.data.platform || result.data.camera_name || 'Unknown'}</h6>
+                                        <p class="mb-1">${JSON.stringify(result.data, null, 2).substring(0, 200)}...</p>
+                                        <small class="text-muted">Source: ${result.source} | ${new Date(result.timestamp).toLocaleString()}</small>
+                                    </div>
+                                    <div class="text-end">
+                                        <div class="confidence-bar mb-1" style="width: 100px;">
+                                            <div class="confidence-fill bg-${source.color}" style="width: ${result.confidence * 100}%"></div>
+                                        </div>
+                                        <small>${(result.confidence * 100).toFixed(1)}%</small>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+
+                    html += '</div></div>';
+                }
+            });
+
+            if (results.summary.total_matches === 0) {
+                html += '<div class="alert alert-info"><i class="fas fa-info-circle"></i> No matches found across all integrated systems.</div>';
+            }
+
+            container.innerHTML = html;
+        }
+    </script>
+</body>
+</html>

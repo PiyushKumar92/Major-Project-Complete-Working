@@ -1,0 +1,5 @@
+# Real-Time Processing Dependencies
+flask-socketio==5.3.6
+python-socketio==5.9.0
+eventlet==0.33.3
+opencv-python==4.8.1.78

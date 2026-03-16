@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+{% block extra_css %}
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+* { font-family: 'Inter', sans-serif; }
+
+.create-announcement-header {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+}
+
+.form-control:focus {
+    border-color: #10b981;
+    box-shadow: 0 0 0 0.2rem rgba(16, 185, 129, 0.25);
+}
+
+.preview-card {
+    border: 2px dashed #d1d5db;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-top: 1rem;
+}
+
+.announcement-preview {
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.preview-info { background: #dbeafe; border-left: 4px solid #3b82f6; }
+.preview-success { background: #d1fae5; border-left: 4px solid #10b981; }
+.preview-warning { background: #fef3c7; border-left: 4px solid #f59e0b; }
+.preview-danger { background: #fee2e2; border-left: 4px solid #ef4444; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="create-announcement-header">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="mb-2">📝 Create New Announcement</h1>
+                <p class="mb-0">Communicate important information to all platform users</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <a href="{{ url_for('admin.announcements') }}" class="btn btn-light">
+                    <i class="fas fa-arrow-left"></i> Back to Announcements
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">📢 Announcement Details</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" id="announcementForm">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        <div class="mb-3">
+                            <label for="title" class="form-label">Title *</label>
+                            <input type="text" class="form-control" id="title" name="title" required
+                                   placeholder="Enter announcement title..." onkeyup="updatePreview()">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="type" class="form-label">Type *</label>
+                            <select class="form-select" id="type" name="type" required onchange="updatePreview()">
+                                <option value="info">Info - General information</option>
+                                <option value="success">Success - Positive news or achievements</option>
+                                <option value="warning">Warning - Important notices</option>
+                                <option value="danger">Urgent - Critical alerts</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="content" class="form-label">Content *</label>
+                            <textarea class="form-control" id="content" name="content" rows="6" required
+                                      placeholder="Enter announcement content..." onkeyup="updatePreview()"></textarea>
+                            <div class="form-text">
+                                This message will be displayed to all users at the top of every page when active.
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="expires_at" class="form-label">Expiry Date (Optional)</label>
+                            <input type="date" class="form-control" id="expires_at" name="expires_at"
+                                   min="{{ tomorrow.strftime('%Y-%m-%d') }}">
+                            <div class="form-text">
+                                Leave empty for permanent announcement. Expired announcements are automatically deactivated.
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-title">💡 Announcement Templates</h6>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <button type="button" class="btn btn-sm btn-outline-primary mb-2 w-100" 
+                                                    onclick="useTemplate('maintenance')">
+                                                System Maintenance
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-success mb-2 w-100" 
+                                                    onclick="useTemplate('feature')">
+                                                New Feature Launch
+                                            </button>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <button type="button" class="btn btn-sm btn-outline-warning mb-2 w-100" 
+                                                    onclick="useTemplate('policy')">
+                                                Policy Update
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-danger mb-2 w-100" 
+                                                    onclick="useTemplate('security')">
+                                                Security Alert
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('admin.announcements') }}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-bullhorn"></i> Create Announcement
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">👁️ Live Preview</h5>
+                </div>
+                <div class="card-body">
+                    <div class="preview-card">
+                        <div id="announcementPreview" class="announcement-preview preview-info">
+                            <h6 id="previewTitle">Your announcement title will appear here</h6>
+                            <p id="previewContent" class="mb-0">Your announcement content will appear here</p>
+                        </div>
+                        <small class="text-muted">This is how your announcement will appear to users</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="mb-0">📊 Best Practices</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success"></i> Keep titles under 60 characters
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success"></i> Use clear, actionable language
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success"></i> Set expiry dates for time-sensitive announcements
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success"></i> Choose appropriate type for visual impact
+                        </li>
+                        <li class="mb-0">
+                            <i class="fas fa-check text-success"></i> Test preview before publishing
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function updatePreview() {
+    const title = document.getElementById('title').value || 'Your announcement title will appear here';
+    const content = document.getElementById('content').value || 'Your announcement content will appear here';
+    const type = document.getElementById('type').value;
+    
+    document.getElementById('previewTitle').textContent = title;
+    document.getElementById('previewContent').textContent = content;
+    
+    const preview = document.getElementById('announcementPreview');
+    preview.className = `announcement-preview preview-${type}`;
+}
+
+function useTemplate(templateType) {
+    const titleField = document.getElementById('title');
+    const contentField = document.getElementById('content');
+    const typeField = document.getElementById('type');
+    
+    const templates = {
+        'maintenance': {
+            title: 'Scheduled System Maintenance',
+            content: 'We will be performing scheduled maintenance on our servers. During this time, the platform may be temporarily unavailable. We apologize for any inconvenience and appreciate your patience.',
+            type: 'warning'
+        },
+        'feature': {
+            title: 'New AI Enhancement Available',
+            content: 'We are excited to announce new improvements to our AI matching system! Enhanced facial recognition and faster processing times are now available for all users.',
+            type: 'success'
+        },
+        'policy': {
+            title: 'Privacy Policy Update',
+            content: 'We have updated our privacy policy to provide better transparency about how we handle your data. Please review the changes in your account settings.',
+            type: 'info'
+        },
+        'security': {
+            title: 'Important Security Update',
+            content: 'We have implemented additional security measures to protect your account. Please ensure your password is strong and consider enabling two-factor authentication.',
+            type: 'danger'
+        }
+    };
+    
+    if (templates[templateType]) {
+        titleField.value = templates[templateType].title;
+        contentField.value = templates[templateType].content;
+        typeField.value = templates[templateType].type;
+        updatePreview();
+    }
+}
+
+// Initialize preview
+document.addEventListener('DOMContentLoaded', function() {
+    updatePreview();
+});
+</script>
+{% endblock %}

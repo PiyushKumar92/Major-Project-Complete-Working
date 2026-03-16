@@ -1,0 +1,296 @@
+{% extends "base.html" %}
+
+{% block title %}Bulk Upload CCTV Footage{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <!-- Header -->
+            <div class="text-center mb-4">
+                <h2 class="text-primary mb-2">
+                    <i class="fas fa-upload me-2"></i>Bulk Upload CCTV Footage
+                </h2>
+                <p class="text-muted">Upload multiple surveillance videos for comprehensive area coverage</p>
+            </div>
+
+            <!-- Upload Form -->
+            <div class="card shadow">
+                <div class="card-body p-4">
+                    <form method="POST" enctype="multipart/form-data" id="bulkUploadForm">
+                        {{ csrf_token() }}
+                        
+                        <!-- Location Information -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-primary mb-3">
+                                    <i class="fas fa-map-marker-alt me-2"></i>Location Information
+                                </h5>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="location_name" class="form-label">Location Name *</label>
+                                <input type="text" class="form-control" id="location_name" name="location_name" required
+                                       placeholder="e.g., Main Street Junction">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="camera_type" class="form-label">Camera Type</label>
+                                <select class="form-select" id="camera_type" name="camera_type">
+                                    <option value="CCTV">CCTV</option>
+                                    <option value="Security">Security Camera</option>
+                                    <option value="Traffic">Traffic Camera</option>
+                                    <option value="Surveillance">Surveillance Camera</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="quality" class="form-label">Video Quality</label>
+                                <select class="form-select" id="quality" name="quality">
+                                    <option value="SD">SD (480p)</option>
+                                    <option value="HD" selected>HD (720p)</option>
+                                    <option value="FHD">Full HD (1080p)</option>
+                                    <option value="4K">4K (2160p)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- File Upload -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-primary mb-3">
+                                    <i class="fas fa-video me-2"></i>Video Files
+                                </h5>
+                            </div>
+                            <div class="col-12 mb-3">
+                                <label for="video_files" class="form-label">Select Multiple Video Files *</label>
+                                <input type="file" class="form-control" id="video_files" name="video_files" 
+                                       accept="video/*" multiple required onchange="handleFileSelect(this)">
+                                <div class="form-text">
+                                    Supported formats: MP4, AVI, MOV, MKV | Max per file: 2GB | Select multiple files
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- File Preview -->
+                        <div id="filePreview" class="mb-4" style="display: none;">
+                            <h5 class="text-primary mb-3">
+                                <i class="fas fa-eye me-2"></i>Selected Files
+                            </h5>
+                            <div id="fileList" class="row"></div>
+                        </div>
+
+                        <!-- Upload Options -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-primary mb-3">
+                                    <i class="fas fa-cog me-2"></i>Upload Options
+                                </h5>
+                            </div>
+                            <div class="col-12">
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" name="auto_match" id="autoMatch" checked>
+                                    <label class="form-check-label" for="autoMatch">
+                                        <strong>Auto-match with existing cases</strong>
+                                        <br><small class="text-muted">Automatically find and match with missing person cases in this location</small>
+                                    </label>
+                                </div>
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" name="auto_analyze" id="autoAnalyze" checked>
+                                    <label class="form-check-label" for="autoAnalyze">
+                                        <strong>Start AI analysis immediately</strong>
+                                        <br><small class="text-muted">Begin face recognition analysis as soon as upload completes</small>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Submit Buttons -->
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="d-flex justify-content-between">
+                                    <a href="{{ url_for('admin.surveillance_footage') }}" class="btn btn-outline-secondary">
+                                        <i class="fas fa-arrow-left me-2"></i>Back to Footage
+                                    </a>
+                                    <div>
+                                        <button type="reset" class="btn btn-outline-warning me-2" onclick="resetForm()">
+                                            <i class="fas fa-undo me-2"></i>Reset
+                                        </button>
+                                        <button type="submit" class="btn btn-primary" id="submitBtn">
+                                            <i class="fas fa-upload me-2"></i>Upload All Files
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Upload Progress -->
+            <div id="uploadProgress" class="card mt-4" style="display: none;">
+                <div class="card-body">
+                    <h6 class="mb-3">
+                        <i class="fas fa-spinner fa-spin me-2"></i>Bulk Upload Progress
+                    </h6>
+                    <div class="progress mb-3" style="height: 25px;">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                             role="progressbar" style="width: 0%"></div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div id="uploadStatus">Preparing upload...</div>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <div id="progressText">0%</div>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <div id="fileProgress"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let selectedFiles = [];
+
+function handleFileSelect(input) {
+    selectedFiles = Array.from(input.files);
+    const filePreview = document.getElementById('filePreview');
+    const fileList = document.getElementById('fileList');
+    
+    if (selectedFiles.length > 0) {
+        fileList.innerHTML = '';
+        let totalSize = 0;
+        
+        selectedFiles.forEach((file, index) => {
+            const fileSize = (file.size / (1024 * 1024)).toFixed(2);
+            totalSize += file.size;
+            
+            const fileCard = document.createElement('div');
+            fileCard.className = 'col-md-6 col-lg-4 mb-3';
+            fileCard.innerHTML = `
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h6 class="card-title text-truncate">${file.name}</h6>
+                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeFile(${index})">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div class="row text-center">
+                            <div class="col-6">
+                                <small class="text-muted">Size</small>
+                                <div class="fw-bold">${fileSize} MB</div>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted">Type</small>
+                                <div class="fw-bold">${file.type.split('/')[1].toUpperCase()}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            fileList.appendChild(fileCard);
+        });
+        
+        // Show total size
+        const totalSizeMB = (totalSize / (1024 * 1024)).toFixed(2);
+        const totalInfo = document.createElement('div');
+        totalInfo.className = 'col-12 mb-3';
+        totalInfo.innerHTML = `
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>Total: ${selectedFiles.length} files, ${totalSizeMB} MB</strong>
+                ${totalSize > 2 * 1024 * 1024 * 1024 ? '<br><span class="text-warning">⚠️ Large upload - this may take some time</span>' : ''}
+            </div>
+        `;
+        fileList.appendChild(totalInfo);
+        
+        filePreview.style.display = 'block';
+    } else {
+        filePreview.style.display = 'none';
+    }
+}
+
+function removeFile(index) {
+    selectedFiles.splice(index, 1);
+    
+    // Update file input
+    const dt = new DataTransfer();
+    selectedFiles.forEach(file => dt.items.add(file));
+    document.getElementById('video_files').files = dt.files;
+    
+    // Refresh preview
+    handleFileSelect(document.getElementById('video_files'));
+}
+
+function resetForm() {
+    selectedFiles = [];
+    document.getElementById('filePreview').style.display = 'none';
+    document.getElementById('uploadProgress').style.display = 'none';
+}
+
+// Form submission with progress tracking
+document.getElementById('bulkUploadForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    if (selectedFiles.length === 0) {
+        alert('Please select at least one video file');
+        return;
+    }
+    
+    const submitBtn = document.getElementById('submitBtn');
+    const progressDiv = document.getElementById('uploadProgress');
+    const progressBar = progressDiv.querySelector('.progress-bar');
+    const progressText = document.getElementById('progressText');
+    const uploadStatus = document.getElementById('uploadStatus');
+    const fileProgress = document.getElementById('fileProgress');
+    
+    // Disable form and show progress
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Uploading...';
+    progressDiv.style.display = 'block';
+    
+    // Prepare form data
+    const formData = new FormData(this);
+    
+    // Upload with XMLHttpRequest for progress tracking
+    const xhr = new XMLHttpRequest();
+    
+    xhr.upload.addEventListener('progress', function(e) {
+        if (e.lengthComputable) {
+            const percentComplete = (e.loaded / e.total) * 100;
+            progressBar.style.width = percentComplete + '%';
+            progressText.textContent = Math.round(percentComplete) + '%';
+            uploadStatus.textContent = `Uploading ${selectedFiles.length} files...`;
+        }
+    });
+    
+    xhr.addEventListener('load', function() {
+        if (xhr.status === 200) {
+            progressBar.style.width = '100%';
+            progressText.textContent = '100%';
+            uploadStatus.innerHTML = '<i class="fas fa-check text-success me-2"></i>Upload completed successfully!';
+            
+            setTimeout(() => {
+                window.location.href = '/admin/surveillance-footage';
+            }, 2000);
+        } else {
+            uploadStatus.innerHTML = '<i class="fas fa-times text-danger me-2"></i>Upload failed. Please try again.';
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-upload me-2"></i>Upload All Files';
+        }
+    });
+    
+    xhr.addEventListener('error', function() {
+        uploadStatus.innerHTML = '<i class="fas fa-times text-danger me-2"></i>Upload error. Please check your connection.';
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-upload me-2"></i>Upload All Files';
+    });
+    
+    xhr.open('POST', '/admin/surveillance-footage/bulk-upload');
+    xhr.send(formData);
+});
+</script>
+{% endblock %}

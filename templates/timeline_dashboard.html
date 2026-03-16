@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Timeline - Missing Person System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/vis-timeline@7.7.0/standalone/umd/vis-timeline-graph2d.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/vis-timeline@7.7.0/styles/vis-timeline-graph2d.min.css" rel="stylesheet">
+    <style>
+        .timeline-container { height: 400px; border: 1px solid #ddd; border-radius: 10px; }
+        .event-card { border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .event-report { border-left: 4px solid #007bff; }
+        .event-analysis { border-left: 4px solid #28a745; }
+        .event-lead { border-left: 4px solid #ffc107; }
+        .event-investigation { border-left: 4px solid #dc3545; }
+        .timeline-controls { background: #f8f9fa; border-radius: 10px; padding: 15px; }
+        .progress-timeline { height: 8px; border-radius: 4px; }
+        .interactive-map { height: 300px; border-radius: 10px; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-clock"></i> Interactive Timeline
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/3d-visualization">3D Visualization</a>
+                <a class="nav-link" href="/mobile-app">Mobile App</a>
+                <a class="nav-link" href="/dashboard">Dashboard</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <!-- Timeline Controls -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="timeline-controls">
+                    <div class="row align-items-center">
+                        <div class="col-md-3">
+                            <label class="form-label">Time Range</label>
+                            <select class="form-select" id="time-range">
+                                <option value="24h">Last 24 Hours</option>
+                                <option value="7d" selected>Last 7 Days</option>
+                                <option value="30d">Last 30 Days</option>
+                                <option value="all">All Time</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Event Type</label>
+                            <select class="form-select" id="event-filter">
+                                <option value="all">All Events</option>
+                                <option value="report">Reports</option>
+                                <option value="analysis">Analysis</option>
+                                <option value="lead">Leads</option>
+                                <option value="investigation">Investigation</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Case</label>
+                            <select class="form-select" id="case-filter">
+                                <option value="all">All Cases</option>
+                                <option value="1">Case #1 - John Doe</option>
+                                <option value="2">Case #2 - Jane Smith</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <button class="btn btn-primary me-2" onclick="refreshTimeline()">
+                                <i class="fas fa-sync"></i> Refresh
+                            </button>
+                            <button class="btn btn-success" onclick="exportTimeline()">
+                                <i class="fas fa-download"></i> Export
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Interactive Timeline -->
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-timeline"></i> Case Timeline</h5>
+                        <div class="float-end">
+                            <button class="btn btn-sm btn-outline-primary" onclick="zoomIn()">
+                                <i class="fas fa-search-plus"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-primary" onclick="zoomOut()">
+                                <i class="fas fa-search-minus"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary" onclick="fitTimeline()">
+                                <i class="fas fa-expand-arrows-alt"></i> Fit
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="timeline-visualization" class="timeline-container"></div>
+                    </div>
+                </div>
+
+                <!-- Progress Timeline -->
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <h6><i class="fas fa-tasks"></i> Case Progress</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="progress progress-timeline mb-2">
+                            <div class="progress-bar bg-success" style="width: 25%"></div>
+                            <div class="progress-bar bg-info" style="width: 25%"></div>
+                            <div class="progress-bar bg-warning" style="width: 25%"></div>
+                            <div class="progress-bar bg-danger" style="width: 25%"></div>
+                        </div>
+                        <div class="row text-center">
+                            <div class="col-3"><small>Reported</small></div>
+                            <div class="col-3"><small>Analysis</small></div>
+                            <div class="col-3"><small>Leads</small></div>
+                            <div class="col-3"><small>Investigation</small></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Event Details -->
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-info-circle"></i> Event Details</h5>
+                    </div>
+                    <div class="card-body" style="max-height: 500px; overflow-y: auto;">
+                        <div id="event-details">
+                            <div class="text-center text-muted">
+                                <i class="fas fa-mouse-pointer fa-3x mb-3"></i>
+                                <p>Click on timeline events to view details</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Event Cards -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <h5><i class="fas fa-list"></i> Recent Events</h5>
+                <div id="event-cards-container">
+                    <!-- Event cards will be populated here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Interactive Map -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-map"></i> Location Timeline</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="location-map" class="interactive-map bg-light d-flex align-items-center justify-content-center">
+                            <div class="text-muted">
+                                <i class="fas fa-map-marked-alt fa-3x mb-3"></i>
+                                <p>Interactive location map will be displayed here</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let timeline;
+        let timelineData = [];
+        let eventsData = [];
+
+        // Initialize timeline
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeTimeline();
+            loadTimelineEvents();
+        });
+
+        function initializeTimeline() {
+            const container = document.getElementById('timeline-visualization');
+            
+            const options = {
+                width: '100%',
+                height: '400px',
+                margin: {
+                    item: 10,
+                    axis: 20
+                },
+                orientation: 'top',
+                showCurrentTime: true,
+                zoomable: true,
+                moveable: true,
+                selectable: true,
+                multiselect: false,
+                template: function(item, element, data) {
+                    return `
+                        <div class="timeline-item-content">
+                            <strong>${item.content}</strong><br>
+                            <small>${item.subtext || ''}</small>
+                        </div>
+                    `;
+                }
+            };
+
+            timeline = new vis.Timeline(container, [], options);
+            
+            // Event listener for timeline selection
+            timeline.on('select', function(event) {
+                if (event.items.length > 0) {
+                    const selectedId = event.items[0];
+                    showEventDetails(selectedId);
+                }
+            });
+        }
+
+        function loadTimelineEvents() {
+            fetch('/api/timeline/events')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        eventsData = data.events;
+                        updateTimeline(data.events);
+                        updateEventCards(data.events);
+                    }
+                })
+                .catch(error => console.error('Error loading timeline events:', error));
+        }
+
+        function updateTimeline(events) {
+            const items = events.map(event => ({
+                id: event.id,
+                content: event.title,
+                subtext: event.description,
+                start: new Date(event.date),
+                type: 'point',
+                className: `event-${event.type}`,
+                title: event.description
+            }));
+
+            timeline.setItems(items);
+        }
+
+        function updateEventCards(events) {
+            const container = document.getElementById('event-cards-container');
+            
+            const cardsHtml = events.map(event => `
+                <div class="event-card card event-${event.type} mb-3">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <h6 class="card-title">${event.title}</h6>
+                                <p class="card-text">${event.description}</p>
+                                <small class="text-muted">
+                                    <i class="fas fa-clock"></i> ${new Date(event.date).toLocaleString()}
+                                    <i class="fas fa-map-marker-alt ms-3"></i> ${event.location}
+                                </small>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <span class="badge bg-${getStatusColor(event.status)} mb-2">${event.status}</span><br>
+                                <button class="btn btn-sm btn-outline-primary" onclick="showEventDetails(${event.id})">
+                                    <i class="fas fa-eye"></i> Details
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            container.innerHTML = cardsHtml;
+        }
+
+        function showEventDetails(eventId) {
+            const event = eventsData.find(e => e.id == eventId);
+            if (!event) return;
+
+            const detailsHtml = `
+                <div class="event-details">
+                    <h6>${event.title}</h6>
+                    <p>${event.description}</p>
+                    
+                    <div class="mb-3">
+                        <strong>Date & Time:</strong><br>
+                        ${new Date(event.date).toLocaleString()}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <strong>Location:</strong><br>
+                        ${event.location}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <strong>Status:</strong><br>
+                        <span class="badge bg-${getStatusColor(event.status)}">${event.status}</span>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <strong>Type:</strong><br>
+                        <span class="badge bg-secondary">${event.type}</span>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-primary btn-sm">
+                            <i class="fas fa-edit"></i> Edit Event
+                        </button>
+                        <button class="btn btn-success btn-sm">
+                            <i class="fas fa-share"></i> Share
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('event-details').innerHTML = detailsHtml;
+        }
+
+        function getStatusColor(status) {
+            const colors = {
+                'completed': 'success',
+                'active': 'warning',
+                'in_progress': 'info',
+                'pending': 'secondary'
+            };
+            return colors[status] || 'secondary';
+        }
+
+        function refreshTimeline() {
+            loadTimelineEvents();
+            showNotification('Timeline refreshed', 'success');
+        }
+
+        function exportTimeline() {
+            const data = {
+                events: eventsData,
+                exported_at: new Date().toISOString()
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'timeline_export.json';
+            a.click();
+            
+            showNotification('Timeline exported', 'success');
+        }
+
+        function zoomIn() {
+            timeline.zoomIn(0.2);
+        }
+
+        function zoomOut() {
+            timeline.zoomOut(0.2);
+        }
+
+        function fitTimeline() {
+            timeline.fit();
+        }
+
+        function showNotification(message, type) {
+            const notification = document.createElement('div');
+            notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+            notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+            notification.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 3000);
+        }
+
+        // Filter functionality
+        document.getElementById('time-range').addEventListener('change', function() {
+            // Filter events by time range
+            loadTimelineEvents();
+        });
+
+        document.getElementById('event-filter').addEventListener('change', function() {
+            const filterType = this.value;
+            if (filterType === 'all') {
+                updateTimeline(eventsData);
+                updateEventCards(eventsData);
+            } else {
+                const filtered = eventsData.filter(event => event.type === filterType);
+                updateTimeline(filtered);
+                updateEventCards(filtered);
+            }
+        });
+
+        document.getElementById('case-filter').addEventListener('change', function() {
+            const caseId = this.value;
+            if (caseId === 'all') {
+                updateTimeline(eventsData);
+                updateEventCards(eventsData);
+            } else {
+                const filtered = eventsData.filter(event => event.person_id == caseId);
+                updateTimeline(filtered);
+                updateEventCards(filtered);
+            }
+        });
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

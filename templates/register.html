@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}Create Account - Missing Person Finder{% endblock %}
+
+{% block content %}
+<div class="content-container">
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <i class="fas fa-user-plus fa-3x mb-3"></i>
+                <h2 class="mb-2">Create Account</h2>
+                <p class="mb-0">Join our platform to help find missing persons</p>
+            </div>
+            
+            <div class="auth-body">
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-3">
+                        {{ form.username.label(class="form-label") }}
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-user"></i></span>
+                            {{ form.username(class="form-control", placeholder="Choose a username") }}
+                        </div>
+                        {% for error in form.username.errors %}
+                            <div class="text-danger small mt-1">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.email.label(class="form-label") }}
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                            {{ form.email(class="form-control", placeholder="Enter your email address") }}
+                        </div>
+                        {% for error in form.email.errors %}
+                            <div class="text-danger small mt-1">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.password.label(class="form-label") }}
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                            {{ form.password(class="form-control", placeholder="Create a strong password") }}
+                        </div>
+                        {% for error in form.password.errors %}
+                            <div class="text-danger small mt-1">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="mb-4">
+                        {{ form.password2.label(class="form-label") }}
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                            {{ form.password2(class="form-control", placeholder="Confirm your password") }}
+                        </div>
+                        {% for error in form.password2.errors %}
+                            <div class="text-danger small mt-1">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="mb-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="terms" required>
+                            <label class="form-check-label small" for="terms">
+                                I agree to the <a href="#" class="text-primary">Terms of Service</a>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    {{ form.submit(class="btn btn-primary w-100 btn-lg") }}
+                </form>
+            </div>
+            
+            <div class="auth-footer">
+                <p class="mb-0">Already have an account? <a href="{{ url_for('main.login') }}" class="text-primary fw-semibold">Sign in here</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

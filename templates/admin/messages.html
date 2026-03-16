@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block extra_css %}
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+* { font-family: 'Inter', sans-serif; }
+
+.messages-header {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: white;
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+}
+
+.message-card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 1rem;
+    transition: transform 0.2s;
+}
+
+.message-card:hover { transform: translateY(-2px); }
+
+.message-status {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 8px;
+}
+
+.status-sent { background: #10b981; }
+.status-read { background: #3b82f6; }
+.status-unread { background: #ef4444; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="messages-header">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="mb-2">💬 Admin Messaging System</h1>
+                <p class="mb-0">Direct communication with platform users</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <a href="{{ url_for('admin.dashboard') }}" class="btn btn-light">
+                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">📤 Sent Messages</h5>
+                    <span class="badge bg-primary">{{ sent_messages|length }} messages</span>
+                </div>
+                <div class="card-body">
+                    {% if sent_messages %}
+                        {% for message in sent_messages %}
+                        <div class="message-card">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex align-items-center mb-2">
+                                            <span class="message-status {% if message.is_read %}status-read{% else %}status-unread{% endif %}"></span>
+                                            <strong>To: {{ message.recipient.username }}</strong>
+                                            <span class="badge bg-light text-dark ms-2">{{ message.recipient.email }}</span>
+                                        </div>
+                                        <h6 class="mb-2">{{ message.subject }}</h6>
+                                        <p class="text-muted mb-2">{{ message.content[:150] }}{% if message.content|length > 150 %}...{% endif %}</p>
+                                        <small class="text-muted">
+                                            <i class="fas fa-clock"></i> {{ message.created_at.strftime('%B %d, %Y at %I:%M %p') }}
+                                            {% if message.is_read %}
+                                                <span class="text-success ms-2"><i class="fas fa-check-double"></i> Read</span>
+                                            {% else %}
+                                                <span class="text-warning ms-2"><i class="fas fa-clock"></i> Unread</span>
+                                            {% endif %}
+                                        </small>
+                                    </div>
+                                    <div class="ms-3">
+                                        <a href="{{ url_for('admin.send_message', user_id=message.recipient_id) }}" 
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-reply"></i> Reply
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-envelope fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No messages sent yet</h5>
+                            <p class="text-muted">Start communicating with users by visiting the Users page and sending messages.</p>
+                            <a href="{{ url_for('admin.users') }}" class="btn btn-primary">
+                                <i class="fas fa-users"></i> Go to Users
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="row mt-4">
+        <div class="col-md-4">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="text-primary">{{ sent_messages|length }}</h3>
+                    <p class="mb-0">Total Sent</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="text-success">{{ sent_messages|selectattr('is_read')|list|length }}</h3>
+                    <p class="mb-0">Read Messages</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="text-warning">{{ sent_messages|rejectattr('is_read')|list|length }}</h3>
+                    <p class="mb-0">Unread Messages</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

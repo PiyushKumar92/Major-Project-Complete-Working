@@ -1,0 +1,345 @@
+{% extends "base.html" %}
+
+{% block title %}Ultra-Advanced Analysis Results - {{ case.person_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-brain"></i>
+                        Ultra-Advanced Analysis: {{ footage.title }}
+                    </h3>
+                    <div class="card-tools">
+                        <span class="badge badge-primary">{{ unique_appearances }} Appearances</span>
+                        <span class="badge badge-info">{{ "%.2f"|format(total_duration) }}s Total</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Analysis Summary -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="info-box bg-primary">
+                                <span class="info-box-icon"><i class="fas fa-eye"></i></span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">Total Detections</span>
+                                    <span class="info-box-number">{{ total_detections }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="info-box bg-success">
+                                <span class="info-box-icon"><i class="fas fa-user-check"></i></span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">Unique Appearances</span>
+                                    <span class="info-box-number">{{ unique_appearances }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="info-box bg-warning">
+                                <span class="info-box-icon"><i class="fas fa-clock"></i></span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">Total Duration</span>
+                                    <span class="info-box-number">{{ "%.1f"|format(total_duration) }}s</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="info-box bg-info">
+                                <span class="info-box-icon"><i class="fas fa-percentage"></i></span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">High Confidence</span>
+                                    <span class="info-box-number">{{ confidence_stats.high }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if unique_appearances > 0 %}
+                    <!-- Confidence Distribution -->
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <h5>Detection Confidence Distribution</h5>
+                            <div class="progress" style="height: 25px;">
+                                {% set total_conf = confidence_stats.high + confidence_stats.medium + confidence_stats.low %}
+                                {% if total_conf > 0 %}
+                                <div class="progress-bar bg-success" style="width: {{ (confidence_stats.high / total_conf * 100)|round(1) }}%">
+                                    High ({{ confidence_stats.high }})
+                                </div>
+                                <div class="progress-bar bg-warning" style="width: {{ (confidence_stats.medium / total_conf * 100)|round(1) }}%">
+                                    Medium ({{ confidence_stats.medium }})
+                                </div>
+                                <div class="progress-bar bg-danger" style="width: {{ (confidence_stats.low / total_conf * 100)|round(1) }}%">
+                                    Low ({{ confidence_stats.low }})
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Appearance Timeline -->
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h5>Person Appearance Timeline</h5>
+                            {% for appearance in appearances %}
+                            <div class="card mb-3 {% if appearance.max_confidence >= 0.7 %}border-success{% elif appearance.max_confidence >= 0.5 %}border-warning{% else %}border-danger{% endif %}">
+                                <div class="card-header">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-play-circle"></i>
+                                        Appearance #{{ loop.index }}
+                                        <span class="badge {% if appearance.max_confidence >= 0.7 %}badge-success{% elif appearance.max_confidence >= 0.5 %}badge-warning{% else %}badge-danger{% endif %} ml-2">
+                                            {{ "%.1f"|format(appearance.max_confidence * 100) }}% Confidence
+                                        </span>
+                                        <small class="text-muted float-right">
+                                            {{ "%.2f"|format(appearance.start_time) }}s - {{ "%.2f"|format(appearance.end_time) }}s 
+                                            ({{ "%.2f"|format(appearance.duration) }}s duration)
+                                        </small>
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-8">
+                                            <p><strong>Detection Details:</strong></p>
+                                            <ul class="list-unstyled">
+                                                <li><i class="fas fa-stopwatch text-primary"></i> <strong>Duration:</strong> {{ "%.2f"|format(appearance.duration) }} seconds</li>
+                                                <li><i class="fas fa-search text-info"></i> <strong>Detection Count:</strong> {{ appearance.sightings|length }} detections</li>
+                                                <li><i class="fas fa-cogs text-warning"></i> <strong>Methods Used:</strong> {{ appearance.methods|join(', ') }}</li>
+                                                <li><i class="fas fa-chart-line text-success"></i> <strong>Max Confidence:</strong> {{ "%.1f"|format(appearance.max_confidence * 100) }}%</li>
+                                            </ul>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <h6>Individual Detections:</h6>
+                                            <div class="timeline-container" style="max-height: 200px; overflow-y: auto;">
+                                                {% for sighting in appearance.sightings %}
+                                                <div class="timeline-item mb-2">
+                                                    <small class="text-muted">
+                                                        <i class="fas fa-clock"></i> {{ "%.2f"|format(sighting.timestamp) }}s
+                                                        <span class="badge badge-sm {% if sighting.confidence_score >= 0.7 %}badge-success{% elif sighting.confidence_score >= 0.5 %}badge-warning{% else %}badge-secondary{% endif %}">
+                                                            {{ "%.1f"|format(sighting.confidence_score * 100) }}%
+                                                        </span>
+                                                    </small>
+                                                    {% if sighting.thumbnail_path %}
+                                                    <br><img src="{{ url_for('static', filename=sighting.thumbnail_path.replace('static/', '')) }}" 
+                                                             class="img-thumbnail mt-1" style="max-width: 60px; max-height: 60px;" alt="Detection">
+                                                    {% endif %}
+                                                </div>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Detailed Detection Table -->
+                    <div class="row mt-4">
+                        <div class="col-md-12">
+                            <h5>All Detections (Chronological)</h5>
+                            <div class="table-responsive">
+                                <table class="table table-striped table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Time</th>
+                                            <th>Confidence</th>
+                                            <th>Method</th>
+                                            <th>Appearance #</th>
+                                            <th>Thumbnail</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for sighting in sightings %}
+                                        <tr>
+                                            <td>{{ "%.2f"|format(sighting.timestamp) }}s</td>
+                                            <td>
+                                                <span class="badge {% if sighting.confidence_score >= 0.7 %}badge-success{% elif sighting.confidence_score >= 0.5 %}badge-warning{% else %}badge-secondary{% endif %}">
+                                                    {{ "%.1f"|format(sighting.confidence_score * 100) }}%
+                                                </span>
+                                            </td>
+                                            <td><small>{{ sighting.detection_method }}</small></td>
+                                            <td>
+                                                {% for appearance in appearances %}
+                                                    {% if sighting in appearance.sightings %}
+                                                        <span class="badge badge-primary">#{{ loop.index }}</span>
+                                                        {% break %}
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </td>
+                                            <td>
+                                                {% if sighting.thumbnail_path %}
+                                                <img src="{{ url_for('static', filename=sighting.thumbnail_path.replace('static/', '')) }}" 
+                                                     class="img-thumbnail" style="max-width: 50px; max-height: 50px;" alt="Detection">
+                                                {% else %}
+                                                <i class="fas fa-user text-muted"></i>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% else %}
+                    <!-- No Detections -->
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="alert alert-info">
+                                <h5><i class="fas fa-info-circle"></i> Ultra-Advanced Analysis Complete</h5>
+                                <p>The person was not detected in this footage using our most advanced detection methods.</p>
+                                <p><strong>Analysis Coverage:</strong></p>
+                                <ul>
+                                    <li>✅ Multiple face detection algorithms (frontal, profile, CNN-based)</li>
+                                    <li>✅ Body detection and pose analysis</li>
+                                    <li>✅ Motion tracking and background subtraction</li>
+                                    <li>✅ Crowd scene analysis and person extraction</li>
+                                    <li>✅ Partial face detection (spectacles, masks, angles)</li>
+                                    <li>✅ Fast-moving object detection (vehicles, running)</li>
+                                </ul>
+                                <p><strong>Possible reasons:</strong></p>
+                                <ul>
+                                    <li>Person did not appear in this specific footage</li>
+                                    <li>Person was too far from camera or heavily occluded</li>
+                                    <li>Lighting conditions were extremely poor</li>
+                                    <li>Person's appearance significantly different from reference photos</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Action Buttons -->
+                    <div class="row mt-4">
+                        <div class="col-md-12">
+                            <a href="{{ url_for('location.match_footage_for_case', case_id=case.id) }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Back to Footage Matches
+                            </a>
+                            <a href="{{ url_for('admin.case_detail', case_id=case.id) }}" class="btn btn-primary">
+                                <i class="fas fa-eye"></i> View Case Details
+                            </a>
+                            {% if unique_appearances > 0 %}
+                            <a href="{{ url_for('location.export_ultra_results', case_id=case.id, footage_id=footage.id) }}" class="btn btn-success">
+                                <i class="fas fa-download"></i> Export Results
+                            </a>
+                            <button class="btn btn-warning" onclick="markPersonFound()">
+                                <i class="fas fa-check-circle"></i> Mark Person as Found
+                            </button>
+                            {% endif %}
+                            <button class="btn btn-info" onclick="reAnalyze()">
+                                <i class="fas fa-redo"></i> Re-analyze with Different Settings
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function markPersonFound() {
+    if (confirm('Mark this person as found based on these ultra-advanced detection results?')) {
+        fetch(`/admin/cases/{{ case.id }}/mark-found`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({
+                'footage_id': {{ footage.id }},
+                'appearances': {{ unique_appearances }},
+                'total_duration': {{ total_duration }},
+                'confidence_stats': {{ confidence_stats|tojson }}
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Person marked as found successfully!');
+                window.location.href = '/admin/cases/{{ case.id }}';
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('Error marking person as found: ' + error);
+        });
+    }
+}
+
+function reAnalyze() {
+    if (confirm('Re-analyze this footage with different detection parameters?')) {
+        fetch(`/admin/location/api/ultra-analyze/{{ case.id }}/{{ footage.id }}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Re-analysis started successfully!');
+                location.reload();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('Error starting re-analysis: ' + error);
+        });
+    }
+}
+
+// Auto-refresh for real-time updates
+setInterval(function() {
+    // Check if analysis is still in progress
+    fetch(`/admin/location/api/get-analysis-progress/{{ case.id }}/{{ footage.id }}`)
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && data.status === 'completed') {
+            location.reload();
+        }
+    })
+    .catch(error => {
+        console.log('Progress check failed:', error);
+    });
+}, 10000); // Check every 10 seconds
+</script>
+
+<style>
+.timeline-container {
+    border-left: 2px solid #007bff;
+    padding-left: 15px;
+}
+
+.timeline-item {
+    position: relative;
+}
+
+.timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -20px;
+    top: 5px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: #007bff;
+}
+
+.info-box {
+    border-radius: 10px;
+    margin-bottom: 15px;
+}
+
+.info-box-icon {
+    border-radius: 10px 0 0 10px;
+}
+</style>
+{% endblock %}

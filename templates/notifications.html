@@ -1,0 +1,368 @@
+{% extends "base.html" %}
+{% block extra_css %}
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+* { font-family: 'Inter', sans-serif; }
+
+.notifications-header {
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    color: white;
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+}
+
+.notification-card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 1rem;
+    transition: transform 0.2s;
+}
+
+.notification-card:hover { transform: translateY(-2px); }
+
+.notification-type {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 8px;
+}
+
+.type-info { background: #3b82f6; }
+.type-success { background: #10b981; }
+.type-warning { background: #f59e0b; }
+.type-danger { background: #ef4444; }
+
+.notification-unread {
+    border-left: 4px solid #3b82f6;
+    background: #f8fafc;
+}
+
+.notification-read {
+    border-left: 4px solid #e5e7eb;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="notifications-header">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="mb-2">🔔 Your Notifications</h1>
+                <p class="mb-0">Messages and updates from the admin team</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <a href="{{ url_for('main.dashboard') }}" class="btn btn-light">
+                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <!-- Success Message Area -->
+    <div id="successMessage" class="alert alert-success alert-dismissible fade" role="alert" style="display: none;">
+        <i class="fas fa-check-circle me-2"></i>
+        <span id="successText"></span>
+        <button type="button" class="btn-close" onclick="hideMessage('successMessage')"></button>
+    </div>
+    
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">📬 All Messages</h5>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-primary">{{ notifications|length }} total</span>
+                        {% if notifications %}
+                        <button class="btn btn-outline-danger btn-sm" onclick="clearAllNotifications()" title="Clear All Notifications">
+                            <i class="fas fa-trash-alt"></i> Clear All
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if notifications %}
+                        {% for notification in notifications %}
+                        <div class="notification-card {% if not notification.is_read %}notification-unread{% else %}notification-read{% endif %}" data-notification-id="{{ notification.id }}">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex align-items-center mb-2">
+                                            <span class="notification-type type-{{ notification.type }}"></span>
+                                            <h6 class="mb-0">{{ notification.title }}</h6>
+                                            {% if not notification.is_read %}
+                                                <span class="badge bg-primary ms-2">New</span>
+                                            {% endif %}
+                                        </div>
+                                        <div class="notification-message mb-2">
+                                            {% set lines = notification.message.split('\n') %}
+                                            {% for line in lines %}
+                                                {% if line.strip() %}
+                                                    {% if line.startswith('📍') or line.startswith('👤') or line.startswith('📞') or line.startswith('📝') or line.startswith('⏰') or line.startswith('⏳') or line.startswith('[') %}
+                                                        <div class="mb-1"><strong>{{ line }}</strong></div>
+                                                    {% elif line.startswith('•') %}
+                                                        <div class="ms-3 text-muted">{{ line }}</div>
+                                                    {% else %}
+                                                        <div class="text-muted">{{ line }}</div>
+                                                    {% endif %}
+                                                {% endif %}
+                                            {% endfor %}
+                                        </div>
+                                        <div class="d-flex align-items-center text-muted">
+                                            <small>
+                                                <i class="fas fa-clock"></i> {{ notification.ist_created_at.strftime('%B %d, %Y at %I:%M %p') }} IST
+                                                {% if notification.sender %}
+                                                    • <i class="fas fa-user"></i> From: {{ notification.sender.username }}
+                                                {% else %}
+                                                    • <i class="fas fa-cog"></i> System Message
+                                                {% endif %}
+                                            </small>
+                                        </div>
+                                    </div>
+                                    <div class="ms-3">
+                                        {% if not notification.is_read %}
+                                        <button class="btn btn-outline-success btn-sm me-1" onclick="markAsRead({{ notification.id }})" title="Mark as Read">
+                                            <i class="fas fa-check"></i>
+                                        </button>
+                                        {% endif %}
+                                        <button class="btn btn-outline-danger btn-sm" onclick="deleteNotification({{ notification.id }})" title="Delete Notification">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-bell-slash fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No notifications yet</h5>
+                            <p class="text-muted">You'll receive notifications here when admins send you messages or when there are important system updates.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    {% if notifications %}
+    <div class="row mt-4">
+        <div class="col-md-4">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="text-primary">{{ notifications|length }}</h3>
+                    <p class="mb-0">Total Messages</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="text-success">{{ notifications|selectattr('sender')|list|length }}</h3>
+                    <p class="mb-0">From Admin</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="text-info">{{ notifications|rejectattr('sender')|list|length }}</h3>
+                    <p class="mb-0">System Messages</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function deleteNotification(notificationId) {
+    if (confirm('Are you sure you want to delete this notification?')) {
+        fetch(`/api/notification/${notificationId}/delete`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showSuccessMessage('Notification deleted successfully!');
+                // Remove the notification card with animation
+                const notificationCard = document.querySelector(`[data-notification-id="${notificationId}"]`);
+                if (notificationCard) {
+                    notificationCard.style.transition = 'all 0.3s ease';
+                    notificationCard.style.transform = 'translateX(100%)';
+                    notificationCard.style.opacity = '0';
+                    setTimeout(() => {
+                        notificationCard.remove();
+                        updateNotificationCount();
+                    }, 300);
+                }
+            } else {
+                showErrorMessage('Failed to delete notification: ' + (data.error || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showErrorMessage('Failed to delete notification. Please try again.');
+        });
+    }
+}
+
+function clearAllNotifications() {
+    if (confirm('Are you sure you want to delete ALL notifications? This action cannot be undone.')) {
+        fetch('/api/notifications/clear-all', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showSuccessMessage('All notifications cleared successfully!');
+                // Remove all notification cards with staggered animation
+                const notificationCards = document.querySelectorAll('.notification-card');
+                notificationCards.forEach((card, index) => {
+                    setTimeout(() => {
+                        card.style.transition = 'all 0.3s ease';
+                        card.style.transform = 'translateX(100%)';
+                        card.style.opacity = '0';
+                        setTimeout(() => {
+                            card.remove();
+                            if (index === notificationCards.length - 1) {
+                                showEmptyState();
+                                updateNotificationCount();
+                            }
+                        }, 300);
+                    }, index * 100);
+                });
+            } else {
+                showErrorMessage('Failed to clear notifications: ' + (data.error || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showErrorMessage('Failed to clear notifications. Please try again.');
+        });
+    }
+}
+
+function showSuccessMessage(message) {
+    const successDiv = document.getElementById('successMessage');
+    const successText = document.getElementById('successText');
+    successText.textContent = message;
+    successDiv.style.display = 'block';
+    successDiv.classList.add('show');
+    
+    // Auto hide after 5 seconds
+    setTimeout(() => {
+        hideMessage('successMessage');
+    }, 5000);
+}
+
+function showErrorMessage(message) {
+    // Create error message if it doesn't exist
+    let errorDiv = document.getElementById('errorMessage');
+    if (!errorDiv) {
+        errorDiv = document.createElement('div');
+        errorDiv.id = 'errorMessage';
+        errorDiv.className = 'alert alert-danger alert-dismissible fade';
+        errorDiv.innerHTML = `
+            <i class="fas fa-exclamation-circle me-2"></i>
+            <span id="errorText"></span>
+            <button type="button" class="btn-close" onclick="hideMessage('errorMessage')"></button>
+        `;
+        document.getElementById('successMessage').parentNode.insertBefore(errorDiv, document.getElementById('successMessage').nextSibling);
+    }
+    
+    const errorText = document.getElementById('errorText');
+    errorText.textContent = message;
+    errorDiv.style.display = 'block';
+    errorDiv.classList.add('show');
+    
+    // Auto hide after 5 seconds
+    setTimeout(() => {
+        hideMessage('errorMessage');
+    }, 5000);
+}
+
+function hideMessage(messageId) {
+    const messageDiv = document.getElementById(messageId);
+    messageDiv.classList.remove('show');
+    setTimeout(() => {
+        messageDiv.style.display = 'none';
+    }, 150);
+}
+
+function updateNotificationCount() {
+    const remainingCards = document.querySelectorAll('.notification-card').length;
+    const badge = document.querySelector('.badge.bg-primary');
+    if (badge) {
+        badge.textContent = `${remainingCards} total`;
+    }
+    
+    // Hide clear all button if no notifications left
+    if (remainingCards === 0) {
+        const clearAllBtn = document.querySelector('button[onclick="clearAllNotifications()"]');
+        if (clearAllBtn) {
+            clearAllBtn.style.display = 'none';
+        }
+    }
+}
+
+function markAsRead(notificationId) {
+    fetch(`/api/notification/${notificationId}/mark-read`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showSuccessMessage('Notification marked as read!');
+            // Remove the "New" badge and mark as read button
+            const notificationCard = document.querySelector(`[data-notification-id="${notificationId}"]`);
+            if (notificationCard) {
+                const newBadge = notificationCard.querySelector('.badge.bg-primary');
+                if (newBadge) newBadge.remove();
+                
+                const markReadBtn = notificationCard.querySelector('button[onclick*="markAsRead"]');
+                if (markReadBtn) markReadBtn.remove();
+                
+                // Change styling to read state
+                notificationCard.classList.remove('notification-unread');
+                notificationCard.classList.add('notification-read');
+            }
+        } else {
+            showErrorMessage('Failed to mark as read: ' + (data.error || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showErrorMessage('Failed to mark as read. Please try again.');
+    });
+}
+
+function showEmptyState() {
+    const cardBody = document.querySelector('.card-body');
+    cardBody.innerHTML = `
+        <div class="text-center py-5">
+            <i class="fas fa-bell-slash fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">No notifications</h5>
+            <p class="text-muted">All notifications have been cleared.</p>
+        </div>
+    `;
+}
+</script>
+{% endblock %}

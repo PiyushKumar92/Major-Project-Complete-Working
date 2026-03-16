@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+
+{% block title %}My Cases - Missing Person Finder{% endblock %}
+
+{% block content %}
+<div class="content-container">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="display-6 fw-bold">My Cases</h1>
+            <p class="text-muted mb-0">Monitor and manage all your missing person cases with real-time AI processing updates</p>
+        </div>
+        <a href="{{ url_for('main.register_case') }}" class="btn btn-primary btn-lg">
+            <i class="fas fa-plus me-2"></i>New Case
+        </a>
+    </div>
+
+    {% if cases %}
+        <!-- Cases Grid -->
+        <div class="row g-4">
+            {% for case in cases %}
+            <div class="col-12 col-xl-6">
+                <div class="card h-100 shadow-sm border-0" style="border-radius: 12px; overflow: hidden;">
+                    <!-- Case Header with Image -->
+                    <div class="row g-0">
+                        <div class="col-md-3 col-12">
+                            <div class="case-image-container" style="height: 180px; overflow: hidden;">
+                                {% set photo_url = get_case_photo_url(case) %}
+                                {% if photo_url %}
+                                    <img src="{{ url_for('static', filename=photo_url|image_url) }}" 
+                                         class="w-100 h-100" alt="{{ case.person_name }}" 
+                                         style="object-fit: cover; border-radius: 12px 0 0 0;" 
+                                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                    <div class="bg-light d-flex align-items-center justify-content-center w-100 h-100" style="display: none; border-radius: 12px 0 0 0;">
+                                        <i class="fas fa-user fa-2x text-muted"></i>
+                                    </div>
+                                {% else %}
+                                    <div class="bg-light d-flex align-items-center justify-content-center w-100 h-100" style="border-radius: 12px 0 0 0;">
+                                        <i class="fas fa-user fa-2x text-muted"></i>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-9 col-12">
+                            <div class="card-body d-flex flex-column h-100 p-3">
+                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                    <h5 class="card-title mb-0 text-truncate" style="max-width: 70%;">{{ case.person_name }}</h5>
+                                    <span class="badge bg-{{ case.status_color }}">{{ case.status }}</span>
+                                </div>
+                                
+                                <div class="flex-grow-1">
+                                    <div class="row g-2 mb-3">
+                                        <div class="col-6">
+                                            <small class="text-muted d-block"><i class="fas fa-birthday-cake me-1"></i>Age</small>
+                                            <span class="fw-bold">{{ case.age or 'Unknown' }}</span>
+                                        </div>
+                                        <div class="col-6">
+                                            <small class="text-muted d-block"><i class="fas fa-calendar me-1"></i>Missing Since</small>
+                                            <span class="fw-bold">{{ case.date_missing.strftime('%d %b %Y') if case.date_missing else 'Unknown' }}</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <small class="text-muted d-block"><i class="fas fa-map-marker-alt me-1"></i>Last Seen Location</small>
+                                        <span class="fw-bold text-truncate d-block" title="{{ case.last_seen_location or 'Location not specified' }}">
+                                            {{ (case.last_seen_location or 'Location not specified')[:40] }}{% if (case.last_seen_location or '')|length > 40 %}...{% endif %}
+                                        </span>
+                                    </div>
+                                    
+                                    <!-- Stats Row -->
+                                    <div class="row g-2 mb-3">
+                                        <div class="col-4 text-center">
+                                            <div class="small text-muted">Photos</div>
+                                            <div class="fw-bold text-primary">{{ case.target_images|length }}</div>
+                                        </div>
+                                        <div class="col-4 text-center">
+                                            <div class="small text-muted">Videos</div>
+                                            <div class="fw-bold {{ 'text-success' if case.search_videos|length > 0 else 'text-muted' }}">
+                                                {{ case.search_videos|length }}
+                                            </div>
+                                        </div>
+                                        <div class="col-4 text-center">
+                                            <div class="small text-muted">Sightings</div>
+                                            <div class="fw-bold text-success">{{ case.sightings|length }}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Action Buttons -->
+                                <div class="d-flex gap-2 mt-auto">
+                                    <a href="{{ url_for('main.case_details', case_id=case.id) }}" class="btn btn-primary btn-sm flex-fill">
+                                        <i class="fas fa-eye me-1"></i>View
+                                    </a>
+                                    {% if case.can_be_edited %}
+                                        <a href="{{ url_for('main.edit_case', case_id=case.id) }}" class="btn btn-outline-primary btn-sm" title="Edit Case">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                    {% endif %}
+                                    {% if case.status not in ['Case Solved', 'Case Over'] %}
+                                        <form method="POST" action="{{ url_for('main.withdraw_case', case_id=case.id) }}" class="d-inline" onsubmit="return confirm('Are you sure you want to withdraw this case? You can resubmit it later.')">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                            <button type="submit" class="btn btn-outline-warning btn-sm" title="Withdraw Case (Preserves Data)">
+                                                <i class="fas fa-archive"></i>
+                                            </button>
+                                        </form>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Sightings Preview -->
+                    {% if case.sightings %}
+                    <div class="card-footer bg-light border-0 p-3">
+                        <h6 class="mb-2"><i class="fas fa-eye me-2 text-success"></i>Recent Sightings ({{ case.sightings|length }})</h6>
+                        <div class="row g-2">
+                            {% for sighting in case.sightings[:2] %}
+                            <div class="col-6">
+                                <div class="bg-white rounded p-2 small">
+                                    <div class="fw-bold text-truncate" title="{{ sighting.video_name }}">{{ sighting.video_name[:15] }}{% if sighting.video_name|length > 15 %}...{% endif %}</div>
+                                    <div class="text-muted">{{ sighting.timestamp }}s</div>
+                                    <div class="text-success">{{ "%.1f"|format(sighting.confidence_score) }}%</div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                            {% if case.sightings|length > 2 %}
+                            <div class="col-12 text-center">
+                                <small class="text-muted">+{{ case.sightings|length - 2 }} more sightings</small>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <style>
+        .case-image-container {
+            position: relative;
+            background: #f8f9fa;
+        }
+        
+        @media (max-width: 767px) {
+            .case-image-container {
+                height: 120px !important;
+                border-radius: 12px 12px 0 0 !important;
+            }
+            
+            .case-image-container img,
+            .case-image-container > div {
+                border-radius: 12px 12px 0 0 !important;
+            }
+        }
+        
+        @media (min-width: 768px) {
+            .card .row.g-0 {
+                min-height: 180px;
+            }
+        }
+        
+        .card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            min-height: 180px;
+        }
+        
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1) !important;
+        }
+        
+        .card-body {
+            min-height: 180px;
+        }
+        </style>
+        
+        <!-- Pagination if needed -->
+        <div class="d-flex justify-content-center mt-5">
+            <nav>
+                <ul class="pagination">
+                    <li class="page-item disabled">
+                        <span class="page-link">Showing {{ cases|length }} cases</span>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    {% else %}
+        <!-- Empty State -->
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <i class="fas fa-folder-open"></i>
+            </div>
+            <h3 class="empty-state-title">No Cases Yet</h3>
+            <p class="empty-state-desc">You haven't created any missing person cases yet. Start by registering your first case to begin using our AI-powered search technology.</p>
+            <div class="d-flex gap-3 justify-content-center">
+                <a href="{{ url_for('main.register_case') }}" class="btn btn-primary btn-lg">
+                    <i class="fas fa-plus me-2"></i>Register First Case
+                </a>
+                <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline-primary btn-lg">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                </a>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,421 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Case - {{ case.person_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-10 col-xl-8">
+            <!-- Header -->
+            <div class="text-center mb-4">
+                <h1 class="display-6 fw-bold text-primary">Edit Case</h1>
+                <p class="lead text-muted">Update case details for {{ case.person_name }}</p>
+                {% if case.status == 'Rejected' %}
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    This case was rejected. Please review admin feedback and make necessary changes before resubmitting.
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Form Validation Errors -->
+            {% if form.errors %}
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <h5 class="alert-heading"><i class="fas fa-exclamation-triangle me-2"></i>Form Submission Failed!</h5>
+                <p class="mb-2">Please fix the following issues before submitting:</p>
+                <ul class="mb-0">
+                    {% for field_name, errors in form.errors.items() %}
+                        {% for error in errors %}
+                        <li><strong>{{ form[field_name].label.text }}:</strong> {{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                </ul>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endif %}
+
+            <form method="POST" enctype="multipart/form-data" id="editCaseForm">
+                {{ form.hidden_tag() }}
+                
+                <!-- Case Type & Category -->
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="fas fa-clipboard-list me-2"></i>Case Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Case Type</label>
+                                {{ form.case_type(class="form-select") }}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Requester Type</label>
+                                {{ form.requester_type(class="form-select") }}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Case Category</label>
+                                {{ form.case_category(class="form-select") }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Person Details -->
+                <div class="card mb-4">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0"><i class="fas fa-user me-2"></i>Person Details</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Full Name *</label>
+                                {{ form.full_name(class="form-control", required=True) }}
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">Age</label>
+                                {{ form.age(class="form-control", type="number", min="1", max="120") }}
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">Gender</label>
+                                {{ form.gender(class="form-select") }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Nickname/Alias</label>
+                                {{ form.nickname(class="form-control") }}
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">Height (cm)</label>
+                                {{ form.height_cm(class="form-control", type="number", min="50", max="250") }}
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">Weight (kg)</label>
+                                <input type="number" class="form-control" name="weight_kg" min="10" max="300" placeholder="Optional">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-bold">Physical Description / Distinguishing Marks <small class="text-muted">(Optional)</small></label>
+                                {{ form.distinguishing_marks(class="form-control", rows="3", placeholder="Physical description, scars, tattoos, clothing details. Write 'NA' or 'Not Known' if no specific details.") }}
+                                <div class="form-text text-info">
+                                    <i class="fas fa-info-circle"></i> You can write "NA", "Not Known", or "No specific details" if information is not available.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Location & Time -->
+                <div class="card mb-4">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="mb-0"><i class="fas fa-map-marker-alt me-2"></i>Last Seen Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Last Seen Location *</label>
+                                {{ form.last_seen_location(class="form-control", required=True) }}
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">Date Missing *</label>
+                                {{ form.last_seen_date(class="form-control", type="date", required=True) }}
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">Time (if known)</label>
+                                <input type="time" class="form-control" name="last_seen_time" value="{{ case.last_seen_time.strftime('%H:%M') if case.last_seen_time else '' }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Area/Locality</label>
+                                <input type="text" class="form-control" name="last_seen_area" placeholder="e.g., Sector 15, Downtown">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">City</label>
+                                <input type="text" class="form-control" name="last_seen_city" placeholder="e.g., Delhi">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">State</label>
+                                <input type="text" class="form-control" name="last_seen_state" placeholder="e.g., Delhi">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">PIN Code</label>
+                                <input type="text" class="form-control" name="last_seen_pincode" placeholder="e.g., 110001">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Nearby Landmarks</label>
+                                <input type="text" class="form-control" name="last_seen_landmarks" placeholder="e.g., Near Metro Station, Mall">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contact Information -->
+                <div class="card mb-4">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0"><i class="fas fa-phone me-2"></i>Contact Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Contact Person Name *</label>
+                                {{ form.contact_person_name(class="form-control", required=True) }}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Contact Phone *</label>
+                                {{ form.contact_person_phone(class="form-control", required=True) }}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Contact Email</label>
+                                {{ form.contact_person_email(class="form-control", type="email") }}
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-bold">Contact Address</label>
+                                <textarea class="form-control" name="contact_address" rows="2" placeholder="Full address of contact person">{{ case.contact_address or '' }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Current Photos Management -->
+                {% if case.target_images %}
+                <div class="card mb-4">
+                    <div class="card-header bg-secondary text-white">
+                        <h5 class="mb-0"><i class="fas fa-images me-2"></i>Current Photos</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3" id="currentPhotos">
+                            {% for image in case.target_images %}
+                            <div class="col-md-3" id="photo-{{ image.id }}">
+                                <div class="card">
+                                    <img src="{{ url_for('static', filename=image.image_path|image_url) }}" 
+                                         class="card-img-top" style="height: 150px; object-fit: cover;">
+                                    <div class="card-body p-2">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="primary_photo_existing" 
+                                                   value="{{ image.id }}" {{ 'checked' if image.is_primary else '' }}>
+                                            <label class="form-check-label small">Primary Photo</label>
+                                        </div>
+                                        <button type="button" class="btn btn-danger btn-sm mt-1" 
+                                                onclick="removePhoto({{ image.id }})">
+                                            <i class="fas fa-trash"></i> Remove
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <input type="hidden" name="photos_to_remove" id="photosToRemove" value="">
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Add New Photos -->
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="fas fa-camera me-2"></i>Add New Photos</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            {{ form.photos(class="form-control", multiple=True, accept="image/*") }}
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Select multiple clear photos of the person. Supported formats: JPG, PNG, GIF<br>
+                                <strong>Note:</strong> You must select ONE primary photo from either existing or new photos.
+                            </div>
+                        </div>
+                        <div id="newPhotosPreview" class="row g-3"></div>
+                        <input type="hidden" name="primary_photo_index" id="primaryPhotoIndex" value="">
+                    </div>
+                </div>
+
+                <!-- Current Reference Videos Management -->
+                {% if case.search_videos %}
+                <div class="card mb-4">
+                    <div class="card-header bg-secondary text-white">
+                        <h5 class="mb-0"><i class="fas fa-video me-2"></i>Current Reference Videos</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3" id="currentVideos">
+                            {% for video in case.search_videos %}
+                            <div class="col-md-4" id="video-{{ video.id }}">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h6 class="card-title text-truncate">{{ video.video_name }}</h6>
+                                        <p class="card-text small text-muted">{{ video.video_path }}</p>
+                                        <button type="button" class="btn btn-danger btn-sm" 
+                                                onclick="removeVideo({{ video.id }})">
+                                            <i class="fas fa-trash"></i> Remove
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <input type="hidden" name="videos_to_remove" id="videosToRemove" value="">
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Add New Reference Videos -->
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="fas fa-video me-2"></i>Add New Reference Videos (Optional)</h5>
+                    </div>
+                    <div class="card-body">
+                        {{ form.video(class="form-control", multiple=True, accept="video/*") }}
+                        <div class="alert alert-info mt-2 mb-0">
+                            <i class="fas fa-lightbulb me-2"></i>
+                            <strong>Purpose:</strong> Upload personal videos of the missing person (family videos, social media clips, etc.) to help AI better analyze facial features and behavior patterns.
+                            <br><br>
+                            <strong>Note:</strong> This is NOT for surveillance footage - admin will handle CCTV footage analysis separately.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Additional Information -->
+                <div class="card mb-4">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Additional Information <small>(Optional)</small></h5>
+                    </div>
+                    <div class="card-body">
+                        {{ form.additional_info(class="form-control", rows="4", placeholder="Any additional details that might help in the search. Write 'Limited information available' or 'NA' if no additional details.") }}
+                        <div class="form-text text-info mt-2">
+                            <i class="fas fa-lightbulb"></i> <strong>Note:</strong> More details improve case success rate, but you can write "NA" or "Not Known" for unavailable information.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit Buttons -->
+                <div class="card">
+                    <div class="card-body text-center">
+                        <div class="alert alert-info mb-3">
+                            <i class="fas fa-lightbulb me-2"></i>
+                            <strong>Before submitting:</strong> Ensure you have selected one primary photo and filled all required fields marked with *
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-lg me-3" onclick="return validateForm()">
+                            <i class="fas fa-save me-2"></i>Update Case
+                        </button>
+                        <a href="{{ url_for('main.case_details', case_id=case.id) }}" class="btn btn-secondary btn-lg">
+                            <i class="fas fa-times me-2"></i>Cancel
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+let photosToRemove = [];
+let videosToRemove = [];
+
+function removePhoto(photoId) {
+    if (confirm('Are you sure you want to remove this photo?')) {
+        photosToRemove.push(photoId);
+        document.getElementById('photosToRemove').value = photosToRemove.join(',');
+        document.getElementById('photo-' + photoId).style.display = 'none';
+        
+        // Check if removed photo was primary, show warning
+        const removedPhoto = document.querySelector(`#photo-${photoId} input[name="primary_photo_existing"]:checked`);
+        if (removedPhoto) {
+            alert('You removed the primary photo. Please select a new primary photo before submitting.');
+        }
+    }
+}
+
+function removeVideo(videoId) {
+    if (confirm('Are you sure you want to remove this video?')) {
+        videosToRemove.push(videoId);
+        document.getElementById('videosToRemove').value = videosToRemove.join(',');
+        document.getElementById('video-' + videoId).style.display = 'none';
+    }
+}
+
+// Photo preview for new uploads
+document.querySelector('input[name="photos"]').addEventListener('change', function(e) {
+    const preview = document.getElementById('newPhotosPreview');
+    preview.innerHTML = '';
+    
+    Array.from(e.target.files).forEach((file, index) => {
+        if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const col = document.createElement('div');
+                col.className = 'col-md-3';
+                col.innerHTML = `
+                    <div class="card">
+                        <img src="${e.target.result}" class="card-img-top" style="height: 150px; object-fit: cover;">
+                        <div class="card-body p-2">
+                            <div class="form-check">
+                                <input class="form-check-input primary-photo-radio" type="radio" name="primary_photo_selection" value="new_${index}" onchange="updatePrimaryPhoto()">
+                                <label class="form-check-label small">Set as Primary</label>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                preview.appendChild(col);
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+});
+
+// Update existing photo radio buttons to use unified system
+document.addEventListener('DOMContentLoaded', function() {
+    const existingRadios = document.querySelectorAll('input[name="primary_photo_existing"]');
+    existingRadios.forEach(radio => {
+        radio.name = 'primary_photo_selection';
+        radio.value = 'existing_' + radio.value;
+        radio.classList.add('primary-photo-radio');
+        radio.onchange = updatePrimaryPhoto;
+    });
+});
+
+function updatePrimaryPhoto() {
+    const selected = document.querySelector('input[name="primary_photo_selection"]:checked');
+    if (selected) {
+        document.getElementById('primaryPhotoIndex').value = selected.value;
+    }
+}
+
+function validateForm() {
+    const requiredFields = [
+        { field: 'full_name', name: 'Full Name' },
+        { field: 'last_seen_location', name: 'Last Seen Location' },
+        { field: 'last_seen_date', name: 'Date Missing' },
+        { field: 'contact_person_name', name: 'Contact Person Name' },
+        { field: 'contact_person_phone', name: 'Contact Phone' }
+    ];
+    
+    let errors = [];
+    
+    // Check required fields
+    requiredFields.forEach(item => {
+        const field = document.querySelector(`[name="${item.field}"]`);
+        if (!field || !field.value.trim()) {
+            errors.push(`${item.name} is required`);
+        }
+    });
+    
+    // Check primary photo selection
+    const primarySelected = document.querySelector('input[name="primary_photo_selection"]:checked');
+    const hasExistingPhotos = document.querySelectorAll('#currentPhotos .col-md-3:not([style*="display: none"])').length > 0;
+    const hasNewPhotos = document.querySelector('input[name="photos"]').files.length > 0;
+    
+    if (!hasExistingPhotos && !hasNewPhotos) {
+        errors.push('At least one photo is required');
+    } else if (!primarySelected) {
+        errors.push('Please select one primary photo');
+    }
+    
+    // Show errors if any
+    if (errors.length > 0) {
+        let errorMsg = 'Please fix the following issues:\n\n';
+        errors.forEach((error, index) => {
+            errorMsg += `${index + 1}. ${error}\n`;
+        });
+        errorMsg += '\nRequired fields are marked with * and must be filled.';
+        alert(errorMsg);
+        return false;
+    }
+    
+    return true;
+}
+</script>
+{% endblock %}

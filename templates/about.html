@@ -1,0 +1,262 @@
+{% extends "base.html" %}
+
+{% block title %}About - Missing Person Finder{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="hero-section">
+    <div class="container text-center">
+        <h1 class="hero-title">About Missing Person Finder</h1>
+        <p class="hero-subtitle">Advanced AI-powered facial recognition platform helping reunite families and solve missing person cases</p>
+    </div>
+</div>
+
+<div class="content-container">
+    <!-- Mission Section -->
+    <div class="row align-items-center mb-5">
+    <div class="col-md-6">
+        <h2 class="display-6 fw-bold mb-4">Our Mission</h2>
+        <p class="lead">Missing Person Finder harnesses the power of artificial intelligence to transform how missing person cases are handled, providing hope and results when time matters most.</p>
+        <p>Built with Flask and powered by advanced computer vision algorithms, our platform processes photos and videos using state-of-the-art facial recognition technology. We combine deep learning models with efficient background processing to deliver accurate matches and actionable insights to families, law enforcement, and humanitarian organizations.</p>
+
+        <div class="d-flex justify-content-start gap-4 mt-4">
+            <div class="text-center">
+                <div class="stats-icon text-primary"><i class="fas fa-brain"></i></div>
+                <div class="stats-label">AI-Powered Face Matching</div>
+            </div>
+            <div class="text-center">
+                <div class="stats-icon text-success"><i class="fas fa-cogs"></i></div>
+                <div class="stats-label">Automated Background Scans</div>
+            </div>
+            <div class="text-center">
+                <div class="stats-icon text-info"><i class="fas fa-shield-alt"></i></div>
+                <div class="stats-label">Secure & Scalable Platform</div>
+            </div>
+        </div>
+        </div>
+    <div class="col-md-6">
+        <div class="bg-light rounded-3 p-5 text-center">
+            <i class="fas fa-heart fa-5x text-danger mb-3"></i>
+            <h4>Reuniting Families</h4>
+            <p class="text-muted">Every search brings hope, every match brings joy</p>
+        </div>
+    </div>
+</div>
+
+<style>
+    .stats-icon {
+        font-size: 2.5rem; /* Adjust icon size */
+        margin-bottom: 8px;
+    }
+    .stats-label {
+        font-weight: 500;
+        color: #555;
+    }
+</style>
+
+    <!-- How It Works Section -->
+    <div class="mb-5">
+        <div class="text-center mb-5">
+            <h2 class="display-6 fw-bold">How Our Technology Works</h2>
+            <p class="lead text-muted">Advanced AI algorithms working around the clock to find missing persons</p>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-md-3">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-upload"></i>
+                    </div>
+                    <h5 class="feature-title">1. Upload Photos</h5>
+                    <p>Provide clear, recent photos of the missing person from multiple angles to train our AI system for optimal recognition accuracy.</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-video"></i>
+                    </div>
+                    <h5 class="feature-title">2. Add Search Videos</h5>
+                    <p>Upload surveillance footage, crowd videos, or any video content where the person might appear for comprehensive analysis.</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-brain"></i>
+                    </div>
+                    <h5 class="feature-title">3. AI Analysis</h5>
+                    <p>Using OpenCV and face_recognition libraries, our system extracts facial encodings and performs similarity matching with configurable confidence thresholds.</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <h5 class="feature-title">4. Get Results</h5>
+                    <p>Real-time notifications via our dashboard show match results with precise timestamps, confidence percentages, and thumbnail previews for quick verification.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Architecture Section -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="mb-0"><i class="fas fa-code me-2"></i>Platform Architecture</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <h5><i class="fab fa-python me-2 text-primary"></i>Backend Technologies</h5>
+                            <ul class="list-unstyled">
+                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i><strong>Flask:</strong> Lightweight web framework</li>
+                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i><strong>SQLAlchemy:</strong> Database ORM with migrations</li>
+                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i><strong>Celery:</strong> Distributed task queue</li>
+                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i><strong>Redis:</strong> Message broker and caching</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h5><i class="fas fa-eye me-2 text-info"></i>AI & Computer Vision</h5>
+                            <ul class="list-unstyled">
+                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i><strong>OpenCV:</strong> Image and video processing</li>
+                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i><strong>face_recognition:</strong> Facial encoding library</li>
+                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i><strong>dlib:</strong> Machine learning algorithms</li>
+                                <li class="mb-2"><i class="fas fa-check text-success me-2"></i><strong>NumPy:</strong> Numerical computing</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Technology Section -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="mb-0"><i class="fas fa-cogs me-2"></i>Core Features</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row g-4">
+                        <div class="col-md-4">
+                            <div class="d-flex align-items-center mb-3">
+                                <i class="fas fa-brain fa-2x text-primary me-3"></i>
+                                <div>
+                                    <h5 class="mb-1">Computer Vision</h5>
+                                    <p class="text-muted mb-0">Face detection using HOG and CNN models with dlib's facial landmark detection</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-flex align-items-center mb-3">
+                                <i class="fas fa-cloud fa-2x text-info me-3"></i>
+                                <div>
+                                    <h5 class="mb-1">Background Processing</h5>
+                                    <p class="text-muted mb-0">Celery task queue with Redis backend for efficient video processing workflows</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-flex align-items-center mb-3">
+                                <i class="fas fa-shield-alt fa-2x text-success me-3"></i>
+                                <div>
+                                    <h5 class="mb-1">Privacy First</h5>
+                                    <p class="text-muted mb-0">Enterprise-grade encryption protecting your sensitive data</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Privacy & Security Section -->
+    <div class="row mb-5">
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h4 class="mb-0"><i class="fas fa-lock me-2"></i>Privacy & Security</h4>
+                </div>
+                <div class="card-body">
+                    <p>We understand the sensitive nature of missing person cases and take privacy seriously:</p>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>All data encrypted in transit and at rest</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Access controls for authorized users only</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Regular security audits and compliance checks</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>GDPR and privacy regulation compliance</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Data retention policies protect user privacy</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+    <div class="card h-100">
+        <div class="card-header">
+            <h4 class="mb-0"><i class="fas fa-cogs me-2"></i>System Capabilities</h4>
+        </div>
+        <div class="card-body">
+            <div class="row text-center">
+                <div class="col-6 mb-3">
+                    <div class="stats-icon text-primary"><i class="fas fa-brain"></i></div>
+                    <div class="stats-label">AI Face Encoding</div>
+                </div>
+                <div class="col-6 mb-3">
+                    <div class="stats-icon text-success"><i class="fas fa-server"></i></div>
+                    <div class="stats-label">Scalable Database</div>
+                </div>
+                <div class="col-6 mb-3">
+                    <div class="stats-icon text-info"><i class="fas fa-tasks"></i></div>
+                    <div class="stats-label">Async Task Processing</div>
+                </div>
+                <div class="col-6 mb-3">
+                    <div class="stats-icon text-warning"><i class="fas fa-shield-alt"></i></div>
+                    <div class="stats-label">Role-Based Access</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .stats-icon {
+        font-size: 2.2rem;
+        margin-bottom: 8px;
+    }
+</style>
+
+    <!-- CTA Section -->
+    <div class="text-center py-5">
+        <h2 class="display-6 fw-bold mb-3">Ready to Get Started?</h2>
+        <p class="lead text-muted mb-4">Our platform is designed to be user-friendly while providing powerful AI capabilities.</p>
+        
+        {% if not current_user.is_authenticated %}
+            <a href="{{ url_for('main.register') }}" class="btn btn-primary btn-lg me-3">
+                <i class="fas fa-rocket me-2"></i>Get Started Free
+            </a>
+            <a href="{{ url_for('main.contact') }}" class="btn btn-outline-primary btn-lg">
+                <i class="fas fa-envelope me-2"></i>Contact Us
+            </a>
+        {% elif current_user.is_admin %}
+            <a href="{{ url_for('admin.dashboard') }}" class="btn btn-primary btn-lg me-3">
+                <i class="fas fa-cog me-2"></i>Admin Dashboard
+            </a>
+            <a href="{{ url_for('main.contact') }}" class="btn btn-outline-primary btn-lg">
+                <i class="fas fa-envelope me-2"></i>Contact Support
+            </a>
+        {% else %}
+            <a href="{{ url_for('main.register_case') }}" class="btn btn-primary btn-lg me-3">
+                <i class="fas fa-plus me-2"></i>Create New Case
+            </a>
+            <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline-primary btn-lg">
+                <i class="fas fa-tachometer-alt me-2"></i>My Dashboard
+            </a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

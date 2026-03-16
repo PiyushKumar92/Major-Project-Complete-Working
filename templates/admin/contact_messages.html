@@ -1,0 +1,276 @@
+{% extends "base.html" %}
+
+{% block title %}Contact Messages - Admin Panel{% endblock %}
+
+{% block head %}
+<meta name="csrf-token" content="{{ csrf_token() }}">
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1><i class="fas fa-envelope me-2"></i>Contact Messages</h1>
+            <p class="text-muted">Manage user contact form submissions</p>
+        </div>
+        <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+        </a>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">All Contact Messages</h5>
+        </div>
+        <div class="card-body">
+            {% if messages.items %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Subject</th>
+                                <th>Message</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for message in messages.items %}
+                            <tr class="{% if not message.is_read %}table-warning{% endif %}" data-message-id="{{ message.id }}">
+                                <td><strong>{{ message.name }}</strong></td>
+                                <td>
+                                    <a href="mailto:{{ message.email }}">{{ message.email }}</a>
+                                </td>
+                                <td>{{ message.subject }}</td>
+                                <td>
+                                    <div style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                        {{ message.message }}
+                                    </div>
+                                    <button class="btn btn-sm btn-link p-0" onclick="viewFullMessage({{ message.id }})">
+                                        View Full
+                                    </button>
+                                </td>
+                                <td>{{ message.created_at.strftime('%m/%d/%Y %H:%M') }}</td>
+                                <td>
+                                    {% if message.is_read %}
+                                        <span class="badge bg-success">Read</span>
+                                    {% else %}
+                                        <span class="badge bg-warning">Unread</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if not message.is_read %}
+                                        <form method="POST" action="{{ url_for('admin.mark_message_read', message_id=message.id) }}" style="display: inline;">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                            <button type="submit" class="btn btn-sm btn-success me-1">
+                                                <i class="fas fa-check"></i> Mark Read
+                                            </button>
+                                        </form>
+                                    {% endif %}
+                                    <form method="POST" action="{{ url_for('admin.archive_contact_message', message_id=message.id) }}" 
+                                          style="display: inline;" 
+                                          onsubmit="return confirm('Archive this message from {{ message.name }}? It will be marked as read and preserved.')">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                        <button type="submit" class="btn btn-sm btn-warning" title="Archive Message">
+                                            <i class="fas fa-archive"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            
+                            <!-- Hidden full message row -->
+                            <tr id="full-message-{{ message.id }}" style="display: none;">
+                                <td colspan="7">
+                                    <div class="alert alert-info">
+                                        <h6>Full Message:</h6>
+                                        <p>{{ message.message }}</p>
+                                        <button class="btn btn-sm btn-secondary" onclick="hideFullMessage('{{ message.id }}')">
+                                            Hide
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                {% if messages.pages > 1 %}
+                <nav aria-label="Contact messages pagination">
+                    <ul class="pagination justify-content-center">
+                        {% if messages.has_prev %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('admin.contact_messages', page=messages.prev_num) }}">Previous</a>
+                            </li>
+                        {% endif %}
+                        
+                        {% for page_num in messages.iter_pages() %}
+                            {% if page_num %}
+                                {% if page_num != messages.page %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('admin.contact_messages', page=page_num) }}">{{ page_num }}</a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ page_num }}</span>
+                                    </li>
+                                {% endif %}
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if messages.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('admin.contact_messages', page=messages.next_num) }}">Next</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-envelope fa-3x text-muted mb-3"></i>
+                    <h5>No Contact Messages</h5>
+                    <p class="text-muted">No contact form submissions have been received yet.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+function showFullMessage(messageId) {
+    document.getElementById('full-message-' + messageId).style.display = 'table-row';
+}
+
+function hideFullMessage(messageId) {
+    document.getElementById('full-message-' + messageId).style.display = 'none';
+}
+
+function markAsRead(messageId) {
+    console.log('Marking message as read:', messageId);
+    
+    const formData = new FormData();
+    formData.append('_method', 'POST');
+    
+    fetch(`/admin/contact-messages/${messageId}/mark-read`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        console.log('Response status:', response.status);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Response data:', data);
+        if (data.success) {
+            // Update UI without reload
+            const row = document.querySelector(`tr[data-message-id="${messageId}"]`);
+            console.log('Found row:', row);
+            if (row) {
+                row.classList.remove('table-warning');
+                const statusBadge = row.querySelector('.badge');
+                if (statusBadge) {
+                    statusBadge.className = 'badge bg-success';
+                    statusBadge.textContent = 'Read';
+                }
+                const markReadBtn = row.querySelector('.btn-success');
+                if (markReadBtn) {
+                    markReadBtn.remove();
+                }
+            }
+            alert('Message marked as read successfully!');
+        } else {
+            alert('Failed to mark message as read: ' + (data.error || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Failed to mark message as read: ' + error.message);
+    });
+}
+
+function viewFullMessage(messageId) {
+    fetch(`/admin/contact-messages/${messageId}/view`)
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const message = data.message;
+            const modalHtml = `
+                <div class="modal fade" id="messageModal" tabindex="-1">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Message from ${message.name}</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="mb-3">
+                                    <strong>From:</strong> ${message.name} (${message.email})
+                                </div>
+                                <div class="mb-3">
+                                    <strong>Subject:</strong> ${message.subject}
+                                </div>
+                                <div class="mb-3">
+                                    <strong>Date:</strong> ${message.created_at}
+                                </div>
+                                <div class="mb-3">
+                                    <strong>Status:</strong> 
+                                    <span class="badge ${message.is_read ? 'bg-success' : 'bg-warning'}">
+                                        ${message.is_read ? 'Read' : 'Unread'}
+                                    </span>
+                                </div>
+                                <div class="mb-3">
+                                    <strong>Message:</strong>
+                                    <div class="border p-3 mt-2 bg-light rounded">
+                                        ${message.content.replace(/\n/g, '<br>')}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <a href="mailto:${message.email}" class="btn btn-primary">
+                                    <i class="fas fa-reply"></i> Reply via Email
+                                </a>
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Remove existing modal if any
+            const existingModal = document.getElementById('messageModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+            
+            // Add modal to page
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('messageModal'));
+            modal.show();
+            
+            // Clean up modal after it's hidden
+            document.getElementById('messageModal').addEventListener('hidden.bs.modal', function() {
+                this.remove();
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Failed to load message');
+    });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,240 @@
+{% extends "base.html" %}
+
+{% block title %}AI Investigation Platform - Advanced Person & Evidence Analysis{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero">
+    <div class="container">
+        <div class="hero-content">
+            <h1>AI-Powered Investigation Platform</h1>
+            <p>Advanced facial recognition and evidence analysis for law enforcement, organizations, and families. Supporting missing person cases, criminal investigations, surveillance analysis, and evidence collection with cutting-edge AI technology.</p>
+            
+            <div class="hero-buttons">
+                {% if not current_user.is_authenticated %}
+                    <a href="{{ url_for('main.register') }}" class="btn btn-secondary btn-lg">
+                        <i class="fas fa-rocket"></i>
+                        Get Started Free
+                    </a>
+                {% elif not current_user.is_admin %}
+                    <a href="{{ url_for('main.register_case') }}" class="btn btn-secondary btn-lg">
+                        <i class="fas fa-plus"></i>
+                        Submit Investigation Request
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Stats Section -->
+<section class="section">
+    <div class="container">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-brain"></i></div>
+                <div class="stat-label">AI-Powered Analysis</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-search"></i></div>
+                <div class="stat-label">Multi-Type Investigations</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-shield-alt"></i></div>
+                <div class="stat-label">Professional Security</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-users-cog"></i></div>
+                <div class="stat-label">Expert Case Management</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    .stat-icon {
+        font-size: 2.5rem;
+        margin-bottom: 10px;
+        color: #007bff; /* Or another color that fits your theme */
+    }
+    .stat-card {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+</style>
+
+<!-- Investigation Types Section -->
+<section class="section section-alt">
+    <div class="container">
+        <div class="section-header">
+            <h2>Comprehensive Investigation Services</h2>
+            <p class="lead">Advanced AI technology supporting multiple investigation types and scenarios</p>
+        </div>
+        
+        <div class="feature-grid">
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-search"></i>
+                </div>
+                <h3 class="feature-title">Missing Person Cases</h3>
+                <p class="feature-description">Advanced facial recognition to locate missing individuals through surveillance footage and crowd analysis.</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-user-secret"></i>
+                </div>
+                <h3 class="feature-title">Criminal Investigation</h3>
+                <p class="feature-description">Identify suspects and witnesses from evidence photos and surveillance videos with high-precision AI analysis.</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-video"></i>
+                </div>
+                <h3 class="feature-title">Surveillance Analysis</h3>
+                <p class="feature-description">Process hours of surveillance footage to detect persons of interest and extract critical evidence.</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-route"></i>
+                </div>
+                <h3 class="feature-title">Person Tracking</h3>
+                <p class="feature-description">Track individual movements across multiple locations and time periods using AI-powered analysis.</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-microscope"></i>
+                </div>
+                <h3 class="feature-title">Evidence Analysis</h3>
+                <p class="feature-description">Analyze photographic and video evidence to identify individuals, objects, and patterns.</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <h3 class="feature-title">Law Enforcement Support</h3>
+                <p class="feature-description">Specialized tools and priority processing for law enforcement agencies and government organizations.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- How It Works Section -->
+<section class="section">
+    <div class="container">
+        <div class="section-header">
+            <h2>How It Works</h2>
+            <p class="lead">Professional investigation process with AI-powered analysis</p>
+        </div>
+        
+        <div class="steps-grid">
+            <div class="step-card">
+                <div class="step-number">1</div>
+                <h4>Submit Request</h4>
+                <p>Choose investigation type, provide case details, and upload photos/videos of the subject or evidence.</p>
+            </div>
+            
+            <div class="step-card">
+                <div class="step-number">2</div>
+                <h4>Admin Review</h4>
+                <p>Our team reviews your case, verifies information, and approves it for AI processing.</p>
+            </div>
+            
+            <div class="step-card">
+                <div class="step-number">3</div>
+                <h4>AI Investigation</h4>
+                <p>Advanced algorithms analyze surveillance footage, cross-reference databases, and identify potential matches.</p>
+            </div>
+            
+            <div class="step-card">
+                <div class="step-number">4</div>
+                <h4>Results & Updates</h4>
+                <p>Receive detailed findings, evidence, and regular case updates with professional analysis and recommendations.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Trust Section -->
+<section class="section section-alt">
+    <div class="container">
+        <div class="section-header">
+            <h2>Trusted by Organizations Worldwide</h2>
+            <p class="lead">Professional investigation platform serving diverse clients</p>
+        </div>
+        
+        <div class="trust-grid">
+            <div class="card">
+                <div class="card-body trust-card">
+                    <i class="fas fa-shield-alt trust-icon trust-icon-success"></i>
+                    <h4>Law Enforcement</h4>
+                    <p>Police departments, detective agencies, and government organizations for criminal investigations and missing person cases.</p>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-body trust-card">
+                    <i class="fas fa-building trust-icon trust-icon-primary"></i>
+                    <h4>Organizations</h4>
+                    <p>NGOs, security firms, and private investigators using advanced AI for professional investigations.</p>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-body trust-card">
+                    <i class="fas fa-users trust-icon trust-icon-warning"></i>
+                    <h4>Families & Individuals</h4>
+                    <p>Families searching for missing loved ones and individuals requiring person identification services.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Browse Cases Section -->
+<section class="section section-alt">
+    <div class="container">
+        <div class="section-header">
+            <h2>Browse Investigation Cases</h2>
+            <p class="lead">View active cases and help us find missing individuals</p>
+        </div>
+        
+        <div class="text-center">
+            <p class="mb-4">Access our comprehensive case database to view ongoing investigations and contribute to finding missing persons.</p>
+            <a href="{{ url_for('main.public_cases') }}" class="btn btn-primary btn-lg">
+                <i class="fas fa-list-alt me-2"></i>View All Cases
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="section">
+    <div class="container">
+        <div class="cta-section">
+            <h2>Ready to Start Your Investigation?</h2>
+            <p>Join law enforcement agencies, organizations, and families who trust our AI-powered investigation platform for professional results.</p>
+            
+            <div class="cta-buttons">
+                {% if not current_user.is_authenticated %}
+                    <a href="{{ url_for('main.register') }}" class="btn btn-secondary btn-lg">
+                        <i class="fas fa-rocket"></i>
+                        Get Started Free
+                    </a>
+                {% elif not current_user.is_admin %}
+                    <a href="{{ url_for('main.register_case') }}" class="btn btn-secondary btn-lg">
+                        <i class="fas fa-plus"></i>
+                        Submit Investigation Request
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

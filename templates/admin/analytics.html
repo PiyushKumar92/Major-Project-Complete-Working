@@ -1,0 +1,327 @@
+{% extends "base.html" %}
+{% block extra_css %}
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+    --primary: #4f46e5;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --info: #3b82f6;
+}
+
+* { font-family: 'Inter', sans-serif; }
+
+.analytics-header {
+    background: linear-gradient(135deg, var(--success), #059669);
+    color: white;
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+}
+
+.metric-card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s;
+    margin-bottom: 2rem;
+}
+
+.metric-card:hover { transform: translateY(-2px); }
+
+.heatmap-container {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.location-bar {
+    height: 20px;
+    border-radius: 10px;
+    margin-bottom: 8px;
+    position: relative;
+}
+
+.location-label {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: white;
+    font-size: 12px;
+    font-weight: 500;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="analytics-header">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="mb-2">📊 Advanced Analytics Dashboard</h1>
+                <p class="mb-0">AI Performance, Geographic Insights & System Metrics</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <a href="{{ url_for('admin.dashboard') }}" class="btn btn-light">
+                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <!-- AI Performance Metrics -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card metric-card">
+                <div class="card-header">
+                    <h5 class="mb-0">🤖 AI Processing Performance</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <!-- Overview Stats -->
+                        <div class="col-md-3 text-center mb-3">
+                            <div class="p-3 rounded" style="background: #dbeafe;">
+                                <h3 class="mb-1">{{ total_cases }}</h3>
+                                <p class="mb-1 font-weight-bold">Total Cases</p>
+                                <small class="text-muted">All registered</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3 text-center mb-3">
+                            <div class="p-3 rounded" style="background: #d1fae5;">
+                                <h3 class="mb-1">{{ total_users }}</h3>
+                                <p class="mb-1 font-weight-bold">Total Users</p>
+                                <small class="text-muted">Platform users</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3 text-center mb-3">
+                            <div class="p-3 rounded" style="background: #fef3c7;">
+                                <h3 class="mb-1">{{ total_sightings }}</h3>
+                                <p class="mb-1 font-weight-bold">AI Sightings</p>
+                                <small class="text-muted">Detections found</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3 text-center mb-3">
+                            <div class="p-3 rounded" style="background: #e0e7ff;">
+                                <h3 class="mb-1">{{ ai_stats.avg_confidence }}%</h3>
+                                <p class="mb-1 font-weight-bold">Avg Confidence</p>
+                                <small class="text-muted">AI accuracy</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Case Status Breakdown -->
+                    {% if processing_stats %}
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <h6>Case Status Distribution:</h6>
+                            <div class="row">
+                                {% for status, count in processing_stats %}
+                                <div class="col-md-2 text-center mb-2">
+                                    <div class="p-2 rounded" style="background: 
+                                        {% if status == 'Queued' %}#f3f4f6{% endif %}
+                                        {% if status == 'Processing' %}#fef3c7{% endif %}
+                                        {% if status == 'Active' %}#dbeafe{% endif %}
+                                        {% if status == 'Resolved' %}#d1fae5{% endif %}
+                                        {% if status == 'Withdrawn' %}#fee2e2{% endif %}
+                                    ">
+                                        <h5 class="mb-1">{{ count }}</h5>
+                                        <small class="font-weight-bold">{{ status }}</small>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confidence Score Distribution -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card metric-card">
+                <div class="card-header">
+                    <h5 class="mb-0">🎯 AI Confidence Distribution</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="confidenceChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card metric-card">
+                <div class="card-header">
+                    <h5 class="mb-0">📈 Confidence Breakdown</h5>
+                </div>
+                <div class="card-body">
+                    {% set total_confidence = confidence_distribution|map('last')|sum %}
+                    {% for range, count in confidence_distribution %}
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <strong>{{ range }}</strong>
+                            <div class="progress mt-1" style="height: 8px; width: 200px;">
+                                {% set percentage = (count * 100 / total_confidence)|round if total_confidence > 0 else 0 %}
+                                <div class="progress-bar" style="width: {{ percentage }}%; background: 
+                                    {% if 'Very High' in range %}#10b981{% endif %}
+                                    {% if 'High' in range %}#3b82f6{% endif %}
+                                    {% if 'Medium' in range %}#f59e0b{% endif %}
+                                    {% if 'Low' in range %}#ef4444{% endif %}
+                                    {% if 'Very Low' in range %}#6b7280{% endif %}
+                                "></div>
+                            </div>
+                        </div>
+                        <span class="badge bg-primary">{{ count }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Geographic Heat Map -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card metric-card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">🗺️ Geographic Heat Map - Case Distribution</h5>
+                    <div>
+                        <span class="badge bg-success">{{ location_data|length }} Locations</span>
+                        <span class="badge bg-info">{{ location_data|map('last')|sum }} Total Cases</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="heatmap-container">
+                        {% set max_cases = location_data|map('last')|max if location_data else 1 %}
+                        {% for location, case_count in location_data %}
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <strong>{{ location }}</strong>
+                                <span class="badge bg-dark">{{ case_count }} cases</span>
+                            </div>
+                            <div class="location-bar" style="background: linear-gradient(90deg, 
+                                {% set intensity = (case_count * 100 / max_cases)|round %}
+                                {% if intensity >= 80 %}#dc2626{% endif %}
+                                {% if intensity >= 60 and intensity < 80 %}#ea580c{% endif %}
+                                {% if intensity >= 40 and intensity < 60 %}#f59e0b{% endif %}
+                                {% if intensity >= 20 and intensity < 40 %}#eab308{% endif %}
+                                {% if intensity < 20 %}#10b981{% endif %}
+                                {{ intensity }}%, transparent {{ intensity }}%);">
+                                <div class="location-label">
+                                    {{ "%.0f"|format((case_count * 100 / max_cases)) }}% intensity
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="mt-4 p-3 bg-light rounded">
+                        <h6>Heat Map Legend:</h6>
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="d-flex align-items-center">
+                                <div style="width: 20px; height: 20px; background: #10b981; border-radius: 3px;"></div>
+                                <span class="ms-2">Low (0-20%)</span>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <div style="width: 20px; height: 20px; background: #eab308; border-radius: 3px;"></div>
+                                <span class="ms-2">Medium (20-40%)</span>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <div style="width: 20px; height: 20px; background: #f59e0b; border-radius: 3px;"></div>
+                                <span class="ms-2">High (40-60%)</span>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <div style="width: 20px; height: 20px; background: #ea580c; border-radius: 3px;"></div>
+                                <span class="ms-2">Very High (60-80%)</span>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <div style="width: 20px; height: 20px; background: #dc2626; border-radius: 3px;"></div>
+                                <span class="ms-2">Critical (80%+)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Options -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card metric-card">
+                <div class="card-header">
+                    <h5 class="mb-0">📥 Export Analytics Data</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <a href="{{ url_for('admin.export_cases') }}" class="btn btn-primary btn-block mb-2">
+                                <i class="fas fa-download"></i> Export All Cases
+                            </a>
+                        </div>
+                        <div class="col-md-4">
+                            <a href="{{ url_for('admin.export_users') }}" class="btn btn-info btn-block mb-2">
+                                <i class="fas fa-download"></i> Export All Users
+                            </a>
+                        </div>
+                        <div class="col-md-4">
+                            <button class="btn btn-success btn-block mb-2" onclick="exportAnalytics()">
+                                <i class="fas fa-chart-bar"></i> Export Analytics Report
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Confidence Distribution Chart
+const confidenceData = {
+    labels: [{% for range, count in confidence_distribution %}'{{ range }}'{% if not loop.last %},{% endif %}{% endfor %}],
+    datasets: [{
+        data: [{% for range, count in confidence_distribution %}{{ count }}{% if not loop.last %},{% endif %}{% endfor %}],
+        backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#6b7280'],
+        borderWidth: 0
+    }]
+};
+
+new Chart(document.getElementById('confidenceChart'), {
+    type: 'bar',
+    data: confidenceData,
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false }
+        },
+        scales: {
+            y: { beginAtZero: true }
+        }
+    }
+});
+
+function exportAnalytics() {
+    // Create analytics report
+    const report = {
+        generated_at: new Date().toISOString(),
+        processing_stats: {{ processing_stats|tojson }},
+        confidence_distribution: {{ confidence_distribution|tojson }},
+        location_data: {{ location_data|tojson }}
+    };
+    
+    const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `analytics_report_${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+</script>
+{% endblock %}

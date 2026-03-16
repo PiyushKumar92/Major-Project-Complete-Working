@@ -1,0 +1,589 @@
+{% extends "base.html" %}
+
+{% block title %}AI Analysis Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="text-primary mb-1">
+                        <i class="fas fa-brain me-2"></i>AI Analysis Dashboard
+                    </h2>
+                    <p class="text-muted mb-0">Monitor AI-powered face recognition and location matching results</p>
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-outline-primary" onclick="refreshAnalysis()">
+                        <i class="fas fa-sync-alt me-2"></i>Refresh
+                    </button>
+                    <button class="btn btn-primary" onclick="startBulkAnalysis()">
+                        <i class="fas fa-play me-2"></i>Start Bulk Analysis
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-primary text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h3 class="mb-0">{{ total_matches }}</h3>
+                            <p class="mb-0">Total Matches</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-search fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-success text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h3 class="mb-0">{{ successful_matches }}</h3>
+                            <p class="mb-0">Successful Detections</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-check-circle fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-warning text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h3 class="mb-0">{{ pending_matches }}</h3>
+                            <p class="mb-0">Pending Analysis</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-clock fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-info text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h3 class="mb-0">{{ processing_matches }}</h3>
+                            <p class="mb-0">Currently Processing</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-cog fa-spin fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <form method="GET" class="row g-3">
+                        <div class="col-md-3">
+                            <label for="status" class="form-label">Status Filter</label>
+                            <select class="form-select" id="status" name="status">
+                                <option value="">All Status</option>
+                                <option value="pending" {{ 'selected' if status_filter == 'pending' }}>Pending</option>
+                                <option value="processing" {{ 'selected' if status_filter == 'processing' }}>Processing</option>
+                                <option value="completed" {{ 'selected' if status_filter == 'completed' }}>Completed</option>
+                                <option value="failed" {{ 'selected' if status_filter == 'failed' }}>Failed</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="confidence" class="form-label">Min Confidence</label>
+                            <select class="form-select" id="confidence" name="confidence">
+                                <option value="">Any Confidence</option>
+                                <option value="0.9">90%+ (Very High)</option>
+                                <option value="0.8">80%+ (High)</option>
+                                <option value="0.7">70%+ (Good)</option>
+                                <option value="0.6">60%+ (Medium)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="person_found" class="form-label">Detection Result</label>
+                            <select class="form-select" id="person_found" name="person_found">
+                                <option value="">All Results</option>
+                                <option value="true">Person Found</option>
+                                <option value="false">No Detection</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary me-2">
+                                <i class="fas fa-filter me-2"></i>Apply Filters
+                            </button>
+                            <a href="{{ url_for('admin.ai_analysis') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-2"></i>Clear
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confidence Analysis Charts -->
+    <div class="row mb-4">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-pie me-2"></i>AI Confidence Distribution
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="confidenceChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-bar me-2"></i>Confidence Breakdown
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="confidence-breakdown">
+                        <div class="confidence-item mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="fw-bold text-success">Very High (90%+)</span>
+                                <span class="badge bg-success" id="veryHigh">0</span>
+                            </div>
+                            <div class="progress" style="height: 8px;">
+                                <div class="progress-bar bg-success" id="veryHighBar" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div class="confidence-item mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="fw-bold text-primary">High (80-89%)</span>
+                                <span class="badge bg-primary" id="high">0</span>
+                            </div>
+                            <div class="progress" style="height: 8px;">
+                                <div class="progress-bar bg-primary" id="highBar" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div class="confidence-item mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="fw-bold text-info">Medium (60-79%)</span>
+                                <span class="badge bg-info" id="medium">0</span>
+                            </div>
+                            <div class="progress" style="height: 8px;">
+                                <div class="progress-bar bg-info" id="mediumBar" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div class="confidence-item mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="fw-bold text-warning">Low (40-59%)</span>
+                                <span class="badge bg-warning" id="low">0</span>
+                            </div>
+                            <div class="progress" style="height: 8px;">
+                                <div class="progress-bar bg-warning" id="lowBar" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div class="confidence-item">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="fw-bold text-danger">Very Low (<40%)</span>
+                                <span class="badge bg-danger" id="veryLow">0</span>
+                            </div>
+                            <div class="progress" style="height: 8px;">
+                                <div class="progress-bar bg-danger" id="veryLowBar" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Analysis Results -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list me-2"></i>Analysis Results
+                        <span class="badge bg-secondary ms-2">{{ matches.total }} total</span>
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Case</th>
+                                    <th>Location</th>
+                                    <th>Location Match</th>
+                                    <th>Status</th>
+                                    <th>Detections</th>
+                                    <th>Confidence</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for match in matches.items %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            {% if match.case.target_images %}
+                                            <div class="case-image-container" style="position: relative; display: inline-block;">
+                                                <img src="/static/{{ match.case.target_images[0].image_path }}" 
+                                                     class="rounded-circle me-2" width="40" height="40" style="object-fit: cover;" 
+                                                     onerror="this.src='/static/images/default-avatar.png'">
+                                                <!-- Small detection indicator -->
+                                                {% if match.detection_count > 0 %}
+                                                <div class="detection-indicator" 
+                                                     style="position: absolute; 
+                                                            top: -2px; right: 8px;
+                                                            width: 12px; height: 12px;
+                                                            background: {{ 'green' if match.confidence_score and match.confidence_score > 0.7 else 'orange' if match.confidence_score and match.confidence_score > 0.5 else 'red' }};
+                                                            border: 2px solid white;
+                                                            border-radius: 50%;
+                                                            animation: pulse-dot 2s infinite;">
+                                                </div>
+                                                {% endif %}
+                                            </div>
+                                            {% else %}
+                                            <div class="bg-secondary rounded-circle me-2 d-flex align-items-center justify-content-center" 
+                                                 style="width: 40px; height: 40px;">
+                                                <i class="fas fa-user text-white"></i>
+                                            </div>
+                                            {% endif %}
+                                            <div>
+                                                <div class="fw-bold">{{ match.case.person_name }}</div>
+                                                <small class="text-muted">Case #{{ match.case.id }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <div class="fw-bold">{{ match.footage.location_name }}</div>
+                                            <small class="text-muted">
+                                                {% if match.distance_km %}
+                                                    {{ "%.1f"|format(match.distance_km) }} km away
+                                                {% else %}
+                                                    Distance unknown
+                                                {% endif %}
+                                            </small>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if match.match_score > 0 %}
+                                        {% set score_value = match.match_score if match.match_score <= 1.0 else match.match_score / 100 %}
+                                        <div class="progress" style="height: 20px; position: relative;">
+                                            <div class="progress-bar bg-{{ 'success' if score_value > 0.8 else 'warning' if score_value > 0.6 else 'danger' }}" 
+                                                 style="width: {{ (score_value * 100)|round }}%;">
+                                            </div>
+                                            <span style="position: absolute; width: 100%; text-align: center; line-height: 20px; color: #000; font-weight: 500;">
+                                                {{ "%.1f"|format(score_value * 100) }}%
+                                            </span>
+                                        </div>
+                                        {% else %}
+                                        <span class="text-danger fw-bold">0.0%</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ 
+                                            'success' if match.status == 'completed' else 
+                                            'primary' if match.status == 'processing' else 
+                                            'warning' if match.status == 'pending' else 
+                                            'danger' 
+                                        }}">
+                                            {{ match.status.title() }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="text-center">
+                                            <div class="fw-bold text-{{ 'success' if match.detection_count > 0 else 'muted' }}">
+                                                {{ match.detection_count }}
+                                            </div>
+                                            <small class="text-muted">detections</small>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if match.confidence_score %}
+                                        {% set conf_value = match.confidence_score if match.confidence_score <= 1.0 else match.confidence_score / 100 %}
+                                        <div class="text-center">
+                                            <div class="fw-bold text-{{ 'success' if conf_value > 0.8 else 'warning' if conf_value > 0.6 else 'danger' }}">
+                                                {{ "%.1f"|format(conf_value * 100) }}%
+                                            </div>
+                                            <small class="text-muted">confidence</small>
+                                        </div>
+                                        {% else %}
+                                        <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{{ url_for('admin.ai_analysis_detail', match_id=match.id) }}" 
+                                               class="btn btn-outline-primary" title="View Details">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <button class="btn btn-outline-danger" 
+                                                    onclick="deleteMatch({{ match.id }})" title="Delete">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if matches.pages > 1 %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <nav aria-label="Analysis pagination">
+                <ul class="pagination justify-content-center">
+                    {% if matches.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('admin.ai_analysis', page=matches.prev_num, status=status_filter) }}">Previous</a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for page_num in matches.iter_pages() %}
+                        {% if page_num %}
+                            {% if page_num != matches.page %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('admin.ai_analysis', page=page_num, status=status_filter) }}">{{ page_num }}</a>
+                            </li>
+                            {% else %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ page_num }}</span>
+                            </li>
+                            {% endif %}
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if matches.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('admin.ai_analysis', page=matches.next_num, status=status_filter) }}">Next</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+@keyframes pulse-dot {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.2); opacity: 0.7; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.case-image-container:hover .detection-indicator {
+    transform: scale(1.3);
+    transition: transform 0.2s ease;
+}
+
+.detection-preview {
+    position: relative;
+    overflow: hidden;
+    border-radius: 4px;
+}
+
+.detection-preview img {
+    transition: transform 0.3s ease;
+}
+
+.detection-preview:hover img {
+    transform: scale(1.05);
+}
+
+.mini-bounding-box {
+    position: absolute;
+    border: 2px solid;
+    background: rgba(255, 255, 255, 0.1);
+    pointer-events: none;
+    border-radius: 2px;
+}
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+let confidenceChart;
+
+function initConfidenceChart() {
+    const ctx = document.getElementById('confidenceChart').getContext('2d');
+    confidenceChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Very High (90%+)', 'High (80-89%)', 'Medium (60-79%)', 'Low (40-59%)', 'Very Low (<40%)'],
+            datasets: [{
+                data: [0, 0, 0, 0, 0],
+                backgroundColor: ['#28a745', '#007bff', '#17a2b8', '#ffc107', '#dc3545'],
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+}
+
+function updateConfidenceAnalysis() {
+    const confidenceData = {
+        veryHigh: 0, high: 0, medium: 0, low: 0, veryLow: 0
+    };
+    
+    // Extract confidence values from table
+    document.querySelectorAll('tbody tr').forEach(row => {
+        const confCell = row.cells[5];
+        if (confCell) {
+            const confText = confCell.textContent.trim();
+            const confMatch = confText.match(/(\d+\.\d+)%/);
+            if (confMatch) {
+                const conf = parseFloat(confMatch[1]);
+                if (conf >= 90) confidenceData.veryHigh++;
+                else if (conf >= 80) confidenceData.high++;
+                else if (conf >= 60) confidenceData.medium++;
+                else if (conf >= 40) confidenceData.low++;
+                else confidenceData.veryLow++;
+            }
+        }
+    });
+    
+    // Update chart
+    if (confidenceChart) {
+        confidenceChart.data.datasets[0].data = [
+            confidenceData.veryHigh, confidenceData.high, confidenceData.medium, 
+            confidenceData.low, confidenceData.veryLow
+        ];
+        confidenceChart.update();
+    }
+    
+    // Update breakdown
+    const total = Object.values(confidenceData).reduce((a, b) => a + b, 0);
+    Object.keys(confidenceData).forEach(key => {
+        const count = confidenceData[key];
+        const percentage = total > 0 ? (count / total * 100) : 0;
+        document.getElementById(key).textContent = count;
+        document.getElementById(key + 'Bar').style.width = percentage + '%';
+    });
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(() => {
+        const canvas = document.getElementById('confidenceChart');
+        if (canvas) {
+            initConfidenceChart();
+            updateConfidenceAnalysis();
+        }
+    }, 100);
+});
+
+function refreshAnalysis() {
+    location.reload();
+}
+
+function startBulkAnalysis() {
+    if (confirm('Start bulk AI analysis for all pending matches? This may take some time.')) {
+        fetch('/admin/ai-analysis/bulk-start', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(`Started bulk analysis for ${data.count} matches`);
+                location.reload();
+            } else {
+                alert('Error starting bulk analysis: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error starting bulk analysis');
+        });
+    }
+}
+
+function reprocessMatch(matchId) {
+    alert('Reprocess functionality has been disabled.');
+}
+
+function deleteMatch(matchId) {
+    if (confirm('Delete this analysis match? This will permanently remove the match and all detections.')) {
+        fetch(`/admin/ai-analysis/${matchId}/delete`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + (data.error || 'Failed to reset'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error resetting match');
+        });
+    }
+}
+
+// Auto-refresh for processing matches
+setInterval(() => {
+    const processingRows = document.querySelectorAll('tbody tr');
+    let hasProcessing = false;
+    
+    processingRows.forEach(row => {
+        const statusBadge = row.querySelector('.badge');
+        if (statusBadge && (statusBadge.textContent.trim().toUpperCase() === 'PROCESSING' || statusBadge.textContent.trim() === 'Processing')) {
+            hasProcessing = true;
+        }
+    });
+    
+    if (hasProcessing) {
+        // Refresh page every 30 seconds if there are processing matches
+        setTimeout(() => location.reload(), 30000);
+    }
+}, 5000);
+</script>
+
+<script src="{{ url_for('static', filename='js/detection_viewer.js') }}"></script>
+{% endblock %}

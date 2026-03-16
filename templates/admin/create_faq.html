@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+{% block extra_css %}
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+* { font-family: 'Inter', sans-serif; }
+
+.create-faq-header {
+    background: linear-gradient(135deg, #06b6d4, #0891b2);
+    color: white;
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+}
+
+.form-control:focus {
+    border-color: #06b6d4;
+    box-shadow: 0 0 0 0.2rem rgba(6, 182, 212, 0.25);
+}
+
+.preview-card {
+    border: 2px dashed #d1d5db;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-top: 1rem;
+    background: #f8fafc;
+}
+
+.faq-preview {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 1rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="create-faq-header">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="mb-2">❓ Create New FAQ</h1>
+                <p class="mb-0">Help users with frequently asked questions</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <a href="{{ url_for('admin.content_management') }}" class="btn btn-light">
+                    <i class="fas fa-arrow-left"></i> Back to Content
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">📝 FAQ Details</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" id="faqForm">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        <div class="mb-3">
+                            <label for="question" class="form-label">Question *</label>
+                            <input type="text" class="form-control" id="question" name="question" required
+                                   placeholder="Enter the frequently asked question..." onkeyup="updatePreview()">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="answer" class="form-label">Answer *</label>
+                            <textarea class="form-control" id="answer" name="answer" rows="6" required
+                                      placeholder="Provide a comprehensive answer..." onkeyup="updatePreview()"></textarea>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="category" class="form-label">Category</label>
+                                    <select class="form-select" id="category" name="category" onchange="updatePreview()">
+                                        <option value="General">General</option>
+                                        <option value="Account">Account & Registration</option>
+                                        <option value="Cases">Case Management</option>
+                                        <option value="AI">AI & Technology</option>
+                                        <option value="Privacy">Privacy & Security</option>
+                                        <option value="Support">Support & Help</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="order" class="form-label">Display Order</label>
+                                    <input type="number" class="form-control" id="order" name="order" 
+                                           value="0" min="0" placeholder="0 = first">
+                                    <div class="form-text">Lower numbers appear first</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-title">💡 FAQ Templates</h6>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <button type="button" class="btn btn-sm btn-outline-primary mb-2 w-100" 
+                                                    onclick="useTemplate('account')">
+                                                Account Questions
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-info mb-2 w-100" 
+                                                    onclick="useTemplate('case')">
+                                                Case Management
+                                            </button>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <button type="button" class="btn btn-sm btn-outline-success mb-2 w-100" 
+                                                    onclick="useTemplate('ai')">
+                                                AI Technology
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-warning mb-2 w-100" 
+                                                    onclick="useTemplate('privacy')">
+                                                Privacy & Security
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('admin.content_management') }}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Create FAQ
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">👁️ Preview</h5>
+                </div>
+                <div class="card-body">
+                    <div class="preview-card">
+                        <div class="faq-preview">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h6 id="previewQuestion" class="mb-0">Your question will appear here</h6>
+                                <span id="previewCategory" class="badge bg-primary">General</span>
+                            </div>
+                            <p id="previewAnswer" class="text-muted mb-0">Your answer will appear here</p>
+                        </div>
+                        <small class="text-muted mt-2 d-block">This is how your FAQ will appear to users</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="mb-0">📋 Writing Tips</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <i class="fas fa-lightbulb text-warning"></i> Use clear, specific questions
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success"></i> Provide complete, helpful answers
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-users text-info"></i> Think from user's perspective
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-link text-primary"></i> Include relevant links if needed
+                        </li>
+                        <li class="mb-0">
+                            <i class="fas fa-sort-numeric-down text-secondary"></i> Use order to prioritize important FAQs
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function updatePreview() {
+    const question = document.getElementById('question').value || 'Your question will appear here';
+    const answer = document.getElementById('answer').value || 'Your answer will appear here';
+    const category = document.getElementById('category').value;
+    
+    document.getElementById('previewQuestion').textContent = question;
+    document.getElementById('previewAnswer').textContent = answer;
+    document.getElementById('previewCategory').textContent = category;
+}
+
+function useTemplate(templateType) {
+    const questionField = document.getElementById('question');
+    const answerField = document.getElementById('answer');
+    const categoryField = document.getElementById('category');
+    
+    const templates = {
+        'account': {
+            question: 'How do I create an account on the platform?',
+            answer: 'To create an account, click the "Register" button in the top navigation. Fill out the registration form with your username, email, and password. After submitting, you can immediately start using the platform to register missing person cases.',
+            category: 'Account'
+        },
+        'case': {
+            question: 'How long does it take to process a missing person case?',
+            answer: 'Case processing time depends on several factors including the number and quality of photos provided, and current system load. Typically, initial AI processing takes 5-15 minutes. Our system then continuously monitors for potential matches.',
+            category: 'Cases'
+        },
+        'ai': {
+            question: 'How accurate is the AI face recognition system?',
+            answer: 'Our AI system uses advanced facial recognition technology with high accuracy rates. However, accuracy depends on photo quality, lighting, and angles. We recommend uploading multiple clear, front-facing photos for best results. All matches should be verified by users and authorities.',
+            category: 'AI'
+        },
+        'privacy': {
+            question: 'How is my personal information protected?',
+            answer: 'We take privacy seriously. All personal data is encrypted and stored securely. Photos and case information are only used for matching purposes. We do not share personal information with third parties without consent, except when required by law enforcement for legitimate investigations.',
+            category: 'Privacy'
+        }
+    };
+    
+    if (templates[templateType]) {
+        questionField.value = templates[templateType].question;
+        answerField.value = templates[templateType].answer;
+        categoryField.value = templates[templateType].category;
+        updatePreview();
+    }
+}
+
+// Initialize preview
+document.addEventListener('DOMContentLoaded', function() {
+    updatePreview();
+});
+</script>
+{% endblock %}

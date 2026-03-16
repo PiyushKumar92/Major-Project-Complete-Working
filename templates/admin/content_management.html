@@ -1,0 +1,271 @@
+{% extends "base.html" %}
+{% block extra_css %}
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+* { font-family: 'Inter', sans-serif; }
+
+.content-header {
+    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+    color: white;
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+}
+
+.content-card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 2rem;
+    transition: transform 0.2s;
+}
+
+.content-card:hover { transform: translateY(-2px); }
+
+.faq-item {
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    padding: 1rem;
+    background: #f9fafb;
+}
+
+.blog-post-item {
+    border-left: 4px solid #8b5cf6;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    background: #f8fafc;
+    border-radius: 0 8px 8px 0;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="content-header">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="mb-2">📝 Content Management</h1>
+                <p class="mb-0">Manage blog posts, FAQs, and platform content</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <a href="{{ url_for('admin.dashboard') }}" class="btn btn-light">
+                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="row">
+        <!-- FAQ Management -->
+        <div class="col-md-6">
+            <div class="card content-card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">❓ FAQ Management</h5>
+                    <a href="{{ url_for('admin.create_faq') }}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-plus"></i> Add FAQ
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if faqs %}
+                        <div style="max-height: 400px; overflow-y: auto;">
+                            {% for faq in faqs %}
+                            <div class="faq-item">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-2">{{ faq.question }}</h6>
+                                        <p class="text-muted mb-2 small">{{ faq.answer[:100] }}{% if faq.answer|length > 100 %}...{% endif %}</p>
+                                        <div class="d-flex align-items-center">
+                                            <span class="badge bg-info me-2">{{ faq.category }}</span>
+                                            <small class="text-muted">Order: {{ faq.order }}</small>
+                                            {% if faq.is_active %}
+                                                <span class="badge bg-success ms-2">Active</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary ms-2">Inactive</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="ms-2">
+                                        <button class="btn btn-sm btn-outline-primary" title="Edit FAQ">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-question-circle fa-2x text-muted mb-3"></i>
+                            <h6 class="text-muted">No FAQs yet</h6>
+                            <p class="text-muted small">Create your first FAQ to help users</p>
+                            <a href="{{ url_for('admin.create_faq') }}" class="btn btn-primary btn-sm">
+                                <i class="fas fa-plus"></i> Create First FAQ
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Blog Posts Management -->
+        <div class="col-md-6">
+            <div class="card content-card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">📰 Blog Posts</h5>
+                    <button class="btn btn-sm btn-success" onclick="createBlogPost()">
+                        <i class="fas fa-plus"></i> New Post
+                    </button>
+                </div>
+                <div class="card-body">
+                    {% if blog_posts %}
+                        <div style="max-height: 400px; overflow-y: auto;">
+                            {% for post in blog_posts %}
+                            <div class="blog-post-item">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1">{{ post.title }}</h6>
+                                        {% if post.excerpt %}
+                                            <p class="text-muted mb-2 small">{{ post.excerpt[:80] }}...</p>
+                                        {% endif %}
+                                        <div class="d-flex align-items-center">
+                                            <small class="text-muted me-3">
+                                                <i class="fas fa-user"></i> {{ post.author.username }}
+                                            </small>
+                                            <small class="text-muted me-3">
+                                                <i class="fas fa-calendar"></i> {{ post.created_at.strftime('%m/%d/%Y') }}
+                                            </small>
+                                            {% if post.is_published %}
+                                                <span class="badge bg-success">Published</span>
+                                            {% else %}
+                                                <span class="badge bg-warning">Draft</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="ms-2">
+                                        <button class="btn btn-sm btn-outline-primary" title="Edit Post">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-newspaper fa-2x text-muted mb-3"></i>
+                            <h6 class="text-muted">No blog posts yet</h6>
+                            <p class="text-muted small">Share success stories and updates</p>
+                            <button class="btn btn-success btn-sm" onclick="createBlogPost()">
+                                <i class="fas fa-plus"></i> Write First Post
+                            </button>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content Statistics -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card content-card">
+                <div class="card-header">
+                    <h5 class="mb-0">📊 Content Statistics</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-3">
+                            <div class="p-3">
+                                <h3 class="text-primary">{{ faqs|length }}</h3>
+                                <p class="mb-0">Total FAQs</p>
+                                <small class="text-success">{{ faqs|selectattr('is_active')|list|length }} active</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="p-3">
+                                <h3 class="text-success">{{ blog_posts|length }}</h3>
+                                <p class="mb-0">Blog Posts</p>
+                                <small class="text-info">{{ blog_posts|selectattr('is_published')|list|length }} published</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="p-3">
+                                <h3 class="text-info">{{ faqs|map(attribute='category')|unique|list|length }}</h3>
+                                <p class="mb-0">FAQ Categories</p>
+                                <small class="text-muted">Organized topics</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="p-3">
+                                <h3 class="text-warning">{{ (faqs|length + blog_posts|length) }}</h3>
+                                <p class="mb-0">Total Content</p>
+                                <small class="text-muted">All items</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card content-card">
+                <div class="card-header">
+                    <h5 class="mb-0">⚡ Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="d-grid">
+                                <a href="{{ url_for('admin.create_faq') }}" class="btn btn-outline-primary">
+                                    <i class="fas fa-question-circle"></i> Create FAQ
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-grid">
+                                <button class="btn btn-outline-success" onclick="createBlogPost()">
+                                    <i class="fas fa-pen"></i> Write Blog Post
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-grid">
+                                <button class="btn btn-outline-info" onclick="exportContent()">
+                                    <i class="fas fa-download"></i> Export Content
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function createBlogPost() {
+    alert('Blog post creation feature coming soon! This will open a rich text editor for creating engaging content.');
+}
+
+function exportContent() {
+    const content = {
+        faqs: [],
+        blog_posts: [],
+        exported_at: new Date().toISOString()
+    };
+    
+    const blob = new Blob([JSON.stringify(content, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'content_export_' + new Date().toISOString().split('T')[0] + '.json';
+    a.click();
+    URL.revokeObjectURL(url);
+}
+</script>
+{% endblock %}"

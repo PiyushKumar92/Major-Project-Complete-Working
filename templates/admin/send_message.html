@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+{% block extra_css %}
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+* { font-family: 'Inter', sans-serif; }
+
+.send-message-header {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+}
+
+.form-control:focus {
+    border-color: #10b981;
+    box-shadow: 0 0 0 0.2rem rgba(16, 185, 129, 0.25);
+}
+
+.user-info-card {
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 2rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="send-message-header">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="mb-2">💬 Send Message to User</h1>
+                <p class="mb-0">Direct communication with platform users</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <a href="{{ url_for('admin.users') }}" class="btn btn-light">
+                    <i class="fas fa-arrow-left"></i> Back to Users
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <!-- User Info -->
+            <div class="user-info-card">
+                <div class="d-flex align-items-center">
+                    <div class="me-3">
+                        <div style="width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg, #4f46e5, #6366f1); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 1.2em;">
+                            {{ user.username[0].upper() }}
+                        </div>
+                    </div>
+                    <div>
+                        <h5 class="mb-1">{{ user.username }}</h5>
+                        <p class="text-muted mb-0">{{ user.email }}</p>
+                        <small class="text-muted">
+                            Member since {{ user.created_at.strftime('%B %Y') }} • 
+                            {{ user.cases|length }} cases registered
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Message Form -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">📝 Compose Message</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        <div class="mb-3">
+                            <label for="subject" class="form-label">Subject *</label>
+                            <input type="text" class="form-control" id="subject" name="subject" required
+                                   placeholder="Enter message subject...">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="type" class="form-label">Message Type</label>
+                            <select class="form-select" id="type" name="type">
+                                <option value="info">Info - General information</option>
+                                <option value="success">Success - Positive updates</option>
+                                <option value="warning">Warning - Important notices</option>
+                                <option value="danger">Urgent - Critical alerts</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="content" class="form-label">Message Content *</label>
+                            <textarea class="form-control" id="content" name="content" rows="8" required
+                                      placeholder="Enter your message content..."></textarea>
+                            <div class="form-text">
+                                This message will appear in the user's notifications and can be viewed in their notifications page.
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-title">💡 Message Templates</h6>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <button type="button" class="btn btn-sm btn-outline-primary mb-2 w-100" 
+                                                    onclick="useTemplate('welcome')">
+                                                Welcome Message
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-success mb-2 w-100" 
+                                                    onclick="useTemplate('case_update')">
+                                                Case Update
+                                            </button>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <button type="button" class="btn btn-sm btn-outline-warning mb-2 w-100" 
+                                                    onclick="useTemplate('account_issue')">
+                                                Account Issue
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-info mb-2 w-100" 
+                                                    onclick="useTemplate('feature_update')">
+                                                Feature Update
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('admin.users') }}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-paper-plane"></i> Send Message
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function useTemplate(templateType) {
+    const subjectField = document.getElementById('subject');
+    const contentField = document.getElementById('content');
+    const typeField = document.getElementById('type');
+    
+    const templates = {
+        'welcome': {
+            subject: 'Welcome to Missing Person Finder Platform',
+            content: 'Hello {{ user.username }},\n\nWelcome to our Missing Person Finder platform! We are here to help you with any questions or concerns you may have.\n\nIf you need assistance with registering a case or using our AI-powered search features, please don\'t hesitate to reach out.\n\nBest regards,\nAdmin Team',
+            type: 'success'
+        },
+        'case_update': {
+            subject: 'Update on Your Missing Person Case',
+            content: 'Hello {{ user.username }},\n\nWe wanted to provide you with an update regarding your missing person case. Our AI system has been actively processing your case and monitoring for potential matches.\n\n[Please add specific details about the case update here]\n\nWe will continue to keep you informed of any developments.\n\nBest regards,\nAdmin Team',
+            type: 'info'
+        },
+        'account_issue': {
+            subject: 'Important: Account Security Notice',
+            content: 'Hello {{ user.username }},\n\nWe have detected some unusual activity on your account and wanted to bring this to your attention for security purposes.\n\n[Please add specific details about the security concern here]\n\nIf you have any questions or concerns, please contact us immediately.\n\nBest regards,\nAdmin Team',
+            type: 'warning'
+        },
+        'feature_update': {
+            subject: 'New Platform Features Available',
+            content: 'Hello {{ user.username }},\n\nWe are excited to announce new features and improvements to our Missing Person Finder platform!\n\n[Please add details about the new features here]\n\nThese updates are designed to improve your experience and help us better assist you in your search efforts.\n\nBest regards,\nAdmin Team',
+            type: 'info'
+        }
+    };
+    
+    if (templates[templateType]) {
+        subjectField.value = templates[templateType].subject;
+        contentField.value = templates[templateType].content;
+        typeField.value = templates[templateType].type;
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,433 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="case-details-container">
+    <div class="case-header">
+        <h1 class="case-title">{{ case.person_name }}</h1>
+        <p class="case-subtitle">Case #{{ case.id }} - {{ case.case_type.replace('_', ' ').title() if case.case_type else 'Missing Person' }} Investigation</p>
+        <div class="case-type-info mb-2">
+            <span class="badge bg-primary me-2">{{ case.case_type.replace('_', ' ').title() if case.case_type else 'Missing Person' }}</span>
+            <span class="badge bg-secondary me-2">{{ case.requester_type.replace('_', ' ').title() if case.requester_type else 'Family' }}</span>
+            {% if case.case_category %}
+            <span class="badge bg-info">{{ case.case_category.replace('_', ' ').title() }}</span>
+            {% endif %}
+        </div>
+        {{ case.status | status_badge | safe }}
+        <div class="mt-3">
+            {{ case.status | status_alert(case.admin_message) | safe }}
+        </div>
+        
+        <!-- Admin Message Display for All Status Changes -->
+        {% if case.admin_message and case.status not in ['Pending Approval', 'Rejected'] %}
+        <div class="mt-2">
+            <div class="alert alert-info py-2 px-3">
+                <i class="fas fa-comment-dots me-2"></i>
+                <strong>Admin Update:</strong>
+                <div class="mt-2">{{ case.admin_message }}</div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Edit button for editable cases only -->
+        {% if case.can_be_edited %}
+        <div class="mt-2">
+            <a href="{{ url_for('main.edit_case', case_id=case.id) }}" class="btn btn-outline-primary btn-sm">
+                <i class="fas fa-edit me-1"></i>Edit Case Details
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="case-content">
+        <div class="main-details">
+            <div class="case-info-card">
+                <h3 class="info-title">Subject Information</h3>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="info-label">Subject Name</div>
+                        <div class="info-value">{{ case.person_name }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Age</div>
+                        <div class="info-value">{{ case.age or 'Unknown' }}</div>
+                    </div>
+                    {% if case.investigation_outcome %}
+                    <div class="info-item">
+                        <div class="info-label">Investigation Outcome</div>
+                        <div class="info-value">
+                            <span class="badge 
+                                {% if 'Found Safe' in case.investigation_outcome %}bg-success
+                                {% elif 'Found Deceased' in case.investigation_outcome %}bg-dark
+                                {% elif 'Criminal Identified' in case.investigation_outcome %}bg-warning
+                                {% elif 'Evidence Collected' in case.investigation_outcome %}bg-info
+                                {% elif 'Still Missing' in case.investigation_outcome %}bg-danger
+                                {% else %}bg-secondary
+                                {% endif %}">
+                                {{ case.investigation_outcome }}
+                            </span>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% if case.completed_at %}
+                    <div class="info-item">
+                        <div class="info-label">Completed On</div>
+                        <div class="info-value">{{ case.completed_at.strftime('%B %d, %Y at %I:%M %p') }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="case-info-card">
+                <h3 class="info-title">Investigation Details</h3>
+                <div class="info-item">
+                    <div class="info-label">Location of Interest</div>
+                    <div class="info-value">{{ case.last_seen_location or 'Not specified' }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Date of Incident</div>
+                    <div class="info-value">{{ case.date_missing.strftime('%B %d, %Y') if case.date_missing else 'Not specified' }}</div>
+                </div>
+                {% if case.last_seen_time %}
+                <div class="info-item">
+                    <div class="info-label">Time of Incident</div>
+                    <div class="info-value">{{ case.last_seen_time.strftime('%I:%M %p') }}</div>
+                </div>
+                {% endif %}
+                <div class="info-item">
+                    <div class="info-label">Priority</div>
+                    <div class="info-value">
+                        <span class="badge {% if case.priority == 'High' %}bg-danger{% elif case.priority == 'Medium' %}bg-warning{% else %}bg-info{% endif %}">
+                            {{ case.priority }}
+                        </span>
+                    </div>
+                </div>
+                {% if case.details %}
+                <div class="info-item" style="grid-column: 1 / -1;">
+                    <div class="info-label">Additional Details</div>
+                    <div class="info-value">
+                        <div style="background: white; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
+                            {% set details_lines = case.details.split('\n') %}
+                            {% for line in details_lines %}
+                                {% if line.strip() and ':' in line %}
+                                    {% set parts = line.split(':', 1) %}
+                                    <div style="display: flex; border-bottom: 1px solid #f3f4f6; padding: 0.75rem 1rem; {% if loop.index % 2 == 0 %}background: #f9fafb;{% endif %}">
+                                        <div style="font-weight: 500; color: #374151; min-width: 140px; flex-shrink: 0;">{{ parts[0].strip() }}</div>
+                                        <div style="color: #6b7280; flex: 1;">{{ parts[1].strip() if parts[1].strip() != 'Not provided' else '<em class="text-muted">Not provided</em>' }}</div>
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                            {% if case.contact_address %}
+                            <div style="display: flex; border-bottom: 1px solid #f3f4f6; padding: 0.75rem 1rem; background: #f0f9ff;">
+                                <div style="font-weight: 500; color: #374151; min-width: 140px; flex-shrink: 0;">Contact Address</div>
+                                <div style="color: #6b7280; flex: 1;">{{ case.contact_address }}</div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            {% if case.target_images %}
+            <div class="case-info-card">
+                <h3 class="info-title">
+                    <i class="fas fa-images me-2"></i>Subject Photos
+                    <span class="badge bg-success ms-2">AI Analyzed</span>
+                </h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1rem;">
+                    {% for image in case.target_images %}
+                    <div style="position: relative;">
+                        <img src="{{ url_for('static', filename=image.image_path|image_url) }}" 
+                             alt="Photo of {{ case.person_name }}" 
+                             style="width: 100%; height: 150px; object-fit: cover; border-radius: 8px; border: 1px solid #ddd; cursor: pointer;" 
+                             onclick="openImageModal(this.src)" 
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        {% if image.is_primary %}
+                            <span class="badge bg-primary position-absolute top-0 start-0 m-2">Primary Photo</span>
+                        {% endif %}
+                        <span class="badge bg-info position-absolute bottom-0 end-0 m-2">AI Ready</span>
+                        <div style="display: none; width: 100%; height: 150px; border-radius: 8px; border: 1px solid #ddd; background: #f8f9fa; align-items: center; justify-content: center; flex-direction: column;">
+                            <i class="fas fa-image fa-2x text-muted mb-2"></i>
+                            <small class="text-muted">Image not found</small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="mt-3 p-3 bg-light rounded">
+                    <small class="text-info">
+                        <i class="fas fa-brain me-1"></i>
+                        <strong>AI Analysis:</strong> Facial features extracted and optimized for surveillance footage matching
+                    </small>
+                </div>
+            </div>
+            {% endif %}
+            
+            {% if case.search_videos %}
+            <div class="case-info-card">
+                <h3 class="info-title">
+                    <i class="fas fa-video me-2"></i>Reference Videos
+                    <span class="badge bg-success ms-2">AI Processed</span>
+                </h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem;">
+                    {% for video in case.search_videos %}
+                    <div style="border: 1px solid #ddd; border-radius: 8px; overflow: hidden; background: white;">
+                        <div style="padding: 0.75rem; background: #f8f9fa; border-bottom: 1px solid #ddd;">
+                            <h6 style="margin: 0; font-weight: 500; color: #374151;">
+                                <i class="fas fa-video me-2 text-primary"></i>{{ video.video_name or 'Uploaded Video' }}
+                            </h6>
+                            <small class="text-muted">
+                                <i class="fas fa-clock me-1"></i>Uploaded: {{ video.uploaded_at.strftime('%B %d, %Y at %I:%M %p') if video.uploaded_at else 'Unknown' }}
+                            </small>
+                        </div>
+                        <div style="position: relative;">
+                            <video controls style="width: 100%; max-height: 200px; background: #000;">
+                                <source src="{{ url_for('static', filename=video.video_path.replace('static/', '')) }}" type="video/mp4">
+                                Your browser does not support the video tag.
+                            </video>
+                        </div>
+                        <div style="padding: 0.75rem;">
+                            <div style="display: flex; justify-content: between; align-items: center; gap: 1rem;">
+                                <span class="badge bg-{{ 'success' if video.status == 'Completed' else 'warning' if video.status == 'Processing' else 'info' }}">
+                                    {{ video.status }}
+                                </span>
+                                {% if video.duration %}
+                                <small class="text-muted">
+                                    <i class="fas fa-stopwatch me-1"></i>{{ '%d:%02d' % (video.duration // 60, video.duration % 60) }}
+                                </small>
+                                {% endif %}
+                            </div>
+                            <small class="text-info mt-2 d-block">
+                                <i class="fas fa-info-circle me-1"></i>Reference video of the person used for AI facial and behavioral analysis.
+                            </small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Image Modal -->
+            <div id="imageModal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); cursor: pointer;" onclick="closeImageModal()">
+                <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); max-width: 90%; max-height: 90%;">
+                    <img id="modalImage" style="width: auto; height: auto; max-width: 100%; max-height: 100%; border-radius: 8px;">
+                    <button onclick="closeImageModal()" style="position: absolute; top: -40px; right: 0; background: white; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; font-size: 18px;">&times;</button>
+                </div>
+            </div>
+            
+            <script>
+            function openImageModal(src) {
+                document.getElementById('modalImage').src = src;
+                document.getElementById('imageModal').style.display = 'block';
+            }
+            
+            function closeImageModal() {
+                document.getElementById('imageModal').style.display = 'none';
+            }
+            </script>
+        </div>
+
+        <div class="sidebar">
+            <div class="case-info-card">
+                <h3 class="info-title">Case Statistics</h3>
+                <div class="info-item">
+                    <div class="info-label">Total Sightings</div>
+                    <div class="info-value">{{ case.total_sightings }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">High Confidence Matches</div>
+                    <div class="info-value">{{ case.high_confidence_sightings }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">AI Location Matches</div>
+                    <div class="info-value">{{ location_matches|length if location_matches else 0 }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">AI Detections</div>
+                    <div class="info-value">{{ detections|length if detections else 0 }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Created</div>
+                    <div class="info-value">{{ case.created_at.strftime('%B %d, %Y') }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Last Updated</div>
+                    <div class="info-value">{{ case.updated_at.strftime('%B %d, %Y') }}</div>
+                </div>
+            </div>
+            
+            <!-- AI Analysis Status -->
+            {% if location_matches %}
+            <div class="case-info-card">
+                <h3 class="info-title"><i class="fas fa-brain me-2"></i>AI Analysis Status</h3>
+                {% for match in location_matches %}
+                <div class="ai-match-item mb-3 p-3" style="background: #f8f9fa; border-radius: 8px; border-left: 4px solid {{ '#28a745' if match.person_found else '#6c757d' }};">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <strong>{{ match.footage.location_name }}</strong>
+                        <span class="badge bg-{{ 'success' if match.status == 'completed' else 'warning' if match.status == 'processing' else 'info' }}">
+                            {{ match.status.title() }}
+                        </span>
+                    </div>
+                    <div class="small text-muted mb-2">
+                        <i class="fas fa-percentage me-1"></i>Match Score: {{ (match.match_score * 100)|round }}%
+                    </div>
+                    {% if match.person_found %}
+                    <div class="alert alert-success py-1 px-2 mb-2">
+                        <i class="fas fa-check-circle me-1"></i>
+                        <small><strong>Person Detected!</strong> {{ match.detection_count }} detection(s) with {{ (match.confidence_score * 100)|round if match.confidence_score else 0 }}% confidence</small>
+                    </div>
+                    {% endif %}
+                    <small class="text-muted">
+                        <i class="fas fa-clock me-1"></i>{{ match.created_at.strftime('%m/%d %H:%M') }}
+                    </small>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <div class="case-info-card">
+                <h3 class="info-title">Actions</h3>
+                <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline">Back to Dashboard</a>
+                {% if case.status in ['Rejected', 'Withdrawn'] %}
+                <a href="{{ url_for('main.edit_case', case_id=case.id) }}" class="btn btn-warning" style="margin-top: 1rem;">
+                    <i class="fas fa-{{ 'edit' if case.status == 'Rejected' else 'redo' }} me-1"></i>{{ 'Edit & Resubmit' if case.status == 'Rejected' else 'Resubmit Case' }}
+                </a>
+                {% endif %}
+                {% if case.status not in ['Case Solved', 'Case Over'] %}
+                <form method="POST" action="{{ url_for('main.withdraw_case', case_id=case.id) }}" 
+                      style="margin-top: 1rem;" 
+                      onsubmit="return confirm('Are you sure you want to withdraw this case? You can resubmit it later if needed.')">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <button type="submit" class="btn" style="background: #f59e0b; color: white;">
+                        <i class="fas fa-archive me-1"></i>Withdraw Case
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- AI Detection Results -->
+    {% if detections %}
+    <div class="mt-4">
+        <div class="case-info-card">
+            <h3 class="info-title">🎯 AI Detection Results ({{ detections|length }})</h3>
+            <div class="row">
+                {% for detection in detections %}
+                <div class="col-md-4 mb-4">
+                    <div class="card detection-result-card">
+                        <div class="card-header d-flex justify-content-between align-items-center py-2">
+                            <small><strong>{{ detection.formatted_timestamp }}</strong></small>
+                            <span class="badge bg-{{ 'success' if detection.confidence_score > 0.7 else 'warning' if detection.confidence_score > 0.5 else 'danger' }}">
+                                {{ (detection.confidence_score * 100)|round }}%
+                            </span>
+                        </div>
+                        <div class="card-body p-2">
+                            {% if detection.frame_path %}
+                            <img src="{{ url_for('static', filename=detection.frame_path) }}" 
+                                 class="img-fluid rounded mb-2 detection-frame" 
+                                 alt="Detection frame"
+                                 onclick="openImageModal(this.src)"
+                                 style="cursor: pointer; max-height: 150px; width: 100%; object-fit: cover;">
+                            {% else %}
+                            <div class="bg-light rounded d-flex align-items-center justify-content-center mb-2" style="height: 120px;">
+                                <i class="fas fa-image fa-2x text-muted"></i>
+                            </div>
+                            {% endif %}
+                            <div class="detection-info">
+                                <small class="text-muted d-block"><i class="fas fa-video me-1"></i>{{ detection.match.footage.location_name }}</small>
+                                <small class="text-muted d-block"><i class="fas fa-cog me-1"></i>{{ detection.analysis_method.replace('_', ' ').title() }}</small>
+                                {% if detection.face_match_score %}
+                                <small class="text-info d-block"><i class="fas fa-user me-1"></i>Face: {{ (detection.face_match_score * 100)|round }}%</small>
+                                {% endif %}
+                                {% if detection.clothing_match_score %}
+                                <small class="text-warning d-block"><i class="fas fa-tshirt me-1"></i>Clothing: {{ (detection.clothing_match_score * 100)|round }}%</small>
+                                {% endif %}
+                                {% if detection.body_pose_score %}
+                                <small class="text-primary d-block"><i class="fas fa-male me-1"></i>Body: {{ (detection.body_pose_score * 100)|round }}%</small>
+                                {% endif %}
+                                <div class="mt-2">
+                                    {% if detection.verified %}
+                                    <span class="badge bg-success"><i class="fas fa-check me-1"></i>Verified</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary"><i class="fas fa-question me-1"></i>Unverified</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.detection-result-card {
+    border: 1px solid #dee2e6;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.detection-result-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.detection-frame {
+    transition: transform 0.2s;
+}
+
+.detection-frame:hover {
+    transform: scale(1.02);
+}
+
+.ai-match-item {
+    transition: background-color 0.2s;
+}
+
+.ai-match-item:hover {
+    background-color: #e9ecef !important;
+}
+
+.detection-info {
+    font-size: 0.85rem;
+}
+
+/* Status badge styles */
+.status-pending-approval {
+    background-color: #ffc107;
+    color: #212529;
+}
+
+.status-approved {
+    background-color: #17a2b8;
+    color: white;
+}
+
+.status-processing {
+    background-color: #007bff;
+    color: white;
+}
+
+.status-rejected {
+    background-color: #dc3545;
+    color: white;
+}
+
+.status-investigation-complete, .status-case-solved {
+    background-color: #28a745;
+    color: white;
+}
+
+.status-under-investigation, .status-under-processing {
+    background-color: #007bff;
+    color: white;
+}
+
+.status-case-closed, .status-case-over {
+    background-color: #343a40;
+    color: white;
+}
+</style>
+{% endblock %}

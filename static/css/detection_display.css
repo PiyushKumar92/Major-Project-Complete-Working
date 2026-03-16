@@ -1,0 +1,292 @@
+/* Enhanced Detection Display CSS */
+
+/* Bounding Box Animations */
+@keyframes pulse-border {
+    0% { 
+        border-color: currentColor; 
+        opacity: 1; 
+    }
+    50% { 
+        border-color: currentColor; 
+        opacity: 0.6; 
+    }
+    100% { 
+        border-color: currentColor; 
+        opacity: 1; 
+    }
+}
+
+@keyframes pulse-dot {
+    0% { 
+        transform: scale(1); 
+        opacity: 1; 
+    }
+    50% { 
+        transform: scale(1.2); 
+        opacity: 0.7; 
+    }
+    100% { 
+        transform: scale(1); 
+        opacity: 1; 
+    }
+}
+
+/* Detection Frame Container */
+.detection-frame-container {
+    position: relative;
+    display: inline-block;
+    transition: all 0.3s ease;
+}
+
+.detection-frame-container:hover {
+    transform: scale(1.02);
+}
+
+/* Bounding Box Overlay */
+.bounding-box-overlay {
+    animation: pulse-border 2s infinite;
+    transition: all 0.3s ease;
+}
+
+.detection-frame-container:hover .bounding-box-overlay {
+    border-width: 3px !important;
+    background: rgba(0, 123, 255, 0.2) !important;
+    animation: none;
+}
+
+/* Confidence Labels */
+.confidence-label {
+    transition: all 0.3s ease;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+}
+
+.detection-frame-container:hover .confidence-label {
+    transform: scale(1.1);
+}
+
+/* Person ID Labels */
+.person-id-label {
+    transition: all 0.3s ease;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+}
+
+/* Detection Grid Layout */
+.detections-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+    padding: 20px;
+}
+
+.detection-card {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.detection-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+/* Frame Container in Cards */
+.frame-container {
+    position: relative;
+    overflow: hidden;
+}
+
+.detection-image {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.detection-card:hover .detection-image {
+    transform: scale(1.05);
+}
+
+/* Detection Bounding Box in Cards */
+.detection-bbox {
+    position: absolute;
+    top: 10%;
+    left: 10%;
+    width: 80%;
+    height: 70%;
+    border: 3px solid;
+    background: rgba(255, 255, 255, 0.1);
+    pointer-events: none;
+    border-radius: 4px;
+    animation: pulse-border 2s infinite;
+}
+
+/* Confidence Badge */
+.confidence-badge {
+    position: absolute;
+    top: -25px;
+    left: 0;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 4px 8px;
+    font-size: 12px;
+    border-radius: 4px;
+    font-weight: bold;
+    text-shadow: none;
+}
+
+/* Timestamp Badge */
+.timestamp-badge {
+    position: absolute;
+    bottom: -25px;
+    right: 0;
+    background: rgba(0, 123, 255, 0.9);
+    color: white;
+    padding: 4px 8px;
+    font-size: 12px;
+    border-radius: 4px;
+    font-weight: bold;
+    text-shadow: none;
+}
+
+/* Detection Info */
+.detection-info {
+    padding: 15px;
+    background: #f8f9fa;
+}
+
+/* Modal Bounding Box */
+.modal-bounding-box {
+    z-index: 1000;
+    animation: pulse-border 2s infinite;
+}
+
+/* Case Image Container */
+.case-image-container {
+    position: relative;
+    display: inline-block;
+}
+
+/* Detection Indicator Dot */
+.detection-indicator {
+    animation: pulse-dot 2s infinite;
+}
+
+.case-image-container:hover .detection-indicator {
+    transform: scale(1.3);
+    transition: transform 0.2s ease;
+}
+
+/* Detection Preview */
+.detection-preview {
+    position: relative;
+    overflow: hidden;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.detection-preview img {
+    transition: transform 0.3s ease;
+}
+
+.detection-preview:hover img {
+    transform: scale(1.05);
+}
+
+/* Mini Bounding Box for Previews */
+.mini-bounding-box {
+    position: absolute;
+    border: 2px solid;
+    background: rgba(255, 255, 255, 0.1);
+    pointer-events: none;
+    border-radius: 2px;
+    top: 15%;
+    left: 20%;
+    width: 60%;
+    height: 60%;
+}
+
+/* Confidence Color Classes */
+.confidence-high {
+    border-color: #28a745 !important;
+    background: rgba(40, 167, 69, 0.1) !important;
+}
+
+.confidence-medium {
+    border-color: #ffc107 !important;
+    background: rgba(255, 193, 7, 0.1) !important;
+}
+
+.confidence-low {
+    border-color: #dc3545 !important;
+    background: rgba(220, 53, 69, 0.1) !important;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .detections-grid {
+        grid-template-columns: 1fr;
+        padding: 10px;
+        gap: 15px;
+    }
+    
+    .detection-image {
+        height: 150px;
+    }
+    
+    .confidence-badge,
+    .timestamp-badge {
+        font-size: 10px;
+        padding: 2px 6px;
+    }
+}
+
+/* Loading Animation */
+.detection-loading {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #007bff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Success/Error States */
+.detection-success {
+    border-color: #28a745;
+    background: rgba(40, 167, 69, 0.05);
+}
+
+.detection-error {
+    border-color: #dc3545;
+    background: rgba(220, 53, 69, 0.05);
+}
+
+/* Tooltip Styles */
+.detection-tooltip {
+    position: absolute;
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 1000;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.detection-frame-container:hover .detection-tooltip {
+    opacity: 1;
+}

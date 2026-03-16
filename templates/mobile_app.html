@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Missing Person Mobile App</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { background: #f8f9fa; }
+        .mobile-container { max-width: 400px; margin: 0 auto; background: white; min-height: 100vh; box-shadow: 0 0 20px rgba(0,0,0,0.1); }
+        .mobile-header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; text-align: center; }
+        .case-card { border-radius: 15px; margin-bottom: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .case-photo { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; }
+        .priority-urgent { border-left: 4px solid #dc3545; }
+        .priority-high { border-left: 4px solid #fd7e14; }
+        .priority-medium { border-left: 4px solid #ffc107; }
+        .priority-low { border-left: 4px solid #28a745; }
+        .floating-btn { position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+        .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 400px; background: white; border-top: 1px solid #dee2e6; }
+        .nav-item { flex: 1; text-align: center; padding: 10px; color: #6c757d; text-decoration: none; }
+        .nav-item.active { color: #007bff; background: #f8f9fa; }
+        .search-bar { border-radius: 25px; padding: 12px 20px; }
+        .tip-form { background: #f8f9fa; border-radius: 15px; padding: 20px; margin: 20px 0; }
+        .status-badge { font-size: 0.75em; }
+    </style>
+</head>
+<body>
+    <div class="mobile-container">
+        <!-- Header -->
+        <div class="mobile-header">
+            <h4><i class="fas fa-search"></i> Missing Person Finder</h4>
+            <p class="mb-0">Help find missing persons in your area</p>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="p-3">
+            <div class="input-group">
+                <input type="text" class="form-control search-bar" placeholder="Search by name, location..." id="search-input">
+                <button class="btn btn-primary" onclick="searchCases()">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="px-3 mb-3">
+            <div class="row text-center">
+                <div class="col-4">
+                    <div class="bg-primary text-white rounded p-2">
+                        <h6 class="mb-0" id="active-cases">0</h6>
+                        <small>Active Cases</small>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="bg-success text-white rounded p-2">
+                        <h6 class="mb-0" id="tips-submitted">0</h6>
+                        <small>Tips Submitted</small>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="bg-warning text-white rounded p-2">
+                        <h6 class="mb-0" id="cases-solved">0</h6>
+                        <small>Cases Solved</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cases List -->
+        <div class="px-3" id="cases-container">
+            <!-- Cases will be loaded here -->
+        </div>
+
+        <!-- Submit Tip Form -->
+        <div class="px-3" id="tip-form-container" style="display: none;">
+            <div class="tip-form">
+                <h5><i class="fas fa-lightbulb"></i> Submit a Tip</h5>
+                <form id="tip-form">
+                    <input type="hidden" id="tip-case-id">
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Your Tip</label>
+                        <textarea class="form-control" id="tip-text" rows="3" placeholder="Describe what you saw or know..."></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Location (Optional)</label>
+                        <input type="text" class="form-control" id="tip-location" placeholder="Where did you see them?">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Contact Info (Optional)</label>
+                        <input type="text" class="form-control" id="tip-contact" placeholder="Phone or email">
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-paper-plane"></i> Submit Tip
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="hideTipForm()">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Emergency Contact -->
+        <div class="px-3 mb-5">
+            <div class="alert alert-danger">
+                <h6><i class="fas fa-exclamation-triangle"></i> Emergency?</h6>
+                <p class="mb-2">If you see a missing person or have urgent information:</p>
+                <div class="d-grid">
+                    <a href="tel:911" class="btn btn-danger">
+                        <i class="fas fa-phone"></i> Call 911
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Navigation -->
+        <div class="bottom-nav d-flex">
+            <a href="#" class="nav-item active" onclick="showCases()">
+                <i class="fas fa-list"></i><br>
+                <small>Cases</small>
+            </a>
+            <a href="#" class="nav-item" onclick="showMap()">
+                <i class="fas fa-map"></i><br>
+                <small>Map</small>
+            </a>
+            <a href="#" class="nav-item" onclick="showTips()">
+                <i class="fas fa-lightbulb"></i><br>
+                <small>Tips</small>
+            </a>
+            <a href="#" class="nav-item" onclick="showProfile()">
+                <i class="fas fa-user"></i><br>
+                <small>Profile</small>
+            </a>
+        </div>
+
+        <!-- Floating Action Button -->
+        <button class="btn btn-primary floating-btn" onclick="showTipForm()">
+            <i class="fas fa-plus"></i>
+        </button>
+    </div>
+
+    <!-- Case Detail Modal -->
+    <div class="modal fade" id="caseModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Case Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="case-details">
+                    <!-- Case details will be loaded here -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-success" onclick="showTipFormForCase()">
+                        <i class="fas fa-lightbulb"></i> Submit Tip
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="shareCase()">
+                        <i class="fas fa-share"></i> Share
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentCases = [];
+        let selectedCase = null;
+
+        // Initialize mobile app
+        document.addEventListener('DOMContentLoaded', function() {
+            loadCases();
+            updateStats();
+        });
+
+        function loadCases() {
+            fetch('/api/mobile/cases')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        currentCases = data.cases;
+                        displayCases(data.cases);
+                    }
+                })
+                .catch(error => console.error('Error loading cases:', error));
+        }
+
+        function displayCases(cases) {
+            const container = document.getElementById('cases-container');
+            
+            if (cases.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-search fa-3x mb-3"></i>
+                        <p>No cases found</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const casesHtml = cases.map(caseData => `
+                <div class="case-card card priority-${caseData.priority}" onclick="showCaseDetails(${caseData.id})">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-3">
+                                <img src="${caseData.photo}" alt="${caseData.name}" class="case-photo">
+                            </div>
+                            <div class="col-9">
+                                <h6 class="mb-1">${caseData.name}</h6>
+                                <p class="mb-1 text-muted">Age: ${caseData.age}</p>
+                                <p class="mb-1"><small><i class="fas fa-map-marker-alt"></i> ${caseData.location}</small></p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="badge bg-${getStatusColor(caseData.status)} status-badge">${caseData.status}</span>
+                                    <small class="text-muted">${caseData.last_seen}</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            container.innerHTML = casesHtml;
+        }
+
+        function showCaseDetails(caseId) {
+            const caseData = currentCases.find(c => c.id === caseId);
+            if (!caseData) return;
+
+            selectedCase = caseData;
+
+            const detailsHtml = `
+                <div class="text-center mb-3">
+                    <img src="${caseData.photo}" alt="${caseData.name}" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover;">
+                </div>
+                
+                <h5 class="text-center">${caseData.name}</h5>
+                
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <strong>Age:</strong> ${caseData.age}
+                    </div>
+                    <div class="col-6">
+                        <strong>Status:</strong> 
+                        <span class="badge bg-${getStatusColor(caseData.status)}">${caseData.status}</span>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <strong>Last Seen:</strong><br>
+                    ${caseData.last_seen} at ${caseData.location}
+                </div>
+                
+                <div class="mb-3">
+                    <strong>Priority:</strong> 
+                    <span class="badge bg-${getPriorityColor(caseData.priority)}">${caseData.priority.toUpperCase()}</span>
+                </div>
+                
+                <div class="alert alert-info">
+                    <small><i class="fas fa-info-circle"></i> If you have any information about this person, please submit a tip or contact authorities immediately.</small>
+                </div>
+            `;
+
+            document.getElementById('case-details').innerHTML = detailsHtml;
+            
+            const modal = new bootstrap.Modal(document.getElementById('caseModal'));
+            modal.show();
+        }
+
+        function showTipForm(caseId = null) {
+            if (caseId) {
+                document.getElementById('tip-case-id').value = caseId;
+            }
+            
+            document.getElementById('cases-container').style.display = 'none';
+            document.getElementById('tip-form-container').style.display = 'block';
+            
+            // Scroll to top
+            window.scrollTo(0, 0);
+        }
+
+        function showTipFormForCase() {
+            if (selectedCase) {
+                bootstrap.Modal.getInstance(document.getElementById('caseModal')).hide();
+                showTipForm(selectedCase.id);
+            }
+        }
+
+        function hideTipForm() {
+            document.getElementById('cases-container').style.display = 'block';
+            document.getElementById('tip-form-container').style.display = 'none';
+            
+            // Clear form
+            document.getElementById('tip-form').reset();
+        }
+
+        function submitTip(event) {
+            event.preventDefault();
+            
+            const tipData = {
+                case_id: document.getElementById('tip-case-id').value || selectedCase?.id,
+                tip_text: document.getElementById('tip-text').value,
+                location: document.getElementById('tip-location').value,
+                contact_info: document.getElementById('tip-contact').value
+            };
+
+            if (!tipData.tip_text.trim()) {
+                showAlert('Please enter your tip information', 'warning');
+                return;
+            }
+
+            fetch('/api/mobile/submit-tip', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(tipData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert('Tip submitted successfully! Thank you for helping.', 'success');
+                    hideTipForm();
+                    updateStats();
+                } else {
+                    showAlert('Failed to submit tip. Please try again.', 'danger');
+                }
+            })
+            .catch(error => {
+                console.error('Error submitting tip:', error);
+                showAlert('Network error. Please check your connection.', 'danger');
+            });
+        }
+
+        function searchCases() {
+            const query = document.getElementById('search-input').value.toLowerCase();
+            
+            if (!query.trim()) {
+                displayCases(currentCases);
+                return;
+            }
+
+            const filtered = currentCases.filter(caseData => 
+                caseData.name.toLowerCase().includes(query) ||
+                caseData.location.toLowerCase().includes(query)
+            );
+
+            displayCases(filtered);
+        }
+
+        function shareCase() {
+            if (selectedCase && navigator.share) {
+                navigator.share({
+                    title: `Missing Person: ${selectedCase.name}`,
+                    text: `Help find ${selectedCase.name}, age ${selectedCase.age}. Last seen at ${selectedCase.location}.`,
+                    url: window.location.href
+                });
+            } else {
+                // Fallback for browsers without Web Share API
+                const text = `Help find ${selectedCase.name}, age ${selectedCase.age}. Last seen at ${selectedCase.location}. ${window.location.href}`;
+                navigator.clipboard.writeText(text).then(() => {
+                    showAlert('Case details copied to clipboard', 'success');
+                });
+            }
+        }
+
+        function updateStats() {
+            // Mock stats - replace with actual API calls
+            document.getElementById('active-cases').textContent = currentCases.length;
+            document.getElementById('tips-submitted').textContent = '12';
+            document.getElementById('cases-solved').textContent = '8';
+        }
+
+        function getStatusColor(status) {
+            const colors = {
+                'investigating': 'primary',
+                'leads_found': 'warning',
+                'resolved': 'success',
+                'closed': 'secondary'
+            };
+            return colors[status] || 'secondary';
+        }
+
+        function getPriorityColor(priority) {
+            const colors = {
+                'urgent': 'danger',
+                'high': 'warning',
+                'medium': 'info',
+                'low': 'success'
+            };
+            return colors[priority] || 'secondary';
+        }
+
+        function showAlert(message, type) {
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+            alert.style.cssText = 'top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; min-width: 300px;';
+            alert.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.body.appendChild(alert);
+            
+            setTimeout(() => {
+                if (alert.parentNode) {
+                    alert.parentNode.removeChild(alert);
+                }
+            }, 4000);
+        }
+
+        // Navigation functions
+        function showCases() {
+            updateNavigation('cases');
+            document.getElementById('cases-container').style.display = 'block';
+            document.getElementById('tip-form-container').style.display = 'none';
+        }
+
+        function showMap() {
+            updateNavigation('map');
+            showAlert('Map view coming soon!', 'info');
+        }
+
+        function showTips() {
+            updateNavigation('tips');
+            showAlert('Tips history coming soon!', 'info');
+        }
+
+        function showProfile() {
+            updateNavigation('profile');
+            showAlert('Profile settings coming soon!', 'info');
+        }
+
+        function updateNavigation(active) {
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            // Add active class to clicked item (simplified)
+        }
+
+        // Form submission
+        document.getElementById('tip-form').addEventListener('submit', submitTip);
+
+        // Search on enter
+        document.getElementById('search-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchCases();
+            }
+        });
+
+        // PWA features
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js').catch(console.error);
+        }
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+{
+  "case_id": 10,
+  "created_at": "2026-03-07T18:17:07.436295",
+  "primary_encoding": null,
+  "all_encodings": [],
+  "confidence_threshold": 0.6,
+  "quality_metrics": {
+    "best_photo_quality": 0,
+    "average_quality": 0,
+    "total_samples": 0
+  }
+}

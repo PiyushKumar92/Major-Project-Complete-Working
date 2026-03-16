@@ -1,0 +1,460 @@
+{% extends "base.html" %}
+
+{% block title %}All Cases - Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="admin-header mb-4 p-4 rounded" style="background: #f8f9fa; border: 1px solid #dee2e6;">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h2 class="text-dark mb-2"><i class="fas fa-folder-open me-2 text-primary"></i>All Cases Management</h2>
+                <p class="text-secondary mb-0">Monitor and manage all missing person cases registered on the platform</p>
+            </div>
+            <div>
+                <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-primary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card stat-card text-center">
+                <div class="card-body">
+                    <div class="stat-icon mx-auto" style="background: var(--primary); color: white;">
+                        <i class="fas fa-folder-open"></i>
+                    </div>
+                    <h3 class="text-primary mb-1">{{ total_cases }}</h3>
+                    <p class="text-muted mb-0">Total Cases</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card text-center">
+                <div class="card-body">
+                    <div class="stat-icon mx-auto" style="background: var(--success); color: white;">
+                        <i class="fas fa-play-circle"></i>
+                    </div>
+                    <h3 class="text-success mb-1">{{ active_cases }}</h3>
+                    <p class="text-muted mb-0">Active Cases</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card text-center">
+                <div class="card-body">
+                    <div class="stat-icon mx-auto" style="background: var(--info); color: white;">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <h3 class="text-info mb-1">{{ completed_cases }}</h3>
+                    <p class="text-muted mb-0">Completed</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card text-center">
+                <div class="card-body">
+                    <div class="stat-icon mx-auto" style="background: var(--warning); color: white;">
+                        <i class="fas fa-percentage"></i>
+                    </div>
+                    <h3 class="text-warning mb-1">{{ ((completed_cases / total_cases * 100)|round) if total_cases > 0 else 0 }}%</h3>
+                    <p class="text-muted mb-0">Success Rate</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Search Cases</label>
+                    <input type="text" name="search" class="form-control" placeholder="Person name or location..." value="{{ search }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Status Filter</label>
+                    <select name="status" class="form-select">
+                        <option value="">All Status</option>
+                        <option value="Pending Approval" {% if status_filter == 'Pending Approval' %}selected{% endif %}>⏳ Pending Approval</option>
+                        <option value="Approved" {% if status_filter == 'Approved' %}selected{% endif %}>✅ Approved</option>
+                        <option value="Rejected" {% if status_filter == 'Rejected' %}selected{% endif %}>❌ Rejected</option>
+                        <option value="Under Processing" {% if status_filter == 'Under Processing' %}selected{% endif %}>🔄 Under Processing</option>
+                        <option value="Case Solved" {% if status_filter == 'Case Solved' %}selected{% endif %}>🎉 Case Solved</option>
+                        <option value="Case Over" {% if status_filter == 'Case Over' %}selected{% endif %}>🔒 Case Over</option>
+                        <option value="Withdrawn" {% if status_filter == 'Withdrawn' %}selected{% endif %}>🚫 Withdrawn</option>
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary me-2">
+                        <i class="fas fa-filter me-2"></i>Filter
+                    </button>
+                    <a href="{{ url_for('admin.cases') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-times me-2"></i>Clear
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Cases Grid -->
+    {% if cases.items %}
+    <div class="row">
+        {% for case in cases.items %}
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card case-card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center">
+                        <div class="case-avatar me-2">
+                            {{ case.person_name[0].upper() }}
+                        </div>
+                        <div>
+                            <h6 class="mb-0">{{ case.person_name }}</h6>
+                            <small class="text-muted">Case #{{ case.id }}</small>
+                        </div>
+                    </div>
+                    <span class="badge bg-{{ case.status_color }}">
+                        {{ case.status }}
+                        {% if case.status == 'Pending Approval' %} ⏳
+                        {% elif case.status == 'Approved' %} ✅
+                        {% elif case.status == 'Rejected' %} ❌
+                        {% elif case.status == 'Under Processing' %} 🔄
+                        {% elif case.status == 'Case Solved' %} 🎉
+                        {% elif case.status == 'Case Over' %} 🔒
+                        {% elif case.status == 'Withdrawn' %} 🚫
+                        {% endif %}
+                    </span>
+                </div>
+                
+                <div class="card-body">
+                    <div class="case-photos mb-3">
+                        {% if case.target_images %}
+                            <div class="row g-2">
+                                {% for image in case.target_images[:3] %}
+                                <div class="col-4">
+                                    <img src="{{ url_for('static', filename=image.image_path|image_url) }}" 
+                                         class="img-fluid rounded case-photo" alt="Missing person photo">
+                                </div>
+                                {% endfor %}
+                                {% if case.target_images|length > 3 %}
+                                <div class="col-4 d-flex align-items-center justify-content-center bg-light rounded">
+                                    <small class="text-muted">+{{ case.target_images|length - 3 }} more</small>
+                                </div>
+                                {% endif %}
+                            </div>
+                        {% else %}
+                            <div class="bg-light rounded d-flex align-items-center justify-content-center" style="height: 120px;">
+                                <i class="fas fa-user fa-3x text-muted"></i>
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="case-details">
+                        <p class="mb-2"><strong>Age:</strong> {{ case.age or 'Unknown' }}</p>
+                        <p class="mb-2"><strong>Location:</strong> 
+                            <i class="fas fa-map-marker-alt text-danger me-1"></i>
+                            {{ case.last_seen_location or 'Not specified' }}
+                        </p>
+                        <p class="mb-2"><strong>Registered by:</strong> {{ case.creator.username }}</p>
+                        <p class="mb-2"><strong>Priority:</strong> 
+                            <span class="badge bg-{{ 'danger' if case.priority == 'Critical' else 'warning' if case.priority == 'High' else 'primary' if case.priority == 'Medium' else 'info' }}">
+                                {{ case.priority }}
+                            </span>
+                        </p>
+                        
+                        <!-- AI Analysis Status -->
+                        {% set ai_matches = case.location_matches|length %}
+                        {% set ai_detections = case.location_matches|selectattr('person_found', 'equalto', true)|list|length %}
+                        <div class="ai-status mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <small class="text-muted">AI Analysis:</small>
+                                {% if ai_matches > 0 %}
+                                    <span class="badge bg-primary">{{ ai_matches }} matches</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">No matches</span>
+                                {% endif %}
+                            </div>
+                            {% if ai_detections > 0 %}
+                                <div class="alert alert-success py-1 px-2 mb-0">
+                                    <i class="fas fa-check-circle me-1"></i>
+                                    <small>{{ ai_detections }} person detection(s) found!</small>
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="case-stats">
+                            <div class="row text-center">
+                                <div class="col-6">
+                                    <div class="stat-number text-success">{{ case.total_sightings }}</div>
+                                    <div class="stat-label">Sightings</div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="stat-number text-info">{{ case.high_confidence_sightings }}</div>
+                                    <div class="stat-label">High Confidence</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-footer">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">
+                            <i class="fas fa-calendar me-1"></i>
+                            {{ case.created_at.strftime('%m/%d/%Y %H:%M') }}
+                        </small>
+                        <div class="btn-group">
+                            <a href="{{ url_for('admin.case_detail', case_id=case.id) }}" 
+                               class="btn btn-sm btn-primary">
+                                <i class="fas fa-eye me-1"></i>View
+                            </a>
+                            
+                            <!-- Quick Status Actions -->
+                            {% if case.status == 'Pending Approval' %}
+                            <div class="btn-group">
+                                <form method="POST" class="d-inline">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                    <button type="submit" 
+                                            formaction="{{ url_for('admin.approve_case', case_id=case.id) }}" 
+                                            class="btn btn-sm btn-success" 
+                                            title="Approve Case"
+                                            onclick="return confirm('✅ Approve this case?')">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                </form>
+                                <button type="button" 
+                                        class="btn btn-sm btn-danger" 
+                                        title="Reject Case"
+                                        onclick="quickReject({{ case.id }})">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            {% elif case.status == 'Approved' %}
+                            <form method="POST" class="d-inline">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                <input type="hidden" name="status" value="Under Processing"/>
+                                <input type="hidden" name="admin_message" value="Case moved to active investigation phase."/>
+                                <button type="submit" 
+                                        formaction="{{ url_for('admin.update_case_status', case_id=case.id) }}" 
+                                        class="btn btn-sm btn-info" 
+                                        title="Start Processing"
+                                        onclick="return confirm('🔄 Move to Under Processing?')">
+                                    <i class="fas fa-play"></i>
+                                </button>
+                            </form>
+                            {% elif case.status == 'Under Processing' %}
+                            <div class="btn-group">
+                                <form method="POST" class="d-inline">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                    <input type="hidden" name="status" value="Case Solved"/>
+                                    <input type="hidden" name="admin_message" value="Investigation completed successfully."/>
+                                    <button type="submit" 
+                                            formaction="{{ url_for('admin.update_case_status', case_id=case.id) }}" 
+                                            class="btn btn-sm btn-success" 
+                                            title="Mark as Solved"
+                                            onclick="return confirm('🎉 Mark case as solved?')">
+                                        <i class="fas fa-trophy"></i>
+                                    </button>
+                                </form>
+                                <form method="POST" class="d-inline">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                    <input type="hidden" name="status" value="Case Over"/>
+                                    <input type="hidden" name="admin_message" value="Investigation completed. Case closed."/>
+                                    <button type="submit" 
+                                            formaction="{{ url_for('admin.update_case_status', case_id=case.id) }}" 
+                                            class="btn btn-sm btn-secondary" 
+                                            title="Close Case"
+                                            onclick="return confirm('🔒 Close this case?')">
+                                        <i class="fas fa-lock"></i>
+                                    </button>
+                                </form>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if cases.pages > 1 %}
+    <nav aria-label="Cases pagination">
+        <ul class="pagination justify-content-center">
+            {% if cases.has_prev %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('admin.cases', page=cases.prev_num, status=status_filter, search=search) }}">Previous</a>
+                </li>
+            {% endif %}
+            
+            {% for page_num in cases.iter_pages() %}
+                {% if page_num %}
+                    {% if page_num != cases.page %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('admin.cases', page=page_num, status=status_filter, search=search) }}">{{ page_num }}</a>
+                        </li>
+                    {% else %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ page_num }}</span>
+                        </li>
+                    {% endif %}
+                {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">...</span>
+                    </li>
+                {% endif %}
+            {% endfor %}
+            
+            {% if cases.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('admin.cases', page=cases.next_num, status=status_filter, search=search) }}">Next</a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+    {% else %}
+    <div class="card">
+        <div class="card-body text-center py-5">
+            <i class="fas fa-folder-open fa-3x text-muted mb-3"></i>
+            <h5>No cases found</h5>
+            <p class="text-muted">No missing person cases match your current filters.</p>
+            <a href="{{ url_for('admin.cases') }}" class="btn btn-primary">
+                <i class="fas fa-refresh me-2"></i>View All Cases
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Quick Reject Modal -->
+<div class="modal fade" id="quickRejectModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Quick Reject Case</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="quickRejectForm" method="POST">
+                <div class="modal-body">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="mb-3">
+                        <label for="quick_rejection_reason" class="form-label">Reason for Rejection:</label>
+                        <select class="form-select" id="quick_rejection_reason" name="rejection_reason" required>
+                            <option value="">Select reason...</option>
+                            <option value="Incomplete information provided">Incomplete information provided</option>
+                            <option value="Poor quality photos - unable to process">Poor quality photos - unable to process</option>
+                            <option value="Missing required documents">Missing required documents</option>
+                            <option value="Duplicate case already exists">Duplicate case already exists</option>
+                            <option value="Invalid case type for our platform">Invalid case type for our platform</option>
+                            <option value="Insufficient evidence to proceed">Insufficient evidence to proceed</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="additional_notes" class="form-label">Additional Notes (Optional):</label>
+                        <textarea class="form-control" id="additional_notes" name="additional_notes" rows="2" 
+                                  placeholder="Any additional feedback for the user..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Reject Case</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function quickReject(caseId) {
+    const form = document.getElementById('quickRejectForm');
+    form.action = `/admin/cases/${caseId}/reject`;
+    new bootstrap.Modal(document.getElementById('quickRejectModal')).show();
+}
+
+// Handle form submission
+document.getElementById('quickRejectForm').addEventListener('submit', function(e) {
+    const reason = document.getElementById('quick_rejection_reason').value;
+    const notes = document.getElementById('additional_notes').value;
+    
+    if (!reason) {
+        e.preventDefault();
+        alert('Please select a reason for rejection.');
+        return;
+    }
+    
+    // Combine reason and notes
+    const finalReason = notes ? `${reason}\n\nAdditional Notes: ${notes}` : reason;
+    
+    // Update the form with combined reason
+    const hiddenInput = document.createElement('input');
+    hiddenInput.type = 'hidden';
+    hiddenInput.name = 'rejection_reason';
+    hiddenInput.value = finalReason;
+    this.appendChild(hiddenInput);
+});
+</script>
+
+<style>
+.case-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+    border: 1px solid #e3e6f0;
+}
+
+.case-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.case-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    font-size: 1.1em;
+}
+
+.case-photo {
+    height: 80px;
+    object-fit: cover;
+}
+
+.stat-number {
+    font-size: 1.5em;
+    font-weight: bold;
+}
+
+.stat-label {
+    font-size: 0.8em;
+    color: #6c757d;
+}
+
+.ai-status {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 10px;
+}
+
+.btn-group .btn {
+    border-radius: 0;
+}
+
+.btn-group .btn:first-child {
+    border-top-left-radius: 0.375rem;
+    border-bottom-left-radius: 0.375rem;
+}
+
+.btn-group .btn:last-child {
+    border-top-right-radius: 0.375rem;
+    border-bottom-right-radius: 0.375rem;
+}
+</style>
+{% endblock %}

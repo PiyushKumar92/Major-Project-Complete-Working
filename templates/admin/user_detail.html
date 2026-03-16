@@ -1,0 +1,267 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-4">
+            <!-- User Profile Card -->
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5><i class="fas fa-user"></i> User Profile</h5>
+                </div>
+                <div class="card-body text-center">
+                    <div class="user-avatar mb-3" style="width: 80px; height: 80px; margin: 0 auto; background: linear-gradient(135deg, #4f46e5, #6366f1); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 2rem; font-weight: bold;">
+                        {{ user.username[0].upper() }}
+                    </div>
+                    <h4>{{ user.username }}</h4>
+                    <p class="text-muted">{{ user.email }}</p>
+                    
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div class="border-end">
+                                <h5 class="text-primary">{{ user.cases|length }}</h5>
+                                <small class="text-muted">Cases</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <h5 class="text-success">{{ total_sightings }}</h5>
+                            <small class="text-muted">Sightings</small>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="text-start">
+                        <p><strong>Status:</strong> 
+                            {% if user.last_login %}
+                                <span class="badge bg-success">Active</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Inactive</span>
+                            {% endif %}
+                        </p>
+                        <p><strong>Role:</strong> 
+                            {% if user.is_admin %}
+                                <span class="badge bg-danger"><i class="fas fa-crown"></i> Admin</span>
+                            {% else %}
+                                <span class="badge bg-primary">User</span>
+                            {% endif %}
+                        </p>
+                        <p><strong>2FA:</strong> 
+                            {% if user.two_factor_enabled %}
+                                <span class="badge bg-success"><i class="fas fa-shield-alt"></i> Enabled</span>
+                            {% else %}
+                                <span class="badge bg-warning">Disabled</span>
+                            {% endif %}
+                        </p>
+                        <p><strong>Joined:</strong> {{ user.created_at.strftime('%B %d, %Y') }}</p>
+                        <p><strong>Last Login:</strong> 
+                            {% if user.last_login %}
+                                {{ user.last_login.strftime('%B %d, %Y at %I:%M %p') }}
+                            {% else %}
+                                <span class="text-muted">Never</span>
+                            {% endif %}
+                        </p>
+                        {% if user.login_ip %}
+                            <p><strong>Last IP:</strong> <code>{{ user.login_ip }}</code></p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Admin Actions -->
+            {% if user.id != current_user.id %}
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6><i class="fas fa-tools"></i> Admin Actions</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('admin.send_message', user_id=user.id) }}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-envelope"></i> Send Message
+                        </a>
+                        
+                        <form method="POST" style="display: inline;">
+                            <button type="submit" 
+                                    formaction="{{ url_for('admin.toggle_admin', user_id=user.id) }}" 
+                                    class="btn btn-sm w-100 {% if user.is_admin %}btn-warning{% else %}btn-success{% endif %}">
+                                <i class="fas {% if user.is_admin %}fa-user-minus{% else %}fa-user-plus{% endif %}"></i>
+                                {% if user.is_admin %}Revoke Admin{% else %}Grant Admin{% endif %}
+                            </button>
+                        </form>
+                        
+                        <button type="button" class="btn btn-info btn-sm" onclick="loginAsUser({{ user.id }})">
+                            <i class="fas fa-sign-in-alt"></i> Login As User
+                        </button>
+                        
+                        <form method="POST" style="display: inline;" 
+                              onsubmit="return confirm('Delete user {{ user.username }}? This action cannot be undone.')">
+                            <button type="submit" 
+                                    formaction="{{ url_for('admin.delete_user', user_id=user.id) }}" 
+                                    class="btn btn-danger btn-sm w-100">
+                                <i class="fas fa-trash"></i> Delete User
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="col-md-8">
+            <!-- User Cases -->
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-folder-open"></i> User Cases ({{ user.cases|length }})</h5>
+                </div>
+                <div class="card-body">
+                    {% if user.cases %}
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Case</th>
+                                        <th>Status</th>
+                                        <th>Priority</th>
+                                        <th>Sightings</th>
+                                        <th>Created</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for case in user.cases %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ case.person_name }}</strong><br>
+                                            <small class="text-muted">Age: {{ case.age or 'Unknown' }}</small>
+                                        </td>
+                                        <td>
+                                            <span class="badge {% if case.status == 'Completed' %}bg-success{% elif case.status == 'Processing' %}bg-warning{% elif case.status == 'Error' %}bg-danger{% else %}bg-secondary{% endif %}">
+                                                {{ case.status }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="badge {% if case.priority == 'Critical' %}bg-danger{% elif case.priority == 'High' %}bg-warning{% else %}bg-info{% endif %}">
+                                                {{ case.priority }}
+                                            </span>
+                                        </td>
+                                        <td>{{ case.sightings|length }}</td>
+                                        <td>{{ case.created_at.strftime('%m/%d/%Y') }}</td>
+                                        <td>
+                                            <a href="{{ url_for('admin.case_detail', case_id=case.id) }}" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-folder-open fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">No cases created yet</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Activity Log -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5><i class="fas fa-history"></i> Recent Activity</h5>
+                </div>
+                <div class="card-body">
+                    {% if activity_logs %}
+                        <div class="timeline">
+                            {% for log in activity_logs %}
+                            <div class="timeline-item">
+                                <div class="timeline-marker bg-primary"></div>
+                                <div class="timeline-content">
+                                    <h6 class="timeline-title">{{ log.action.replace('_', ' ').title() }}</h6>
+                                    <p class="timeline-text">{{ log.details }}</p>
+                                    <small class="text-muted">{{ log.timestamp.strftime('%B %d, %Y at %I:%M %p') }}</small>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-history fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">No recent activity</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 15px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #dee2e6;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -22px;
+    top: 5px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid white;
+}
+
+.timeline-content {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 3px solid #007bff;
+}
+
+.timeline-title {
+    margin-bottom: 5px;
+    color: #495057;
+}
+
+.timeline-text {
+    margin-bottom: 5px;
+    color: #6c757d;
+}
+</style>
+
+<script>
+function loginAsUser(userId) {
+    if (confirm('Login as this user? You will be logged out of your admin account.')) {
+        fetch(`/admin/impersonate/${userId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            }
+        }).then(response => {
+            if (response.ok) {
+                window.location.href = '/dashboard';
+            } else {
+                alert('Failed to impersonate user');
+            }
+        });
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,127 @@
+/* Simple Upload Component Styles */
+:root {
+    --upload-primary: #2563eb;
+    --upload-success: #10b981;
+    --upload-danger: #ef4444;
+    --upload-gray-50: #f9fafb;
+    --upload-gray-200: #e5e7eb;
+    --upload-gray-300: #d1d5db;
+    --upload-gray-500: #6b7280;
+    --upload-gray-700: #374151;
+    --upload-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* Upload Container */
+.upload-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding: 1rem;
+    border: 2px dashed var(--upload-gray-300);
+    border-radius: 12px;
+    background: var(--upload-gray-50);
+    transition: all 0.3s ease;
+}
+
+.upload-container:hover {
+    border-color: var(--upload-primary);
+    background: rgba(37, 99, 235, 0.05);
+}
+
+/* Upload Box */
+.upload-box {
+    width: 150px;
+    height: 150px;
+    border-radius: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    transition: all 0.2s ease;
+}
+
+.add-more-btn {
+    border: 2px dashed var(--upload-primary);
+    color: var(--upload-primary);
+    font-weight: 600;
+    cursor: pointer;
+    background: transparent;
+    transition: all 0.2s ease;
+}
+
+.add-more-btn:hover {
+    background: rgba(37, 99, 235, 0.05);
+    transform: scale(1.02);
+}
+
+/* Image Preview */
+.image-preview {
+    border: 2px solid var(--upload-success);
+    padding: 4px;
+    box-sizing: border-box;
+    position: relative;
+    overflow: hidden;
+}
+
+.image-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 4px;
+    display: block;
+}
+
+/* Delete Button */
+.delete-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--upload-danger);
+    color: white;
+    border: 2px solid white;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    box-shadow: var(--upload-shadow);
+    transition: all 0.2s ease;
+}
+
+.delete-btn:hover {
+    background: #dc2626;
+    transform: scale(1.1);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .upload-container {
+        justify-content: center;
+    }
+    
+    .upload-box {
+        width: 120px;
+        height: 120px;
+    }
+}
+
+@media (max-width: 480px) {
+    .upload-box {
+        width: 100px;
+        height: 100px;
+    }
+    
+    .delete-btn {
+        width: 20px;
+        height: 20px;
+        font-size: 12px;
+        top: 4px;
+        right: 4px;
+    }
+}

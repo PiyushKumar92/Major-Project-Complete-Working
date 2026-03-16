@@ -1,0 +1,292 @@
+{% extends "base.html" %}
+{% block extra_css %}
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+* { font-family: 'Inter', sans-serif; }
+
+.ai-settings-header {
+    background: linear-gradient(135deg, #1f2937, #374151);
+    color: white;
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+}
+
+.setting-card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 1rem;
+    transition: transform 0.2s;
+}
+
+.setting-card:hover { transform: translateY(-2px); }
+
+.setting-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1rem;
+}
+
+.form-control:focus {
+    border-color: #374151;
+    box-shadow: 0 0 0 0.2rem rgba(55, 65, 81, 0.25);
+}
+
+.warning-banner {
+    background: #fef3c7;
+    border: 1px solid #f59e0b;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 2rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="ai-settings-header">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="mb-2">⚙️ AI System Configuration</h1>
+                <p class="mb-0">Advanced settings for AI processing and matching algorithms</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <a href="{{ url_for('admin.dashboard') }}" class="btn btn-light">
+                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <!-- Warning Banner -->
+    <div class="warning-banner">
+        <div class="d-flex align-items-center">
+            <i class="fas fa-exclamation-triangle text-warning fa-2x me-3"></i>
+            <div>
+                <h6 class="mb-1">⚠️ Advanced Configuration Warning</h6>
+                <p class="mb-0">
+                    Modifying these settings affects AI processing for all cases. Changes take effect immediately 
+                    and may impact system performance. Only modify if you understand the implications.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <form method="POST" action="{{ url_for('admin.update_ai_settings') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <div class="row">
+            <div class="col-md-8">
+                <!-- AI Processing Settings -->
+                <div class="card setting-card">
+                    <div class="card-header">
+                        <h5 class="mb-0">🧠 AI Processing Configuration</h5>
+                    </div>
+                    <div class="card-body">
+                        {% for setting in settings %}
+                            {% if setting.setting_name in ['confidence_threshold', 'max_processing_time', 'face_detection_model'] %}
+                            <div class="d-flex align-items-center mb-4">
+                                <div class="setting-icon" style="background: 
+                                    {% if setting.setting_name == 'confidence_threshold' %}#dbeafe{% endif %}
+                                    {% if setting.setting_name == 'max_processing_time' %}#fef3c7{% endif %}
+                                    {% if setting.setting_name == 'face_detection_model' %}#d1fae5{% endif %}
+                                ">
+                                    <i class="fas 
+                                        {% if setting.setting_name == 'confidence_threshold' %}fa-bullseye text-blue-600{% endif %}
+                                        {% if setting.setting_name == 'max_processing_time' %}fa-clock text-yellow-600{% endif %}
+                                        {% if setting.setting_name == 'face_detection_model' %}fa-brain text-green-600{% endif %}
+                                    "></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <label class="form-label mb-1">
+                                        <strong>{{ setting.setting_name.replace('_', ' ').title() }}</strong>
+                                    </label>
+                                    <p class="text-muted mb-2 small">{{ setting.description }}</p>
+                                    
+                                    {% if setting.setting_name == 'confidence_threshold' %}
+                                        <div class="row align-items-center">
+                                            <div class="col-md-6">
+                                                <input type="range" class="form-range" 
+                                                       name="setting_{{ setting.id }}" 
+                                                       min="0.1" max="1.0" step="0.1" 
+                                                       value="{{ setting.setting_value }}"
+                                                       oninput="updateThresholdValue(this.value)">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <span class="badge bg-primary" id="thresholdValue">{{ setting.setting_value }}</span>
+                                                <small class="text-muted ms-2">
+                                                    ({{ (setting.setting_value|float * 100)|round }}% confidence required)
+                                                </small>
+                                            </div>
+                                        </div>
+                                    {% elif setting.setting_name == 'face_detection_model' %}
+                                        <select class="form-select" name="setting_{{ setting.id }}">
+                                            <option value="hog" {% if setting.setting_value == 'hog' %}selected{% endif %}>
+                                                HOG (Faster, less accurate)
+                                            </option>
+                                            <option value="cnn" {% if setting.setting_value == 'cnn' %}selected{% endif %}>
+                                                CNN (Slower, more accurate)
+                                            </option>
+                                        </select>
+                                    {% else %}
+                                        <input type="text" class="form-control" 
+                                               name="setting_{{ setting.id }}" 
+                                               value="{{ setting.setting_value }}">
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Feature Toggles -->
+                <div class="card setting-card">
+                    <div class="card-header">
+                        <h5 class="mb-0">🔧 Feature Configuration</h5>
+                    </div>
+                    <div class="card-body">
+                        {% for setting in settings %}
+                            {% if setting.setting_name not in ['confidence_threshold', 'max_processing_time', 'face_detection_model'] %}
+                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                <div class="d-flex align-items-center">
+                                    <div class="setting-icon" style="background: #f3f4f6;">
+                                        <i class="fas fa-toggle-on text-success"></i>
+                                    </div>
+                                    <div>
+                                        <label class="form-label mb-1">
+                                            <strong>{{ setting.setting_name.replace('_', ' ').title() }}</strong>
+                                        </label>
+                                        <p class="text-muted mb-0 small">{{ setting.description }}</p>
+                                    </div>
+                                </div>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" 
+                                           name="setting_{{ setting.id }}" 
+                                           value="true"
+                                           {% if setting.setting_value.lower() == 'true' %}checked{% endif %}>
+                                </div>
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <!-- Current Status -->
+                <div class="card setting-card">
+                    <div class="card-header">
+                        <h5 class="mb-0">📊 Current AI Status</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="text-center mb-3">
+                            <div class="badge bg-success fs-6 p-2">
+                                <i class="fas fa-check-circle"></i> System Online
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <small class="text-muted">Processing Queue</small>
+                            <div class="progress mt-1">
+                                <div class="progress-bar bg-info" style="width: 25%"></div>
+                            </div>
+                            <small class="text-muted">3 cases in queue</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <small class="text-muted">System Load</small>
+                            <div class="progress mt-1">
+                                <div class="progress-bar bg-warning" style="width: 60%"></div>
+                            </div>
+                            <small class="text-muted">Moderate load</small>
+                        </div>
+
+                        <hr>
+                        
+                        <div class="text-center">
+                            <small class="text-muted">Last settings update</small><br>
+                            <strong>
+                                {% if settings %}
+                                    {{ settings[0].updated_at.strftime('%B %d, %Y at %I:%M %p') }}
+                                {% else %}
+                                    Never
+                                {% endif %}
+                            </strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Performance Impact -->
+                <div class="card setting-card">
+                    <div class="card-header">
+                        <h5 class="mb-0">⚡ Performance Impact</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span>Confidence Threshold</span>
+                                <span class="badge bg-info">Moderate</span>
+                            </div>
+                            <small class="text-muted">Lower = More matches, higher processing</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span>Detection Model</span>
+                                <span class="badge bg-warning">High</span>
+                            </div>
+                            <small class="text-muted">CNN model uses more resources</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span>Processing Time Limit</span>
+                                <span class="badge bg-success">Low</span>
+                            </div>
+                            <small class="text-muted">Higher limits may slow system</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Save Button -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card setting-card">
+                    <div class="card-body text-center">
+                        <button type="submit" class="btn btn-dark btn-lg">
+                            <i class="fas fa-save"></i> Save AI Configuration
+                        </button>
+                        <p class="text-muted mt-2 mb-0">
+                            Changes will be applied immediately to all new processing tasks
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+function updateThresholdValue(value) {
+    document.getElementById('thresholdValue').textContent = value;
+}
+
+// Add confirmation for critical changes
+document.querySelector('form').addEventListener('submit', function(e) {
+    const confidence = document.querySelector('input[type="range"]').value;
+    if (confidence < 0.5) {
+        if (!confirm('Setting confidence threshold below 50% may generate many false positives. Continue?')) {
+            e.preventDefault();
+        }
+    }
+});
+</script>
+{% endblock %}

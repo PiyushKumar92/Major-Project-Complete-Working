@@ -1,0 +1,1887 @@
+{% extends "base.html" %}
+
+{% block title %}User Management - Admin Panel{% endblock %}
+
+{% block content %}
+<!-- Professional Admin Users Header -->
+<div class="admin-page-header">
+    <div class="container">
+        <div class="admin-page-header-content">
+            <div class="admin-page-header-text">
+                <div class="admin-page-badge">
+                    <i class="fas fa-users"></i>
+                    <span>User Management</span>
+                </div>
+                <h1>User Administration</h1>
+                <p>Comprehensive user oversight, account management, and access control</p>
+            </div>
+            <div class="admin-page-header-actions">
+                <a href="{{ url_for('admin.export_users') }}" class="btn btn-ghost">
+                    <i class="fas fa-download"></i> Export Data
+                </a>
+                <a href="{{ url_for('admin.dashboard') }}" class="btn btn-primary">
+                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <!-- Professional Search and Filters -->
+    <div class="search-filter-card-pro">
+        <div class="filter-header">
+            <h3 class="filter-title">
+                <i class="fas fa-filter me-2"></i>User Management Filters
+            </h3>
+            <p class="filter-subtitle">Search, filter, and sort users to find exactly what you need</p>
+        </div>
+        
+        <form method="GET" class="filter-form-pro">
+            <div class="filter-grid-pro">
+                <!-- Search Input -->
+                <div class="filter-group search-group">
+                    <label class="filter-label">
+                        <i class="fas fa-search me-2"></i>Search Users
+                    </label>
+                    <div class="search-input-wrapper">
+                        <input type="text" class="form-control-pro search-input" name="search" 
+                               value="{{ search or '' }}" placeholder="Type username or email address...">
+                        <div class="search-icon">
+                            <i class="fas fa-search"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Status Filter -->
+                <div class="filter-group">
+                    <label class="filter-label">
+                        <i class="fas fa-toggle-on me-2"></i>Activity Status
+                    </label>
+                    <select class="form-select-pro" name="status">
+                        <option value="">🔍 All Status</option>
+                        <option value="active" {% if status_filter == 'active' %}selected{% endif %}>✅ Active Users</option>
+                        <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>⭕ Inactive Users</option>
+                    </select>
+                </div>
+                
+                <!-- Role Filter -->
+                <div class="filter-group">
+                    <label class="filter-label">
+                        <i class="fas fa-user-shield me-2"></i>User Role
+                    </label>
+                    <select class="form-select-pro" name="role">
+                        <option value="">👥 All Roles</option>
+                        <option value="admin" {% if role_filter == 'admin' %}selected{% endif %}>👑 Administrators</option>
+                        <option value="user" {% if role_filter == 'user' %}selected{% endif %}>👤 Regular Users</option>
+                    </select>
+                </div>
+                
+                <!-- Sort Options -->
+                <div class="filter-group">
+                    <label class="filter-label">
+                        <i class="fas fa-sort me-2"></i>Sort By
+                    </label>
+                    <select class="form-select-pro" name="sort">
+                        <option value="created_at" {% if sort_by == 'created_at' %}selected{% endif %}>📅 Join Date</option>
+                        <option value="username" {% if sort_by == 'username' %}selected{% endif %}>🔤 Username</option>
+                        <option value="email" {% if sort_by == 'email' %}selected{% endif %}>📧 Email Address</option>
+                        <option value="last_login" {% if sort_by == 'last_login' %}selected{% endif %}>⏰ Last Activity</option>
+                    </select>
+                </div>
+                
+                <!-- Sort Order & Submit -->
+                <div class="filter-group sort-submit-group">
+                    <label class="filter-label">
+                        <i class="fas fa-sort-amount-down me-2"></i>Sort Order
+                    </label>
+                    <div class="sort-submit-wrapper">
+                        <select class="form-select-pro sort-order" name="order">
+                            <option value="desc" {% if sort_order == 'desc' %}selected{% endif %}>⬇️ Newest First</option>
+                            <option value="asc" {% if sort_order == 'asc' %}selected{% endif %}>⬆️ Oldest First</option>
+                        </select>
+                        <button type="submit" class="btn-apply-filters">
+                            <i class="fas fa-filter"></i>
+                            <span>Apply Filters</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Filter Actions -->
+            <div class="filter-actions-pro">
+                <div class="filter-actions-left">
+                    {% if search or status_filter or role_filter %}
+                        <a href="{{ url_for('admin.users') }}" class="btn-clear-filters">
+                            <i class="fas fa-times-circle me-2"></i>Clear All Filters
+                        </a>
+                        <div class="active-filters">
+                            <span class="active-filters-label">Active Filters:</span>
+                            {% if search %}
+                                <span class="filter-tag">Search: "{{ search }}"</span>
+                            {% endif %}
+                            {% if status_filter %}
+                                <span class="filter-tag">Status: {{ status_filter.title() }}</span>
+                            {% endif %}
+                            {% if role_filter %}
+                                <span class="filter-tag">Role: {{ role_filter.title() }}</span>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="filter-actions-right">
+                    <div class="filter-stats-pro">
+                        <div class="stat-item">
+                            <i class="fas fa-users me-2"></i>
+                            <span class="stat-number">{{ users.total if users else 0 }}</span>
+                            <span class="stat-label">Total Users</span>
+                        </div>
+                        {% if users and users.pages > 1 %}
+                            <div class="stat-item">
+                                <i class="fas fa-file-alt me-2"></i>
+                                <span class="stat-number">{{ users.page }}</span>
+                                <span class="stat-label">of {{ users.pages }} Pages</span>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Professional Users Table -->
+    <div class="data-table">
+        <div class="data-table-header">
+            <h2 class="data-table-title">User Directory</h2>
+            <div class="data-table-actions">
+                {% if search %}
+                    <span class="badge badge-info">{{ users.total if users else 0 }} results for "{{ search }}"</span>
+                {% endif %}
+                <a href="{{ url_for('admin.export_users') }}" class="btn btn-ghost btn-sm">
+                    <i class="fas fa-download"></i> Export
+                </a>
+            </div>
+        </div>
+        
+        {% if users and users.items %}
+            <div class="table-responsive">
+                <table class="professional-table">
+                    <thead>
+                        <tr>
+                            <th>User Information</th>
+                            <th>Status</th>
+                            <th>Role</th>
+                            <th>Cases</th>
+                            <th>Activity</th>
+                            <th>Joined</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users.items %}
+                        <tr>
+                            <td>
+                                <div class="user-profile-card">
+                                    <div class="user-avatar-pro">
+                                        <div class="avatar-circle">
+                                            {{ user.username[0].upper() }}
+                                        </div>
+                                        {% if user.is_admin %}
+                                            <div class="admin-crown">
+                                                <i class="fas fa-crown"></i>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="user-info-pro">
+                                        <div class="user-name-pro">
+                                            {{ user.username }}
+                                        </div>
+                                        <div class="user-email-pro">
+                                            <i class="fas fa-envelope me-1"></i>{{ user.email }}
+                                        </div>
+                                        <div class="user-id-pro">
+                                            <small class="text-muted">ID: #{{ user.id }}</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="status-badge-pro {% if user.is_active %}active{% else %}inactive{% endif %}">
+                                    <div class="status-indicator-pro">
+                                        <div class="status-dot-pro"></div>
+                                        <span class="status-text">{% if user.is_active %}Active{% else %}Inactive{% endif %}</span>
+                                    </div>
+                                    {% if user.last_login %}
+                                        <small class="last-seen">Online {{ user.last_login.strftime('%b %d') }}</small>
+                                    {% else %}
+                                        <small class="last-seen">Never active</small>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td>
+                                <div class="role-display-pro">
+                                    {% if user.is_admin %}
+                                        <div class="role-badge admin-role">
+                                            <i class="fas fa-shield-alt"></i>
+                                            <span>Administrator</span>
+                                        </div>
+                                        <small class="role-desc">Full system access</small>
+                                    {% else %}
+                                        <div class="role-badge user-role">
+                                            <i class="fas fa-user"></i>
+                                            <span>Standard User</span>
+                                        </div>
+                                        <small class="role-desc">Case management</small>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td>
+                                <div class="cases-stats-pro">
+                                    <div class="total-cases">
+                                        <span class="cases-number">{{ user.cases|length if user.cases else 0 }}</span>
+                                        <span class="cases-label">Cases</span>
+                                    </div>
+                                    {% if user.cases and user.cases|length > 0 %}
+                                        <div class="cases-breakdown">
+                                            <div class="active-cases">
+                                                <i class="fas fa-circle text-success"></i>
+                                                {{ user.cases|selectattr('status', 'equalto', 'Active')|list|length }} Active
+                                            </div>
+                                        </div>
+                                    {% else %}
+                                        <small class="no-cases">No cases created</small>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td>
+                                <div class="activity-stats-pro">
+                                    {% if user.last_login %}
+                                        <div class="last-activity">
+                                            <i class="fas fa-clock text-success"></i>
+                                            <span>{{ user.last_login.strftime('%b %d, %Y') }}</span>
+                                        </div>
+                                        <div class="login-stats">
+                                            <small class="text-muted">{{ user.login_count or 0 }} total logins</small>
+                                        </div>
+                                    {% else %}
+                                        <div class="no-activity">
+                                            <i class="fas fa-user-clock text-warning"></i>
+                                            <span class="text-muted">Never logged in</span>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td>
+                                <div class="join-info-pro">
+                                    <div class="join-date">
+                                        <i class="fas fa-calendar-plus text-primary"></i>
+                                        <span>{{ user.created_at.strftime('%b %d, %Y') }}</span>
+                                    </div>
+                                    <small class="member-duration text-muted">
+                                        {% set days_diff = (moment.utcnow() - user.created_at).days %}
+                                        Member for {{ days_diff }} days
+                                    </small>
+                                </div>
+                            </td>
+                            <td>
+                                {% if user.id != current_user.id %}
+                                    <div class="action-buttons-group">
+                                        <!-- Send Message Button -->
+                                        <button type="button" class="action-btn primary" 
+                                                onclick="sendMessage({{ user.id }}, '{{ user.username }}')"
+                                                title="Send Message to {{ user.username }}">
+                                            <i class="fas fa-envelope"></i>
+                                            <span class="btn-text">Message</span>
+                                        </button>
+                                        
+                                        <!-- Toggle Admin Button -->
+                                        <form method="POST" action="{{ url_for('admin.toggle_admin', user_id=user.id) }}" style="display: inline;" 
+                                              onsubmit="return confirmAdminToggle('{{ user.username }}', {{ user.is_admin|lower }})">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                            <button type="submit" 
+                                                    class="action-btn {% if user.is_admin %}warning{% else %}success{% endif %}"
+                                                    title="{% if user.is_admin %}Revoke Admin Access{% else %}Grant Admin Access{% endif %}">
+                                                <i class="fas {% if user.is_admin %}fa-user-shield{% else %}fa-user-cog{% endif %}"></i>
+                                                <span class="btn-text">{% if user.is_admin %}Revoke{% else %}Grant{% endif %}</span>
+                                            </button>
+                                        </form>
+                                        
+                                        <!-- Delete User Button -->
+                                        <form method="POST" action="{{ url_for('admin.deactivate_user', user_id=user.id) }}" style="display: inline;" 
+                                              onsubmit="return confirmDeactivate('{{ user.username }}', {{ user.cases|length }})">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                            <button type="submit" 
+                                                    class="action-btn warning" 
+                                                    title="Deactivate {{ user.username }}">
+                                                <i class="fas fa-user-slash"></i>
+                                                <span class="btn-text">Deactivate</span>
+                                            </button>
+                                        </form>
+                                        
+                                        <!-- Delete User Button -->
+                                        <form method="POST" action="{{ url_for('admin.delete_user', user_id=user.id) }}" style="display: inline;" 
+                                              onsubmit="return confirmDelete('{{ user.username }}', {{ user.cases|length }})">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                            <button type="submit" 
+                                                    class="action-btn danger" 
+                                                    title="Permanently Delete {{ user.username }}">
+                                                <i class="fas fa-trash-alt"></i>
+                                                <span class="btn-text">Delete</span>
+                                            </button>
+                                        </form>
+                                    </div>
+                                {% else %}
+                                    <div class="current-user-indicator">
+                                        <span class="current-user-badge">
+                                            <i class="fas fa-user-shield"></i> 
+                                            <span>You</span>
+                                        </span>
+                                    </div>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination -->
+                {% if users.pages > 1 %}
+                <div class="card-footer">
+                    <nav>
+                        <ul class="pagination justify-content-center mb-0">
+                            {% if users.has_prev %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('admin.users', page=users.prev_num, search=search) }}">
+                                        <i class="fas fa-chevron-left"></i> Previous
+                                    </a>
+                                </li>
+                            {% endif %}
+                            
+                            {% for page_num in users.iter_pages() %}
+                                {% if page_num %}
+                                    {% if page_num != users.page %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="{{ url_for('admin.users', page=page_num, search=search) }}">
+                                                {{ page_num }}
+                                            </a>
+                                        </li>
+                                    {% else %}
+                                        <li class="page-item active">
+                                            <span class="page-link">{{ page_num }}</span>
+                                        </li>
+                                    {% endif %}
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link">...</span>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if users.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('admin.users', page=users.next_num, search=search) }}">
+                                        Next <i class="fas fa-chevron-right"></i>
+                                    </a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+                {% endif %}
+        {% else %}
+            <!-- Professional Empty State -->
+            <div class="empty-state">
+                <div class="empty-state-icon">
+                    <i class="fas fa-search"></i>
+                </div>
+                <h2 class="empty-state-title">No Users Found</h2>
+                {% if search %}
+                    <p class="empty-state-description">
+                        No users match your search criteria <strong>"{{ search }}"</strong>.
+                    </p>
+                    
+                    {% if debug_info %}
+                    <div class="search-suggestions">
+                        {% if debug_info.suggested_searches %}
+                        <h4><i class="fas fa-magic"></i> Did you mean:</h4>
+                        <div class="user-suggestions">
+                            {% for username in debug_info.suggested_searches %}
+                                <a href="{{ url_for('admin.users', search=username) }}" class="suggestion-tag suggested">
+                                    <i class="fas fa-user"></i> {{ username }}
+                                </a>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        
+                        <h4><i class="fas fa-users"></i> All Available Users:</h4>
+                        <div class="user-suggestions">
+                            {% for username in debug_info.available_users %}
+                                <a href="{{ url_for('admin.users', search=username) }}" class="suggestion-tag">
+                                    {{ username }}
+                                </a>
+                            {% endfor %}
+                        </div>
+                        <p class="suggestion-text">
+                            <i class="fas fa-lightbulb"></i> 
+                            Try searching with partial names like "piyush", "shastri", or "admin".
+                        </p>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="empty-state-actions">
+                        <a href="{{ url_for('admin.users') }}" class="btn btn-primary">
+                            <i class="fas fa-users"></i> View All Users
+                        </a>
+                        <button onclick="document.querySelector('.search-input').focus()" class="btn btn-outline-primary">
+                            <i class="fas fa-search"></i> Try Different Search
+                        </button>
+                    </div>
+                {% else %}
+                    <p class="empty-state-description">
+                        No users have registered yet. Users will appear here once they create accounts.
+                    </p>
+                    <div class="empty-state-actions">
+                        <a href="{{ url_for('admin.dashboard') }}" class="btn btn-primary">Back to Dashboard</a>
+                    </div>
+                {% endif %}
+            </div>
+        {% endif %}
+        </div>
+    </div>
+
+    <!-- Professional User Statistics -->
+    {% if users and users.items %}
+    <div class="admin-stats-grid">
+        <div class="admin-stat-card">
+            <div class="stat-icon primary">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="stat-number text-primary">{{ users.total if users else 0 }}</div>
+            <div class="stat-label">Total Users</div>
+            <div class="stat-sublabel">Registered accounts</div>
+        </div>
+        
+        <div class="admin-stat-card">
+            <div class="stat-icon success">
+                <i class="fas fa-user-check"></i>
+            </div>
+            <div class="stat-number text-success">{{ users.items|selectattr('is_active')|list|length if users and users.items else 0 }}</div>
+            <div class="stat-label">Active Users</div>
+            <div class="stat-sublabel">Currently active</div>
+        </div>
+        
+        <div class="admin-stat-card">
+            <div class="stat-icon warning">
+                <i class="fas fa-crown"></i>
+            </div>
+            <div class="stat-number text-warning">{{ users.items|selectattr('is_admin')|list|length if users and users.items else 0 }}</div>
+            <div class="stat-label">Administrators</div>
+            <div class="stat-sublabel">Admin privileges</div>
+        </div>
+        
+        <div class="admin-stat-card">
+            <div class="stat-icon info">
+                <i class="fas fa-folder-open"></i>
+            </div>
+            <div class="stat-number text-info">{{ total_cases or 0 }}</div>
+            <div class="stat-label">Total Cases</div>
+            <div class="stat-sublabel">All user cases</div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+/* Professional Admin Users Page Styles */
+.admin-page-header {
+    background: linear-gradient(135deg, var(--primary-600) 0%, var(--primary-700) 100%);
+    color: white;
+    padding: var(--space-12) 0;
+    margin-bottom: var(--space-8);
+}
+
+.admin-page-header-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-8);
+}
+
+.admin-page-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    background: rgba(255, 255, 255, 0.15);
+    color: rgba(255, 255, 255, 0.9);
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    margin-bottom: var(--space-4);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.admin-page-header h1 {
+    color: white;
+    font-size: var(--font-size-4xl);
+    font-weight: 700;
+    margin-bottom: var(--space-2);
+}
+
+.admin-page-header p {
+    color: rgba(255, 255, 255, 0.85);
+    font-size: var(--font-size-lg);
+    margin: 0;
+}
+
+.admin-page-header-actions {
+    display: flex;
+    gap: var(--space-3);
+    align-items: center;
+}
+
+/* User Table Specific Styles */
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-full);
+    background: var(--primary-600);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: var(--font-size-sm);
+    flex-shrink: 0;
+}
+
+.user-name a {
+    font-weight: 600;
+    color: var(--gray-900);
+    text-decoration: none;
+}
+
+.user-name a:hover {
+    color: var(--primary-600);
+    text-decoration: underline;
+}
+
+.user-email {
+    font-size: var(--font-size-sm);
+    color: var(--gray-500);
+}
+
+.case-stats {
+    text-align: center;
+}
+
+.case-count {
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+    color: var(--gray-900);
+    display: block;
+}
+
+.case-breakdown {
+    font-size: var(--font-size-xs);
+    color: var(--gray-500);
+    margin-top: var(--space-1);
+}
+
+.activity-info {
+    text-align: center;
+}
+
+.last-login {
+    font-size: var(--font-size-sm);
+    color: var(--gray-900);
+    font-weight: 500;
+}
+
+.login-count {
+    font-size: var(--font-size-xs);
+    color: var(--gray-500);
+    margin-top: var(--space-1);
+}
+
+.no-login {
+    font-size: var(--font-size-sm);
+    color: var(--gray-500);
+    font-style: italic;
+}
+
+.join-date {
+    font-size: var(--font-size-sm);
+    color: var(--gray-600);
+    text-align: center;
+}
+
+.current-user-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    background: var(--primary-100);
+    color: var(--primary-700);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-xs);
+    font-weight: 500;
+}
+
+/* Filter Actions Layout */
+.filter-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.filter-actions-left {
+    display: flex;
+    gap: var(--space-3);
+}
+
+.filter-actions-right {
+    display: flex;
+    gap: var(--space-3);
+    align-items: center;
+}
+
+.filter-stats {
+    display: flex;
+    gap: var(--space-2);
+    align-items: center;
+}
+
+/* Badge Variants */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-xs);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.badge-primary {
+    background: var(--primary-100);
+    color: var(--primary-700);
+}
+
+.badge-secondary {
+    background: var(--gray-100);
+    color: var(--gray-700);
+}
+
+.badge-success {
+    background: var(--secondary-100);
+    color: var(--secondary-700);
+}
+
+.badge-danger {
+    background: var(--error-100);
+    color: var(--error-700);
+}
+
+.badge-warning {
+    background: var(--warning-100);
+    color: var(--warning-700);
+}
+
+.badge-info {
+    background: var(--info-100);
+    color: var(--info-700);
+}
+
+/* Enhanced Statistics Section */
+.admin-stats-section {
+    margin: var(--space-8) 0;
+    padding: var(--space-6);
+    background: var(--gray-50);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--gray-200);
+}
+
+.admin-stats-header {
+    text-align: center;
+    margin-bottom: var(--space-8);
+}
+
+.admin-stats-title {
+    font-size: var(--font-size-2xl);
+    font-weight: 700;
+    color: var(--gray-900);
+    margin-bottom: var(--space-2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-3);
+}
+
+.admin-stats-subtitle {
+    font-size: var(--font-size-lg);
+    color: var(--gray-600);
+    margin: 0;
+}
+
+.admin-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--space-6);
+}
+
+/* Enhanced Statistics Cards */
+.admin-stat-card {
+    background: white;
+    border-radius: var(--radius-lg);
+    padding: var(--space-6);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    border: 1px solid var(--gray-200);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.admin-stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.admin-stat-card.primary {
+    border-left: 4px solid var(--primary-500);
+}
+
+.admin-stat-card.success {
+    border-left: 4px solid var(--secondary-500);
+}
+
+.admin-stat-card.warning {
+    border-left: 4px solid var(--warning-500);
+}
+
+.admin-stat-card.info {
+    border-left: 4px solid var(--info-500);
+}
+
+.admin-stat-card.danger {
+    border-left: 4px solid var(--error-500);
+}
+
+.admin-stat-card.dark {
+    border-left: 4px solid var(--gray-700);
+}
+
+/* Stat Card Header */
+.stat-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-4);
+}
+
+.stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--font-size-xl);
+}
+
+.admin-stat-card.primary .stat-icon {
+    background: var(--primary-100);
+    color: var(--primary-600);
+}
+
+.admin-stat-card.success .stat-icon {
+    background: var(--secondary-100);
+    color: var(--secondary-600);
+}
+
+.admin-stat-card.warning .stat-icon {
+    background: var(--warning-100);
+    color: var(--warning-600);
+}
+
+.admin-stat-card.info .stat-icon {
+    background: var(--info-100);
+    color: var(--info-600);
+}
+
+.admin-stat-card.danger .stat-icon {
+    background: var(--error-100);
+    color: var(--error-600);
+}
+
+.admin-stat-card.dark .stat-icon {
+    background: var(--gray-100);
+    color: var(--gray-600);
+}
+
+/* Stat Indicators */
+.stat-trend {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-1) var(--space-2);
+    background: var(--secondary-100);
+    color: var(--secondary-700);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+}
+
+.stat-percentage {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--gray-600);
+    background: var(--gray-100);
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-md);
+}
+
+.stat-badge .badge {
+    font-size: var(--font-size-xs);
+}
+
+.stat-alert {
+    color: var(--warning-600);
+    font-size: var(--font-size-lg);
+}
+
+.stat-status {
+    display: flex;
+    align-items: center;
+}
+
+.status-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: var(--radius-full);
+    display: inline-block;
+}
+
+.status-dot.success {
+    background: var(--secondary-500);
+}
+
+.status-dot.warning {
+    background: var(--warning-500);
+}
+
+.status-dot.danger {
+    background: var(--error-500);
+}
+
+/* Stat Content */
+.stat-content {
+    text-align: center;
+    margin-bottom: var(--space-4);
+}
+
+.stat-number {
+    font-size: var(--font-size-4xl);
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: var(--space-2);
+}
+
+.admin-stat-card.primary .stat-number {
+    color: var(--primary-600);
+}
+
+.admin-stat-card.success .stat-number {
+    color: var(--secondary-600);
+}
+
+.admin-stat-card.warning .stat-number {
+    color: var(--warning-600);
+}
+
+.admin-stat-card.info .stat-number {
+    color: var(--info-600);
+}
+
+.admin-stat-card.danger .stat-number {
+    color: var(--error-600);
+}
+
+.admin-stat-card.dark .stat-number {
+    color: var(--gray-700);
+}
+
+.stat-label {
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    color: var(--gray-900);
+    margin-bottom: var(--space-1);
+}
+
+.stat-sublabel {
+    font-size: var(--font-size-sm);
+    color: var(--gray-500);
+}
+
+/* Stat Footer */
+.stat-footer {
+    margin-top: var(--space-4);
+}
+
+.stat-progress {
+    width: 100%;
+    height: 4px;
+    background: var(--gray-200);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+    margin-bottom: var(--space-2);
+}
+
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary-500), var(--primary-600));
+    border-radius: var(--radius-full);
+    transition: width 0.3s ease;
+}
+
+.admin-stat-card.success .progress-bar {
+    background: linear-gradient(90deg, var(--secondary-500), var(--secondary-600));
+}
+
+.admin-stat-card.warning .progress-bar {
+    background: linear-gradient(90deg, var(--warning-500), var(--warning-600));
+}
+
+.admin-stat-card.info .progress-bar {
+    background: linear-gradient(90deg, var(--info-500), var(--info-600));
+}
+
+.admin-stat-card.danger .progress-bar {
+    background: linear-gradient(90deg, var(--error-500), var(--error-600));
+}
+
+.admin-stat-card.dark .progress-bar {
+    background: linear-gradient(90deg, var(--gray-600), var(--gray-700));
+}
+
+.text-primary { color: var(--primary-600) !important; }
+.text-success { color: var(--secondary-600) !important; }
+.text-warning { color: var(--warning-600) !important; }
+.text-info { color: var(--info-600) !important; }
+.text-muted { color: var(--gray-500) !important; }
+
+/* Professional User Directory Styles */
+.user-profile-card {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 12px 8px;
+    min-height: 80px;
+}
+
+.user-avatar-pro {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.avatar-circle {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 18px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.admin-crown {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    background: #ffd700;
+    color: #b8860b;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.user-info-pro {
+    flex: 1;
+    min-width: 0;
+    line-height: 1.4;
+}
+
+.user-name-pro {
+    font-weight: 600;
+    font-size: 16px;
+    color: #1f2937;
+    margin-bottom: 4px;
+    line-height: 1.2;
+}
+
+.user-email-pro {
+    color: #6b7280;
+    font-size: 14px;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    line-height: 1.3;
+}
+
+.user-id-pro {
+    font-size: 12px;
+    margin-top: 2px;
+}
+
+/* Status Badge Professional */
+.status-badge-pro {
+    text-align: center;
+    padding: 8px 4px;
+    min-width: 100px;
+}
+
+.status-indicator-pro {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-bottom: 6px;
+}
+
+.status-dot-pro {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.status-badge-pro.active .status-dot-pro {
+    background: #10b981;
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+}
+
+.status-badge-pro.inactive .status-dot-pro {
+    background: #ef4444;
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
+}
+
+.status-text {
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.status-badge-pro.active .status-text {
+    color: #10b981;
+}
+
+.status-badge-pro.inactive .status-text {
+    color: #ef4444;
+}
+
+.last-seen {
+    color: #9ca3af;
+    font-size: 12px;
+    margin-top: 2px;
+    line-height: 1.2;
+}
+
+/* Role Display Professional */
+.role-display-pro {
+    text-align: center;
+    padding: 8px 4px;
+    min-width: 120px;
+}
+
+.role-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 6px;
+    white-space: nowrap;
+}
+
+.admin-role {
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+    color: #92400e;
+    border: 1px solid #fbbf24;
+}
+
+.user-role {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: white;
+    border: 1px solid #1d4ed8;
+    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+}
+
+.role-desc {
+    color: #6b7280;
+    font-size: 11px;
+    margin-top: 2px;
+    line-height: 1.2;
+}
+
+/* Cases Stats Professional */
+.cases-stats-pro {
+    text-align: center;
+    padding: 8px 4px;
+    min-width: 80px;
+}
+
+.total-cases {
+    margin-bottom: 6px;
+}
+
+.cases-number {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1f2937;
+    display: block;
+    line-height: 1;
+}
+
+.cases-label {
+    font-size: 12px;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.cases-breakdown {
+    margin-top: 6px;
+}
+
+.active-cases {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    font-size: 12px;
+    color: #10b981;
+}
+
+.no-cases {
+    color: #9ca3af;
+    font-size: 12px;
+    font-style: italic;
+    margin-top: 4px;
+    line-height: 1.2;
+}
+
+/* Activity Stats Professional */
+.activity-stats-pro {
+    text-align: center;
+    padding: 8px 4px;
+    min-width: 120px;
+}
+
+.last-activity {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-bottom: 6px;
+    font-size: 14px;
+    color: #374151;
+    line-height: 1.3;
+}
+
+.login-stats {
+    font-size: 12px;
+    margin-top: 2px;
+    line-height: 1.2;
+}
+
+.no-activity {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-size: 14px;
+    line-height: 1.3;
+}
+
+/* Join Info Professional */
+.join-info-pro {
+    text-align: center;
+    padding: 8px 4px;
+    min-width: 100px;
+}
+
+.join-date {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-bottom: 6px;
+    font-size: 14px;
+    color: #374151;
+    line-height: 1.3;
+}
+
+.member-duration {
+    font-size: 12px;
+    margin-top: 2px;
+    line-height: 1.2;
+}
+
+/* Enhanced Action Buttons */
+.action-buttons-group {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    padding: 8px 4px;
+    min-width: 200px;
+}
+
+/* Professional Search & Filter Styles */
+.search-filter-card-pro {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    color: white;
+}
+
+.filter-header {
+    text-align: center;
+    margin-bottom: 24px;
+}
+
+.filter-title {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.filter-subtitle {
+    font-size: 16px;
+    color: rgba(255,255,255,0.9);
+    margin: 0;
+}
+
+.filter-form-pro {
+    background: rgba(255,255,255,0.1);
+    border-radius: 12px;
+    padding: 20px;
+    backdrop-filter: blur(10px);
+}
+
+.filter-grid-pro {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr 1.5fr;
+    gap: 20px;
+    align-items: end;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.filter-label {
+    font-weight: 600;
+    font-size: 14px;
+    color: white;
+    display: flex;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.search-input-wrapper {
+    position: relative;
+}
+
+.form-control-pro, .form-select-pro {
+    background: rgba(255,255,255,0.95);
+    border: 2px solid rgba(255,255,255,0.3);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 14px;
+    color: #374151;
+    transition: all 0.3s ease;
+    width: 100%;
+}
+
+.search-input {
+    padding-right: 45px;
+}
+
+.search-icon {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #9ca3af;
+    pointer-events: none;
+}
+
+.form-control-pro:focus, .form-select-pro:focus {
+    outline: none;
+    border-color: #fbbf24;
+    box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.2);
+    background: white;
+}
+
+.sort-submit-wrapper {
+    display: flex;
+    gap: 12px;
+    align-items: stretch;
+}
+
+.sort-order {
+    flex: 1;
+}
+
+.btn-apply-filters {
+    background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    border: none;
+    border-radius: 8px;
+    padding: 12px 20px;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+    min-width: 140px;
+    justify-content: center;
+}
+
+.btn-apply-filters:hover {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+}
+
+.filter-actions-pro {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255,255,255,0.2);
+}
+
+.btn-clear-filters {
+    background: rgba(239, 68, 68, 0.2);
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    color: #fca5a5;
+    padding: 8px 16px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+}
+
+.btn-clear-filters:hover {
+    background: rgba(239, 68, 68, 0.3);
+    color: #fecaca;
+    text-decoration: none;
+}
+
+.active-filters {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: 16px;
+}
+
+.active-filters-label {
+    font-size: 12px;
+    color: rgba(255,255,255,0.8);
+    font-weight: 500;
+}
+
+.filter-tag {
+    background: rgba(34, 197, 94, 0.2);
+    border: 1px solid rgba(34, 197, 94, 0.4);
+    color: #86efac;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.filter-stats-pro {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(255,255,255,0.1);
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.stat-number {
+    font-weight: 700;
+    color: #fbbf24;
+}
+
+.stat-label {
+    color: rgba(255,255,255,0.9);
+    font-size: 13px;
+}
+
+/* Table Cell Spacing */
+.professional-table td {
+    padding: 12px 8px !important;
+    vertical-align: middle;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.professional-table tr:hover {
+    background-color: #f9fafb;
+}
+
+.professional-table th {
+    padding: 16px 8px !important;
+    font-weight: 600;
+    color: #374151;
+    background-color: #f8fafc;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+/* Search Suggestions Styles */
+.search-suggestions {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 16px;
+    margin: 16px 0;
+    text-align: left;
+}
+
+.search-suggestions h4 {
+    color: #374151;
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.user-suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.suggestion-tag {
+    background: #3b82f6;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 20px;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+}
+
+.suggestion-tag:hover {
+    background: #2563eb;
+    color: white;
+    text-decoration: none;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+}
+
+.suggestion-tag.suggested {
+    background: #10b981;
+    border: 2px solid #059669;
+    font-weight: 600;
+}
+
+.suggestion-tag.suggested:hover {
+    background: #059669;
+    color: white;
+}
+
+.suggestion-text {
+    color: #6b7280;
+    font-size: 14px;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.suggestion-text i {
+    color: #fbbf24;
+}
+
+.empty-state-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 20px;
+}
+
+.btn-outline-primary {
+    background: transparent;
+    border: 2px solid #3b82f6;
+    color: #3b82f6;
+    padding: 10px 20px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-outline-primary:hover {
+    background: #3b82f6;
+    color: white;
+    text-decoration: none;
+}
+
+/* Responsive Design for Filters */
+@media (max-width: 1200px) {
+    .filter-grid-pro {
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 16px;
+    }
+    
+    .search-group {
+        grid-column: 1 / -1;
+    }
+    
+    .sort-submit-group {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 768px) {
+    .filter-grid-pro {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    .filter-actions-pro {
+        flex-direction: column;
+        gap: 16px;
+        align-items: stretch;
+    }
+    
+    .filter-stats-pro {
+        justify-content: center;
+    }
+    
+    .sort-submit-wrapper {
+        flex-direction: column;
+        gap: 8px;
+    }
+}
+
+.action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-2) var(--space-3);
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 80px;
+    justify-content: center;
+}
+
+.action-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.action-btn.primary {
+    background: var(--primary-600);
+    color: white;
+}
+
+.action-btn.primary:hover {
+    background: var(--primary-700);
+    color: white;
+}
+
+.action-btn.success {
+    background: var(--secondary-600);
+    color: white;
+}
+
+.action-btn.success:hover {
+    background: var(--secondary-700);
+    color: white;
+}
+
+.action-btn.warning {
+    background: var(--warning-600);
+    color: white;
+}
+
+.action-btn.warning:hover {
+    background: var(--warning-700);
+    color: #1f2937 !important;
+}
+
+.action-btn.warning:hover .btn-text,
+.action-btn.warning:hover i {
+    color: #1f2937 !important;
+}
+
+.action-btn.danger {
+    background: var(--error-600);
+    color: white;
+}
+
+.action-btn.danger:hover {
+    background: var(--error-700);
+    color: white;
+}
+
+.btn-text {
+    font-size: var(--font-size-xs);
+    font-weight: 500;
+}
+
+.current-user-indicator {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.current-user-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-4);
+    background: linear-gradient(135deg, var(--primary-100), var(--primary-200));
+    color: var(--primary-700);
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    border: 2px solid var(--primary-300);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .admin-page-header-content {
+        flex-direction: column;
+        text-align: center;
+        gap: var(--space-6);
+    }
+    
+    .user-info {
+        flex-direction: column;
+        text-align: center;
+        gap: var(--space-2);
+    }
+    
+    .filter-actions {
+        flex-direction: column;
+        gap: var(--space-4);
+        align-items: stretch;
+    }
+    
+    .filter-actions-right {
+        justify-content: center;
+    }
+    
+    .action-buttons-group {
+        flex-direction: column;
+        gap: var(--space-1);
+    }
+    
+    .action-btn {
+        width: 100%;
+        min-width: auto;
+    }
+    
+    .btn-text {
+        display: inline;
+    }
+}
+</style>
+
+<script>
+// Enhanced User Management Functions
+function confirmDeactivate(username, caseCount) {
+    let message = `Are you sure you want to deactivate user "${username}"?\n\nThis will disable their account but preserve all data.`;
+    
+    if (caseCount > 0) {
+        message += `\n\nNote: This user has ${caseCount} case(s). All cases will be preserved and can be reactivated later.`;
+    }
+    
+    return confirm(message);
+}
+
+function confirmDelete(username, caseCount) {
+    let message = `⚠️ PERMANENT DELETION WARNING ⚠️\n\nAre you sure you want to PERMANENTLY DELETE user "${username}"?\n\nThis action CANNOT be undone and will remove:`;
+    message += `\n• User account and profile`;
+    message += `\n• All login credentials`;
+    message += `\n• User preferences and settings`;
+    
+    if (caseCount > 0) {
+        message += `\n• ALL ${caseCount} case(s) and associated data`;
+        message += `\n• Case photos, videos, and documents`;
+        message += `\n• Investigation history and notes`;
+    }
+    
+    message += `\n\nType "DELETE" to confirm permanent deletion:`;
+    
+    const confirmation = prompt(message);
+    return confirmation === "DELETE";
+}
+
+function confirmDelete(username, caseCount) {
+    let message = `⚠️ PERMANENT DELETION WARNING ⚠️\n\nAre you sure you want to PERMANENTLY DELETE user "${username}"?\n\nThis action CANNOT be undone and will remove:`;
+    message += `\n• User account and profile`;
+    message += `\n• All login credentials`;
+    message += `\n• User preferences and settings`;
+    
+    if (caseCount > 0) {
+        message += `\n• ALL ${caseCount} case(s) and associated data`;
+        message += `\n• Case photos, videos, and documents`;
+        message += `\n• Investigation history and notes`;
+    }
+    
+    message += `\n\nType "DELETE" to confirm permanent deletion:`;
+    
+    const confirmation = prompt(message);
+    return confirmation === "DELETE";
+}
+
+function sendMessage(userId, username) {
+    const message = prompt(`Send a message to ${username}:`);
+    if (message && message.trim()) {
+        // Create a form and submit
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/admin/send-message/${userId}`;
+        
+        // Add CSRF token
+        const csrfToken = document.querySelector('meta[name=csrf-token]');
+        if (csrfToken) {
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = 'csrf_token';
+            csrfInput.value = csrfToken.getAttribute('content');
+            form.appendChild(csrfInput);
+        }
+        
+        const messageInput = document.createElement('input');
+        messageInput.type = 'hidden';
+        messageInput.name = 'message';
+        messageInput.value = message.trim();
+        
+        const subjectInput = document.createElement('input');
+        subjectInput.type = 'hidden';
+        subjectInput.name = 'subject';
+        subjectInput.value = 'Admin Message';
+        
+        form.appendChild(messageInput);
+        form.appendChild(subjectInput);
+        document.body.appendChild(form);
+        form.submit();
+    } else if (message !== null) {
+        alert('Message cannot be empty!');
+    }
+}
+
+function confirmAdminToggle(username, isCurrentlyAdmin) {
+    const action = isCurrentlyAdmin ? 'revoke admin access from' : 'grant admin access to';
+    const warning = isCurrentlyAdmin ? 
+        `This will remove ${username}'s administrator privileges. They will lose access to the admin panel.` :
+        `This will give ${username} full administrator privileges including user management and system access.`;
+    
+    return confirm(`Are you sure you want to ${action} ${username}?\n\n${warning}`);
+}
+
+function confirmDelete(username, caseCount) {
+    let message = `Are you sure you want to delete user "${username}"?\n\nThis action cannot be undone.`;
+    
+    if (caseCount > 0) {
+        message += `\n\nWarning: This user has ${caseCount} case(s). Deleting the user will also delete all their cases and associated data.`;
+    }
+    
+    return confirm(message);
+}
+
+// Enhanced table interactions
+document.addEventListener('DOMContentLoaded', function() {
+    // Add hover effects to table rows
+    const tableRows = document.querySelectorAll('.professional-table tbody tr');
+    tableRows.forEach(row => {
+        row.addEventListener('mouseenter', function() {
+            this.style.backgroundColor = 'var(--gray-50)';
+        });
+        
+        row.addEventListener('mouseleave', function() {
+            this.style.backgroundColor = '';
+        });
+    });
+    
+    // Add visual feedback without disabling buttons
+    const actionButtons = document.querySelectorAll('.action-btn');
+    actionButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            if (this.type === 'submit') {
+                // Add visual feedback but don't disable
+                this.style.opacity = '0.7';
+                setTimeout(() => {
+                    this.style.opacity = '1';
+                }, 2000);
+            }
+        });
+    });
+});
+</script>
+
+{% endblock %}
