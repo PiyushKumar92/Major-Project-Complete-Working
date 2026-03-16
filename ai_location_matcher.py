@@ -1,5 +1,5 @@
 """
-AI Location Matcher - FAST face detection with smart sampling
+AI Location Matcher - FAST face detection with smart sampling abd do fast 
 """
 import cv2
 import numpy as np
